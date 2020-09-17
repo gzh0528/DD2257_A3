@@ -65,6 +65,13 @@ public:
     bool isInside(const PositionType& pos) const;
 
     /**
+     * \brief Clamp a position to the bounding box
+     *
+     * @param pos World position to be checked
+     */
+    PositionType clampPositionToBBox(const PositionType& pos) const;
+
+    /**
      * \brief Get the world position of a vertex.
      * Use this when e.g. drawing vertices.
      *
@@ -268,6 +275,17 @@ bool Field<Dim, VecDim>::isInside(const typename Field<Dim, VecDim>::PositionTyp
 }
 
 template <int Dim, int VecDim>
+typename Field<Dim, VecDim>::PositionType Field<Dim, VecDim>::clampPositionToBBox(
+    const typename Field<Dim, VecDim>::PositionType& pos) const {
+    PositionType clampedPos = pos;
+    for (int d = 0; d < Dim; ++d) {
+        if (pos[d] < offset_[d]) clampedPos[d] = offset_[d];
+        if (pos[d] > offset_[d] + extent_[d]) clampedPos[d] = offset_[d] + extent_[d];
+    }
+    return clampedPos;
+}
+
+template <int Dim, int VecDim>
 typename Field<Dim, VecDim>::IndexType Field<Dim, VecDim>::getLowerIndex(
     const typename Field<Dim, VecDim>::PositionType& pos) const {
     IndexType idx;
@@ -306,7 +324,9 @@ typename Field<Dim, VecDim>::VectorType Field<Dim, VecDim>::sample(const size3_t
 template <int Dim, int VecDim>
 typename Field<Dim, VecDim>::VectorType Field<Dim, VecDim>::interpolate(
     const typename Field<Dim, VecDim>::PositionType& pos) const {
-    if (!isInside(pos)) return typename Field<Dim, VecDim>::VectorType(0);
+    if (!isInside(pos)) {
+        return interpolateInGridCoords(gridCoordsFromWorldPos(clampPositionToBBox(pos)));
+    }
     return interpolateInGridCoords(gridCoordsFromWorldPos(pos));
 }
 
