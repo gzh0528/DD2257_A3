@@ -28,6 +28,20 @@ public:
 
     // Methods
 public:
+
+    // Add a point to a mesh
+    static void drawPoint(const dvec2& p, const vec4& color, IndexBufferRAM* indexBuffer,
+                          std::vector<BasicMesh::Vertex>& vertices);
+    // Add a point to a polyline, assumes that the indexBuffer uses Strip Connectivity
+    static void drawNextPointInPolyline(const dvec2& p, const vec4& color,
+                                        IndexBufferRAM* indexBuffer,
+                                        std::vector<BasicMesh::Vertex>& vertices);
+    // Add a line segment to a mesh, assuming no connectivity in the indexBuffer
+    static void drawLineSegment(const dvec2& v1, const dvec2& v2, const vec4& color,
+                                IndexBufferRAM* indexBuffer,
+                                std::vector<BasicMesh::Vertex>& vertices);
+
+
     // TODO: Implement the methods below (one integration step with either Euler or
     // Runge-Kutte of 4th order integration method)
     // Pass any other properties that influence the integration process

@@ -16,6 +16,8 @@
 #include <inviwo/core/processors/processor.h>
 #include <inviwo/core/properties/eventproperty.h>
 #include <inviwo/core/properties/ordinalproperty.h>
+#include <inviwo/core/properties/cameraproperty.h>
+
 #include <labstreamlines/labstreamlinesmoduledefine.h>
 #include <labutils/scalarvectorfield.h>
 
@@ -36,9 +38,10 @@ namespace inviwo {
       will be processed.
 
     ### Outports
-      * __outMesh__ The output mesh contains points and linesegments for the
+      * __meshOut__ The output mesh contains points and linesegments for the
       two streamlines computed with different integration schemes and both
       starting at a given start point
+      * __meshBBoxOut__ Mesh with boundling box
 
     ### Properties
       * __propStartPoint__ Location of the start point
@@ -48,12 +51,12 @@ namespace inviwo {
 class IVW_MODULE_LABSTREAMLINES_API EulerRK4Comparison : public Processor {
 
 public:
-// Construction / Deconstruction
+    // Construction / Deconstruction
 public:
     EulerRK4Comparison();
     virtual ~EulerRK4Comparison() = default;
 
-// Methods
+    // Methods
 public:
     virtual const ProcessorInfo getProcessorInfo() const override;
     static const ProcessorInfo processorInfo_;
@@ -63,18 +66,23 @@ protected:
     virtual void process() override;
     void eventMoveStart(Event* event);
 
-// Ports
+    // Ports
 public:
     // Input data
     VolumeInport inData;
 
     // Output mesh
-    MeshOutport outMesh;
+    MeshOutport meshOut;
 
-// Properties
+    // Output mesh for bounding box and gridlines
+    MeshOutport meshBBoxOut;
+
+    // Properties
 public:
     FloatVec2Property propStartPoint;
+
     EventProperty mouseMoveStart;
+    CameraProperty propCamera;
 
     // TODO: Declare additional properties
     // IntProperty properyName;
@@ -82,6 +90,8 @@ public:
 
 // Attributes
 private:
+    dvec2 BBoxMin_;
+    dvec2 BBoxMax_;
 };
 
 }  // namespace inviwo
