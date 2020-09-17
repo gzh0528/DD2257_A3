@@ -36,7 +36,6 @@ EulerRK4Comparison::EulerRK4Comparison()
     , mouseMoveStart(
           "mouseMoveStart", "Move Start", [this](Event* e) { eventMoveStart(e); },
           MouseButton::Left, MouseState::Press | MouseState::Move)
-    , propCamera("camera", "Camera", util::boundingBox(inData))
 // TODO: Initialize additional properties
 // propertyName("propertyIdentifier", "Display Name of the Propery",
 // default value (optional), minimum value (optional), maximum value (optional), increment
@@ -54,23 +53,20 @@ EulerRK4Comparison::EulerRK4Comparison()
     // TODO: Register additional properties
     // addProperty(propertyName);
 
-    addProperty(propCamera);
-    propCamera.setCollapsed(true);
-    propCamera.setReadOnly(true);
 }
 
 void EulerRK4Comparison::eventMoveStart(Event* event) {
     if (!inData.hasData()) return;
     auto mouseEvent = static_cast<MouseEvent*>(event);
-    // Get normalized device coordsinates
-    vec3 mousePos = mouseEvent->ndc();
+    vec2 mousePos = mouseEvent->posNormalized();
 
-    // Convert to world coordinates
-    mousePos = propCamera.getWorldPosFromNormalizedDeviceCoords(mousePos);
+    // Map to bounding box range
+    mousePos[0] *= static_cast<float>(BBoxMax_[0] - BBoxMin_[0]);
+    mousePos[1] *= static_cast<float>(BBoxMax_[1] - BBoxMin_[1]);
+    mousePos += static_cast<vec2>(BBoxMin_);
 
     // Update starting point
-    // Z-coordinate is ignored since we use a 2D dataset
-    propStartPoint.set(vec2(mousePos.x, mousePos.y));
+    propStartPoint.set(mousePos);
     event->markAsUsed();
 }
 
@@ -121,7 +117,6 @@ void EulerRK4Comparison::process() {
     // Draw start point
     dvec2 startPoint = propStartPoint.get();
     Integrator::drawPoint(startPoint, black, indexBufferPoints.get(), vertices);
-
 
     // TODO: Implement the Euler and Runge-Kutta of 4th order integration schemes
     // and then integrate forward for a specified number of integration steps and a given stepsize

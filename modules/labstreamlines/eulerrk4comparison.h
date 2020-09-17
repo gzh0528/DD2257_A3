@@ -16,8 +16,6 @@
 #include <inviwo/core/processors/processor.h>
 #include <inviwo/core/properties/eventproperty.h>
 #include <inviwo/core/properties/ordinalproperty.h>
-#include <inviwo/core/properties/cameraproperty.h>
-
 #include <labstreamlines/labstreamlinesmoduledefine.h>
 #include <labutils/scalarvectorfield.h>
 
@@ -82,7 +80,6 @@ public:
     FloatVec2Property propStartPoint;
 
     EventProperty mouseMoveStart;
-    CameraProperty propCamera;
 
     // TODO: Declare additional properties
     // IntProperty properyName;
@@ -90,8 +87,8 @@ public:
 
 // Attributes
 private:
-    dvec2 BBoxMin_;
-    dvec2 BBoxMax_;
+    dvec2 BBoxMin_{0, 0};
+    dvec2 BBoxMax_{0, 0};
 };
 
 }  // namespace inviwo
