@@ -17,7 +17,7 @@ namespace inviwo {
 // The Class Identifier has to be globally unique. Use a reverse DNS naming scheme
 const ProcessorInfo LICProcessor::processorInfo_{
     "org.inviwo.LICProcessor",  // Class identifier
-    "LIC",                      // Display name
+    "LICProcessor",             // Display name
     "KTH Labs",                 // Category
     CodeState::Experimental,    // Code state
     Tags::None,                 // Tags
@@ -59,19 +59,26 @@ void LICProcessor::process() {
     const RGBAImage texture = RGBAImage::createFromImage(tex);
     texDims_ = tex->getDimensions();
 
+    double value = texture.readPixelGrayScale(size2_t(0, 0));
+
+    LogProcessorInfo(value);
+
     // Prepare the output, it has the same dimensions as the texture and rgba values in [0,255]
     auto outImage = std::make_shared<Image>(texDims_, DataVec4UInt8::get());
     RGBAImage licImage(outImage);
 
     std::vector<std::vector<double>> licTexture(texDims_.x, std::vector<double>(texDims_.y, 0.0));
 
-    // TODO: Implement LIC and FastLIC
-    // This code instead just creates a black image
+    // Hint: Output an image showing which pixels you have visited for debugging
+    std::vector<std::vector<int>> visited(texDims_.x, std::vector<int>(texDims_.y, 0));
 
-    for (auto j = 0; j < texDims_.y; j++) {
-        for (auto i = 0; i < texDims_.x; i++) {
+    // TODO: Implement LIC and FastLIC
+    // This code instead sets all pixels to the same gray value
+
+    for (size_t j = 0; j < texDims_.y; j++) {
+        for (size_t i = 0; i < texDims_.x; i++) {
             int val = int(licTexture[i][j]);
-            // licImage.setPixel(size2_t(i, j), dvec4(val, val, val, 255));
+            licImage.setPixel(size2_t(i, j), dvec4(val, val, val, 255));
             // or
             licImage.setPixelGrayScale(size2_t(i, j), val);
         }
