@@ -28,7 +28,7 @@ const vec4 Topology::ColorsCP[6] = {
 const ProcessorInfo Topology::processorInfo_{
     "org.inviwo.Topology",    // Class identifier
     "Vector Field Topology",  // Display name
-    "KTH Labs",               // Category
+    "KTH Lab",                // Category
     CodeState::Experimental,  // Code state
     Tags::None,               // Tags
 };
@@ -39,6 +39,7 @@ Topology::Topology()
     : Processor()
     , inData("inData")
     , outMesh("meshOut")
+    , meshBBoxOut("meshBBoxOut")
 // TODO: Initialize additional properties
 // propertyName("propertyIdentifier", "Display Name of the Propery",
 // default value (optional), minimum value (optional), maximum value (optional), increment
@@ -47,6 +48,7 @@ Topology::Topology()
     // Register Ports
     addPort(outMesh);
     addPort(inData);
+    addPort(meshBBoxOut);
 
     // TODO: Register additional properties
     // addProperty(propertyName);
@@ -62,26 +64,33 @@ void Topology::process() {
     // Retreive data in a form that we can access it
     const VectorField2 vectorField = VectorField2::createFieldFromVolume(vol);
 
+    // Add a bounding box to the mesh
+    const dvec2& BBoxMin = vectorField.getBBoxMin();
+    const dvec2& BBoxMax = vectorField.getBBoxMax();
+    auto bboxMesh = std::make_shared<BasicMesh>();
+    std::vector<BasicMesh::Vertex> bboxVertices;
+    auto indexBufferBBox = bboxMesh->addIndexBuffer(DrawType::Lines, ConnectivityType::Strip);
+    // Bounding Box vertex 0
+    vec4 black = vec4(0, 0, 0, 1);
+    Integrator::drawNextPointInPolyline(BBoxMin, black, indexBufferBBox.get(), bboxVertices);
+    Integrator::drawNextPointInPolyline(vec2(BBoxMin[0], BBoxMax[1]), black, indexBufferBBox.get(),
+                                        bboxVertices);
+    Integrator::drawNextPointInPolyline(BBoxMax, black, indexBufferBBox.get(), bboxVertices);
+    Integrator::drawNextPointInPolyline(vec2(BBoxMax[0], BBoxMin[1]), black, indexBufferBBox.get(),
+                                        bboxVertices);
+    // Connect back to the first point, to make a full rectangle
+    indexBufferBBox->add(static_cast<std::uint32_t>(0));
+    bboxMesh->addVertices(bboxVertices);
+    meshBBoxOut.setData(bboxMesh);
+
     // Initialize mesh, vertices and index buffers for seperatrices
     auto mesh = std::make_shared<BasicMesh>();
     std::vector<BasicMesh::Vertex> vertices;
-
-    // Add a bounding box to the mesh (The 2D mesh renderer will automatically adapt to this)
-    const dvec2& BBoxMin = vectorField.getBBoxMin();
-    const dvec2& BBoxMax = vectorField.getBBoxMax();
-    auto indexBufferBBox = mesh->addIndexBuffer(DrawType::Lines, ConnectivityType::None);
-    drawLineSegment(BBoxMin, vec2(BBoxMin[0], BBoxMax[1]), vec4(0, 0, 0, 1), indexBufferBBox.get(),
-                    vertices);
-    drawLineSegment(vec2(BBoxMin[0], BBoxMax[1]), BBoxMax, vec4(0, 0, 0, 1), indexBufferBBox.get(),
-                    vertices);
-    drawLineSegment(BBoxMax, vec2(BBoxMax[0], BBoxMin[1]), vec4(0, 0, 0, 1), indexBufferBBox.get(),
-                    vertices);
-    drawLineSegment(vec2(BBoxMax[0], BBoxMin[1]), BBoxMin, vec4(0, 0, 0, 1), indexBufferBBox.get(),
-                    vertices);
-
     // Either add all line segments to this index buffer (one large buffer, two consecutive points
-    // make up one line), or use several index buffers with connectivity type adjacency.
+    // make up one line), or use several index buffers with connectivity type strip.
     auto indexBufferSeparatrices = mesh->addIndexBuffer(DrawType::Lines, ConnectivityType::None);
+    // auto indexBufferSeparatrices = mesh->addIndexBuffer(DrawType::Lines,
+    // ConnectivityType::Strip);
 
     auto indexBufferPoints = mesh->addIndexBuffer(DrawType::Points, ConnectivityType::None);
 
@@ -92,18 +101,20 @@ void Topology::process() {
     size2_t dims = vectorField.getNumVerticesPerDim();
 
     // Looping through all values in the vector field.
-    for (int j = 0; j < dims[1]; ++j) {
-        for (int i = 0; i < dims[0]; ++i) {
+    for (size_t j = 0; j < dims[1]; ++j) {
+        for (size_t i = 0; i < dims[0]; ++i) {
             dvec2 vectorValue = vectorField.getValueAtVertex(size2_t(i, j));
-            dvec2 pos = vectorField.getPositionAtVertex(size2_t(i, j));
-            // Computing the jacobian at a position
-            dmat2 jacobian = vectorField.derive(pos);
-            // Doing the eigen analysis
-            auto eigenResult = util::eigenAnalysis(jacobian);
-            // The result of the eigen analysis has attributed eigenvaluesRe eigenvaluesIm and
-            // eigenvectors
         }
     }
+
+    // Other helpful functions
+    // dvec2 pos = vectorField.getPositionAtVertex(size2_t(i, j));
+    // Computing the jacobian at a position
+    // dmat2 jacobian = vectorField.derive(pos);
+    // Doing the eigen analysis
+    // auto eigenResult = util::eigenAnalysis(jacobian);
+    // The result of the eigen analysis has attributed eigenvaluesRe eigenvaluesIm and
+    // eigenvectors
 
     // Accessing the colors
     vec4 colorCenter = ColorsCP[static_cast<int>(TypeCP::Center)];

@@ -37,6 +37,7 @@ namespace inviwo {
     ### Outports
       * __outMesh__ The output mesh contains points and linesegments that make up
       the topological skeleton.
+      * __meshBBoxOut__ Mesh with boundling box
 */
 class IVW_MODULE_LABTOPO_API Topology : public Processor {
 public:
@@ -80,6 +81,9 @@ public:
 
     // Output mesh
     MeshOutport outMesh;
+
+	// Output mesh for bounding box and gridlines
+    MeshOutport meshBBoxOut;
 
 };  // namespace inviwo
 
