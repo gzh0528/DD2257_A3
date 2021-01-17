@@ -4,3 +4,4 @@
 set(dependencies
 )
 set(protected ON)
+set(EnableByDefault OFF)

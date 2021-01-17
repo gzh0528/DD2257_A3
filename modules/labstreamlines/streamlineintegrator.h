@@ -89,7 +89,7 @@ public:
 public:
     FloatVec2Property propStartPoint;
     TemplateOptionProperty<int> propSeedMode;
-
+    BoolProperty propDisplayPoints;
     IntProperty propNumStepsTaken;
     EventProperty mouseMoveStart;
 

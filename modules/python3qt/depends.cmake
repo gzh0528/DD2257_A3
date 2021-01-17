@@ -5,3 +5,4 @@ set(dependencies
     InviwoPython3Module
     InviwoQtWidgetsModule
 )
+set(EnableByDefault OFF)

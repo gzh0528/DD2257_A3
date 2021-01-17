@@ -33,6 +33,7 @@ StreamlineIntegrator::StreamlineIntegrator()
     , inData("volIn")
     , meshOut("meshOut")
     , meshBBoxOut("meshBBoxOut")
+    , propDisplayPoints("display Points", "Display Points", true)
     , propStartPoint("startPoint", "Start Point", vec2(0.5, 0.5), vec2(-1), vec2(1), vec2(0.1))
     , propSeedMode("seedMode", "Seeds")
     , propNumStepsTaken("numstepstaken", "Number of actual steps", 0, 0, 100000)
@@ -54,6 +55,7 @@ StreamlineIntegrator::StreamlineIntegrator()
     propSeedMode.addOption("multiple", "Multiple Seeds", 1);
     addProperty(propSeedMode);
     addProperty(propStartPoint);
+    addProperty(propDisplayPoints);
     addProperty(propNumStepsTaken);
     propNumStepsTaken.setReadOnly(true);
     propNumStepsTaken.setSemantics(PropertySemantics::Text);
@@ -129,7 +131,7 @@ void StreamlineIntegrator::process() {
         auto indexBufferPoints = mesh->addIndexBuffer(DrawType::Points, ConnectivityType::None);
         vec2 startPoint = propStartPoint.get();
         // Draw start point
-        if (displayPoints_.get() != 0)
+        if (propDisplayPoints.get() != 0)
             Integrator::drawPoint(startPoint, vec4(0, 0, 0, 1), indexBufferPoints.get(), vertices);
 
         // TODO: Create one stream line from the given start point
