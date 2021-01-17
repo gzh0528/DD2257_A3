@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2015-2020 Inviwo Foundation
+ * Copyright (c) 2015-2021 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -65,6 +65,7 @@ private:
     void updateProcessorIdentifiersStriped(TxElement* node);
     void updatePropertyEditorMetadata(TxElement* node);
     void updateCameraPropertyToRefs(TxElement* node);
+    void updateLinkAndConnections(TxElement* node);
 
     void traverseNodes(TxElement* node, updateType update);
 

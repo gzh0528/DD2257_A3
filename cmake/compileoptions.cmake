@@ -2,7 +2,7 @@
 #
 # Inviwo - Interactive Visualization Workshop
 #
-# Copyright (c) 2013-2020 Inviwo Foundation
+# Copyright (c) 2013-2021 Inviwo Foundation
 # All rights reserved.
 # 
 # Redistribution and use in source and binary forms, with or without
@@ -113,6 +113,7 @@ macro(ivw_define_standard_definitions project_name target)
         $<$<BOOL:${IVW_CFG_FORCE_ASSERTIONS}>:IVW_FORCE_ASSERTIONS>
         $<$<BOOL:${IVW_USE_OPENMP}>:IVW_USE_OPENMP>
         $<$<CONFIG:Debug>:IVW_DEBUG>
+        $<$<CONFIG:Release>:IVW_RELEASE>
     )
     if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
         target_compile_definitions(${target} PRIVATE 

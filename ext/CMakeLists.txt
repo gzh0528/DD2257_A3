@@ -175,14 +175,9 @@ if(NOT IVW_USE_EXTERNAL_UTFCPP)
         TYPE "Boost Software License"
         FILES ${IVW_EXTENSIONS_DIR}/utf/LICENSE
     )
-else()
-    ivw_vcpkg_paths(INCLUDE vcpkgInclude)  # get the vcpkg include path as a hint if available
-    find_path(UTFCPP_INCLUDE_DIR NAMES utf8.h utf8/core.h HINTS ${vcpkgInclude} REQUIRED)
-    add_library(utf8cpp INTERFACE)
-    add_library(utf8::cpp ALIAS utf8cpp)
-    target_include_directories(utf8cpp INTERFACE $<BUILD_INTERFACE:${UTFCPP_INCLUDE_DIR}>)
+else()  
+    find_package(utf8cpp CONFIG REQUIRED)
     ivw_vcpkg_install(utfcpp MODULE Core EXT)
-    ivw_register_package(utfcpp utf8cpp)
 endif()
 
 # nlohmann json
@@ -262,11 +257,11 @@ if(WIN32 AND MSVC)
     endif()
 endif()
 
-if(PYTHONLIBS_FOUND)
+if(Python3_FOUND)
     option(IVW_USE_EXTERNAL_PYBIND11 "Pybind11 is provided externaly" OFF)
     if(NOT IVW_USE_EXTERNAL_PYBIND11)
         add_subdirectory(pybind11)
-        ivw_register_license_file(NAME "PyBind11" VERSION 2.2.4 MODULE Core EXT
+        ivw_register_license_file(NAME "PyBind11" VERSION 2.6.1 MODULE Core EXT
             URL "https://github.com/pybind/pybind11"
             TYPE "BSD-style"
             FILES ${IVW_EXTENSIONS_DIR}/pybind11/LICENSE

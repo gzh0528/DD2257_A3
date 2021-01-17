@@ -3,7 +3,7 @@
  * Inviwo - Interactive Visualization Workshop
  * Version 0.9
  *
- * Copyright (c) 2012-2020 Inviwo Foundation
+ * Copyright (c) 2012-2021 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -304,7 +304,7 @@ protected:
     FontFamilyStyle getFontTuple() const;
 
     std::tuple<utilgl::DepthMaskState, utilgl::GlBoolState, utilgl::BlendModeState,
-               utilgl::Activate<FrameBufferObject>>
+               utilgl::ActivateFBO>
     setupRenderState(std::shared_ptr<Texture2D> texture, bool clearTexture);
 
     std::string::const_iterator validateString(const std::string& str) const;
@@ -325,7 +325,7 @@ protected:
 
     FrameBufferObject fbo_;
     std::shared_ptr<Texture2D>
-        prevTexture_;  //<! 2D texture handle which was used previously in renderToTexture()
+        currTexture_;  //<! 2D texture handle which was used previously in renderToTexture()
 };
 
 namespace util {

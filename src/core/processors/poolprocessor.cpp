@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2019-2020 Inviwo Foundation
+ * Copyright (c) 2019-2021 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -122,8 +122,16 @@ void PoolProcessor::invalidate(InvalidationLevel invalidationLevel, Property* so
 }
 
 void PoolProcessor::handleError() {
-    StandardExceptionHandler eh{};
-    eh(IVW_CONTEXT);
+    LogError("An error occurred while processing background jobs");
+    try {
+        throw;
+    } catch (Exception& e) {
+        util::log(e.getContext(), e.getMessage(), LogLevel::Error);
+    } catch (std::exception& e) {
+        util::log(IVW_CONTEXT, std::string(e.what()), LogLevel::Error);
+    } catch (...) {
+        util::log(IVW_CONTEXT, "Unknown error", LogLevel::Error);
+    }
     for (auto port : getOutports()) {
         port->clear();
     }

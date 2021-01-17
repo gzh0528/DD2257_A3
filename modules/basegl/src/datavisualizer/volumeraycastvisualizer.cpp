@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2018-2020 Inviwo Foundation
+ * Copyright (c) 2018-2021 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -104,8 +104,7 @@ std::vector<Processor*> VolumeRaycastVisualizer::addVisualizerNetwork(Outport* o
     // set shading mode in volume raycaster to 'no shading'
     dynamic_cast<OptionPropertyInt*>(vrc->getPropertyByIdentifier("shadingMode", true))->set(0);
 
-    dynamic_cast<FloatProperty*>(lrp->getPropertyByPath({{"lineSettings"}, {"lineWidth"}}))
-        ->set(1.5f);
+    dynamic_cast<FloatProperty*>(lrp->getPropertyByPath("lineSettings.lineWidth"))->set(1.5f);
     dynamic_cast<FloatVec3RefProperty*>(vrc->getPropertyByIdentifier("lookFrom", true))
         ->set(vec3(0.0f, 0.0f, 30.0f));
 

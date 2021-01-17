@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2012-2020 Inviwo Foundation
+ * Copyright (c) 2012-2021 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -57,6 +57,7 @@ class CameraFactory;
  */
 class IVW_CORE_API CameraProperty : public CompositeProperty, public TrackballObject {
 public:
+    using value_type = Camera;
     virtual std::string getClassIdentifier() const override;
     static const std::string classIdentifier;
 
@@ -86,9 +87,6 @@ public:
 
     CameraProperty& setCamera(const std::string& cameraIdentifier);
     CameraProperty& setCamera(std::unique_ptr<Camera> camera);
-
-    virtual CameraProperty& setCurrentStateAsDefault() override;
-    virtual CameraProperty& resetToDefaultState() override;
 
     virtual const vec3& getLookFrom() const override;
     virtual CameraProperty& setLookFrom(vec3 lookFrom) override;
@@ -156,6 +154,11 @@ public:
 
     Property* getCameraProperty(const std::string& identifier) const;
     void addCamerapProperty(std::unique_ptr<Property> camprop);
+
+    virtual CameraProperty& setCurrentStateAsDefault() override;
+    virtual CameraProperty& resetToDefaultState() override;
+    virtual bool isDefaultState() const override;
+    virtual bool needsSerialization() const override;
 
     virtual void serialize(Serializer& s) const override;
     virtual void deserialize(Deserializer& d) override;

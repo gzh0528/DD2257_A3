@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2015-2020 Inviwo Foundation
+ * Copyright (c) 2015-2021 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -37,6 +37,9 @@
 #include <warn/ignore/all>
 #include <QSurfaceFormat>
 #include <warn/pop>
+
+#include <string_view>
+
 class QOffscreenSurface;
 class QOpenGLContext;  // Include causes: warning qopenglfunctions.h is not compatible with GLEW,
                        // GLEW defines will be undefined
@@ -58,7 +61,12 @@ public:
      * Must be created in the main thread.
      * Must call initializeGL before using it for
      */
-    HiddenCanvasQt(QSurfaceFormat format = QSurfaceFormat::defaultFormat());
+    HiddenCanvasQt(std::string_view name, QSurfaceFormat format = QSurfaceFormat::defaultFormat());
+    HiddenCanvasQt(const HiddenCanvasQt&) = delete;
+    HiddenCanvasQt(HiddenCanvasQt&&) = delete;
+    HiddenCanvasQt& operator=(const HiddenCanvasQt&) = delete;
+    HiddenCanvasQt& operator=(HiddenCanvasQt&&) = delete;
+
     virtual ~HiddenCanvasQt();
     /*
      * Initialize context and OpenGL functions. Only call this function once.

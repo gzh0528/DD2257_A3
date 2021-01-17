@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2015-2020 Inviwo Foundation
+ * Copyright (c) 2015-2021 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -32,12 +32,16 @@
 #include <inviwo/core/util/raiiutils.h>
 #include <inviwo/core/util/filesystem.h>
 
+#include <inviwo/core/common/inviwoapplication.h>
+
 #include <modules/opengl/shader/shaderresource.h>
 #include <modules/opengl/shader/shadermanager.h>
 
-#include <modules/qtwidgets/properties/syntaxhighlighter.h>
+#include <modules/qtwidgets/syntaxhighlighter.h>
 #include <modules/qtwidgets/inviwoqtutils.h>
 #include <modules/qtwidgets/codeedit.h>
+
+#include <modules/openglqt/glslsyntaxhighlight.h>
 
 #include <warn/push>
 #include <warn/ignore/all>
@@ -70,7 +74,10 @@ ShaderWidget::ShaderWidget(ShaderObject* obj, QWidget* parent)
     toolBar->setMovable(false);
     setWidget(mainWindow);
 
-    shadercode_ = new CodeEdit{GLSL};
+    shadercode_ = new CodeEdit{this};
+    auto settings = InviwoApplication::getPtr()->getSettingsByType<GLSLSyntaxHighlight>();
+    codeCallbacks_ = utilqt::setGLSLSyntaxHighlight(shadercode_->syntaxHighlighter(), *settings);
+
     shadercode_->setObjectName("shaderwidgetcode");
     shadercode_->setPlainText(utilqt::toQString(obj->print(false, false)));
 
@@ -175,6 +182,11 @@ void ShaderWidget::save() {
     if (auto resource = ShaderManager::getPtr()->getShaderResource(obj_->getResource()->key())) {
         resource->setSource(utilqt::fromQString(shadercode_->toPlainText()));
         shadercode_->document()->setModified(false);
+    } else {
+        LogWarn(fmt::format(
+            "Could not save, the ShaderResource \"{}\" was not found in the ShaderManager. The "
+            "ShaderResource needs to be registered with the ShaderManager for saving to work",
+            obj_->getResource()->key()));
     }
 }
 

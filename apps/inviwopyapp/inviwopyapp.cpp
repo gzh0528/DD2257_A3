@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2019-2020 Inviwo Foundation
+ * Copyright (c) 2019-2021 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,8 +27,11 @@
  *
  *********************************************************************************/
 
+#include <warn/push>
+#include <warn/ignore/all>
 #include <pybind11/pybind11.h>
 #include <pybind11/embed.h>
+#include <warn/pop>
 
 #include <inviwo/core/common/defaulttohighperformancegpu.h>
 #include <inviwo/core/common/inviwo.h>

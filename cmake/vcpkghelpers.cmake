@@ -2,7 +2,7 @@
 #
 # Inviwo - Interactive Visualization Workshop
 #
-# Copyright (c) 2020 Inviwo Foundation
+# Copyright (c) 2020-2021 Inviwo Foundation
 # All rights reserved.
 # 
 # Redistribution and use in source and binary forms, with or without
@@ -27,6 +27,10 @@
 # 
 #################################################################################
 
+# Retrive the git sha of the VCPKG installation, once for later use in ivw_vcpkg_install
+if(VCPKG_TOOLCHAIN)
+    ivw_git_get_hash(${_VCPKG_ROOT_DIR} ivw_vcpkg_sha)
+endif()
 
 # A helper function to get to various vcpkg paths
 # If vcpkg is not used we just return empty strings
@@ -76,7 +80,6 @@ function(ivw_vcpkg_paths)
     endif()
 endfunction()
 
-
 # A helper function to install vcpkg libs. Will install dll/so, lib, pdb, stc. into the 
 # correspnding folders by globing the vcpkg package folders. 
 # It will also try and install eny transitive dependencies autoamtically 
@@ -99,26 +102,48 @@ function(ivw_vcpkg_install name)
 	string(TOLOWER "${name}" lowercase_name)
 
     if(DEFINED IVW_CFG_VCPKG_OVERLAYS)
-        set(overlay --overlay ${IVW_CFG_VCPKG_OVERLAYS})
+        set(overlay "--overlay" "${IVW_CFG_VCPKG_OVERLAYS}")
     else()
         set(overlay "")
     endif()
 
-    if(NOT DEFINED ivw_vcpkg_info_${lowercase_name})
+    if(VCPKG_MANIFEST_MODE AND EXISTS "${CMAKE_SOURCE_DIR}/vcpkg_installed")
+        set(install "--install" "${CMAKE_SOURCE_DIR}/vcpkg_installed")
+        set(installdir "${CMAKE_SOURCE_DIR}/vcpkg_installed/")
+    elseif(VCPKG_MANIFEST_MODE AND EXISTS "${CMAKE_BINARY_DIR}/vcpkg_installed")
+        set(install "--install" "${CMAKE_BINARY_DIR}/vcpkg_installed")
+        set(installdir "${CMAKE_BINARY_DIR}/vcpkg_installed/")
+    else()
+        set(install "")
+        set(installdir "${_VCPKG_ROOT_DIR}/installed/")
+    endif()
+
+    if(NOT DEFINED ivw_vcpkg_info_${lowercase_name} OR 
+        NOT ivw_vcpkg_info_${lowercase_name}_sha STREQUAL ivw_vcpkg_sha)
         message(STATUS "Vcpkg fetching metadata for: ${name}")
         execute_process(
-            COMMAND "${PYTHON_EXECUTABLE}" "${IVW_TOOLS_DIR}/vcpkginfo.py"
+            COMMAND "${Python3_EXECUTABLE}" "${IVW_TOOLS_DIR}/vcpkginfo.py"
                 --vcpkg "${_VCPKG_EXECUTABLE}" 
-                ${overlay}
                 --pkg ${lowercase_name}
                 --triplet ${VCPKG_TARGET_TRIPLET}
+                ${overlay}
+                ${install}
             OUTPUT_VARIABLE pkgInfo
+            ERROR_VARIABLE pkgError
             OUTPUT_STRIP_TRAILING_WHITESPACE
         )
         if(NOT pkgInfo)
-            message(WARNING "Unable to retrive vcpkg package info for ${name}")
+            message(WARNING "  Unable to retrive vcpkg package info for ${name}.\n" 
+                "  vcpkg: ${_VCPKG_EXECUTABLE}\n"
+                "  triplet: ${VCPKG_TARGET_TRIPLET}\n"
+                "  package: ${lowercase_name}\n"
+                "  overlay: ${overlay}\n"
+                "  install: ${install}\n"
+                "  Error: ${pkgError}"
+            )
         else()
             set("ivw_vcpkg_info_${lowercase_name}" "${pkgInfo}" CACHE INTERNAL "Vcpkg meta data")
+            set("ivw_vcpkg_info_${lowercase_name}_sha" "${ivw_vcpkg_sha}" CACHE INTERNAL "Vcpkg SHA")
         endif()
     else()
         set(pkgInfo ${ivw_vcpkg_info_${lowercase_name}})
@@ -129,43 +154,84 @@ function(ivw_vcpkg_install name)
     set(vcmultiValueArgs VCPKG_DEPENDENCIES VCPKG_OWNED_FILES)
     cmake_parse_arguments(INFO "${vcoptions}" "${vconeValueArgs}" "${vcmultiValueArgs}" ${pkgInfo})
 
-    set(binfiles ${INFO_VCPKG_OWNED_FILES})
-    string(REPLACE "." "\\." binsuffix ${CMAKE_SHARED_LIBRARY_SUFFIX})
-    list(FILTER binfiles INCLUDE REGEX "${VCPKG_TARGET_TRIPLET}/bin/.*${binsuffix}") 
-    list(TRANSFORM binfiles PREPEND "${_VCPKG_ROOT_DIR}/installed/")
+    if(NOT INFO_VCPKG_OWNED_FILES)
+        set(INFO_VCPKG_OWNED_FILES "")
+    endif()
 
-    set(pdbfiles ${INFO_VCPKG_OWNED_FILES})
-    list(FILTER pdbfiles INCLUDE REGEX "${VCPKG_TARGET_TRIPLET}/bin/.*\\.pdb")
-    list(TRANSFORM pdbfiles PREPEND "${_VCPKG_ROOT_DIR}/installed/")
+    if(WIN32)
+        set(binfiles ${INFO_VCPKG_OWNED_FILES})
+        list(FILTER binfiles INCLUDE REGEX "${VCPKG_TARGET_TRIPLET}/bin/.*\\.dll") 
+        list(TRANSFORM binfiles PREPEND ${installdir})
 
-    set(libfiles ${INFO_VCPKG_OWNED_FILES})
-    string(REPLACE "." "\\." libsuffix ${CMAKE_LINK_LIBRARY_SUFFIX})
-    list(FILTER libfiles INCLUDE REGEX "${VCPKG_TARGET_TRIPLET}/lib/.*${libsuffix}")
-    list(TRANSFORM libfiles PREPEND "${_VCPKG_ROOT_DIR}/installed/")
+        set(pdbfiles ${INFO_VCPKG_OWNED_FILES})
+        list(FILTER pdbfiles INCLUDE REGEX "${VCPKG_TARGET_TRIPLET}/bin/.*\\.pdb")
+        list(TRANSFORM pdbfiles PREPEND ${installdir})
+
+        set(libfiles ${INFO_VCPKG_OWNED_FILES})
+        list(FILTER libfiles INCLUDE REGEX "${VCPKG_TARGET_TRIPLET}/lib/.*\\.lib")
+        list(TRANSFORM libfiles PREPEND ${installdir})
+
+        install(
+            FILES ${binfiles} 
+            DESTINATION ${IVW_RUNTIME_INSTALL_DIR}
+            COMPONENT Application
+        )
+        install(
+            FILES ${pdbfiles} 
+            DESTINATION ${IVW_RUNTIME_INSTALL_DIR}
+            COMPONENT Development
+        )
+        install(
+            FILES ${libfiles} 
+            DESTINATION ${IVW_LIBRARY_INSTALL_DIR}
+            COMPONENT Development
+        )
+    elseif(APPLE)
+        set(libfiles ${INFO_VCPKG_OWNED_FILES})
+        list(FILTER libfiles INCLUDE REGEX "${VCPKG_TARGET_TRIPLET}/lib/.*\\.dylib")
+        list(TRANSFORM libfiles PREPEND ${installdir})
+        install(
+            FILES ${libfiles} 
+            DESTINATION ${IVW_LIBRARY_INSTALL_DIR}
+            COMPONENT Application
+        )
+        
+        set(libfiles ${INFO_VCPKG_OWNED_FILES})
+        list(FILTER libfiles INCLUDE REGEX "${VCPKG_TARGET_TRIPLET}/lib/.*\\.a")
+        list(TRANSFORM libfiles PREPEND ${installdir})
+        install(
+            FILES ${libfiles} 
+            DESTINATION ${IVW_LIBRARY_INSTALL_DIR}
+            COMPONENT Development
+        )
+    else()
+        set(libfiles ${INFO_VCPKG_OWNED_FILES})
+        list(FILTER libfiles INCLUDE REGEX "${VCPKG_TARGET_TRIPLET}/lib/.*\\.so")
+        list(TRANSFORM libfiles PREPEND ${installdir})
+        install(
+            FILES ${libfiles} 
+            DESTINATION ${IVW_LIBRARY_INSTALL_DIR}
+            COMPONENT Application
+        )
+        
+        set(libfiles ${INFO_VCPKG_OWNED_FILES})
+        list(FILTER libfiles INCLUDE REGEX "${VCPKG_TARGET_TRIPLET}/lib/.*\\.a")
+        list(TRANSFORM libfiles PREPEND ${installdir})
+        install(
+            FILES ${libfiles} 
+            DESTINATION ${IVW_LIBRARY_INSTALL_DIR}
+            COMPONENT Development
+        )
+    endif()
 
     set(copyright ${INFO_VCPKG_OWNED_FILES})
     list(FILTER copyright INCLUDE REGEX "${VCPKG_TARGET_TRIPLET}/share/.*copyright.*")
-    list(TRANSFORM copyright PREPEND "${_VCPKG_ROOT_DIR}/installed/")
+    list(TRANSFORM copyright PREPEND ${installdir})
 
     set(headers ${INFO_VCPKG_OWNED_FILES})
     list(FILTER headers INCLUDE REGEX "${VCPKG_TARGET_TRIPLET}/include/.*\\..?.*")
-    list(TRANSFORM headers PREPEND "${_VCPKG_ROOT_DIR}/installed/")
+    list(TRANSFORM headers PREPEND ${installdir})
 
-    install(
-       FILES ${binfiles} 
-       DESTINATION ${IVW_RUNTIME_INSTALL_DIR}
-       COMPONENT Application
-    )
-    install(
-       FILES ${pdbfiles} 
-       DESTINATION ${IVW_RUNTIME_INSTALL_DIR}
-       COMPONENT Development
-    )
-    install(
-       FILES ${libfiles} 
-       DESTINATION ${IVW_LIBRARY_INSTALL_DIR}
-       COMPONENT Development
-    )
 
     if(INFO_VCPKG_HOMEPAGE)
         set(homepage URL ${INFO_VCPKG_HOMEPAGE})
@@ -186,10 +252,12 @@ function(ivw_vcpkg_install name)
         )
     endif()
 
-    list(TRANSFORM INFO_VCPKG_DEPENDENCIES REPLACE ":.*" "")
-    foreach(dep IN LISTS INFO_VCPKG_DEPENDENCIES)
-        ivw_vcpkg_install(${dep} MODULE ${ARG_MODULE} ${ext})
-    endforeach()
+    if(INFO_VCPKG_DEPENDENCIES)
+        list(TRANSFORM INFO_VCPKG_DEPENDENCIES REPLACE ":.*" "")
+        foreach(dep IN LISTS INFO_VCPKG_DEPENDENCIES)
+            ivw_vcpkg_install(${dep} MODULE ${ARG_MODULE} ${ext})
+        endforeach()
+    endif()
     
     if(ARG_OUT_VERSION)
         set(${ARG_OUT_VERSION} ${INFO_VCPKG_VERSION} PARENT_SCOPE)
@@ -202,7 +270,7 @@ function(ivw_vcpkg_install name)
     if(NOT TARGET ${name}_vcpkg)
         add_custom_target(${name}_vcpkg SOURCES ${headers})
         source_group(
-            TREE "${_VCPKG_ROOT_DIR}/installed/${VCPKG_TARGET_TRIPLET}/include/" 
+            TREE "${installdir}${VCPKG_TARGET_TRIPLET}/include/" 
             PREFIX "Header Files" 
             FILES ${headers}
         )

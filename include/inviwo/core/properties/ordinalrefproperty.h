@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2020 Inviwo Foundation
+ * Copyright (c) 2020-2021 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -155,6 +155,7 @@ public:
 
     virtual OrdinalRefProperty<T>& setCurrentStateAsDefault() override;
     virtual OrdinalRefProperty<T>& resetToDefaultState() override;
+    virtual bool isDefaultState() const override;
 
     virtual void serialize(Serializer& s) const override;
     virtual void deserialize(Deserializer& d) override;
@@ -246,8 +247,10 @@ using IntSize4RefProperty = OrdinalRefProperty<size4_t>;
 
 template <typename T>
 struct PropertyTraits<OrdinalRefProperty<T>> {
-    static std::string classIdentifier() {
-        return "org.inviwo." + Defaultvalues<T>::getName() + "RefProperty";
+    static const std::string& classIdentifier() {
+        static const std::string identifier =
+            "org.inviwo." + Defaultvalues<T>::getName() + "RefProperty";
+        return identifier;
     }
 };
 
@@ -281,7 +284,7 @@ OrdinalRefProperty<T>::OrdinalRefProperty(const std::string& identifier,
         throw Exception{
             fmt::format("Invalid range ({} <= {} <= {}) given for \"{}\" ({}Property, {})",
                         minValue_.value, get_(), maxValue_.value, this->getDisplayName(),
-                        Defaultvalues<T>::getName(), joinString(this->getPath(), ".")),
+                        Defaultvalues<T>::getName(), this->getPath()),
             IVW_CONTEXT};
     }
 }
@@ -394,7 +397,7 @@ void OrdinalRefProperty<T>::set(const T& value, const T& minVal, const T& maxVal
     if (!validRange(minVal, maxVal)) {
         throw Exception{
             fmt::format("Invalid range given for \"{}\" ({}Property, {})", this->getDisplayName(),
-                        Defaultvalues<T>::getName(), joinString(this->getPath(), ".")),
+                        Defaultvalues<T>::getName(), this->getPath()),
             IVW_CONTEXT};
     }
 
@@ -513,6 +516,11 @@ OrdinalRefProperty<T>& OrdinalRefProperty<T>::resetToDefaultState() {
 }
 
 template <typename T>
+bool OrdinalRefProperty<T>::isDefaultState() const {
+    return increment_.isDefault() && minValue_.isDefault() && maxValue_.isDefault();
+}
+
+template <typename T>
 OrdinalRefProperty<T>& OrdinalRefProperty<T>::setCurrentStateAsDefault() {
     Property::setCurrentStateAsDefault();
     minValue_.setAsDefault();
@@ -604,6 +612,7 @@ Document OrdinalRefProperty<T>::getDescription() const {
     return doc;
 }
 
+/// @cond
 // Scalar properties
 extern template class IVW_CORE_TMPL_EXP OrdinalRefProperty<float>;
 extern template class IVW_CORE_TMPL_EXP OrdinalRefProperty<int>;
@@ -639,5 +648,6 @@ extern template class IVW_CORE_TMPL_EXP OrdinalRefProperty<dmat4>;
 
 extern template class IVW_CORE_TMPL_EXP OrdinalRefProperty<glm::dquat>;
 extern template class IVW_CORE_TMPL_EXP OrdinalRefProperty<glm::fquat>;
+/// @endcond
 
 }  // namespace inviwo

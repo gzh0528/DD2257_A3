@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2013-2020 Inviwo Foundation
+ * Copyright (c) 2013-2021 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -65,8 +65,8 @@ VolumeSliceGL::VolumeSliceGL()
     : Processor()
     , inport_("volume")
     , outport_("outport", DataFormat<glm::u8vec4>::get())
-    , shader_("standard.vert", "volumeslice.frag", false)
-    , indicatorShader_("standard.vert", "standard.frag", true)
+    , shader_("standard.vert", "volumeslice.frag", Shader::Build::No)
+    , indicatorShader_("standard.vert", "standard.frag", Shader::Build::Yes)
     , trafoGroup_("trafoGroup", "Transformations")
     , pickGroup_("pickGroup", "Position Selection")
     , tfGroup_("tfGroup", "Transfer Function Properties")
@@ -125,20 +125,23 @@ VolumeSliceGL::VolumeSliceGL()
                     PropertySemantics::Text)
     , handleInteractionEvents_("handleEvents", "Handle Interaction Events", true,
                                InvalidationLevel::Valid)
-    , mouseShiftSlice_("mouseShiftSlice", "Mouse Slice Shift",
-                       [this](Event* e) { eventShiftSlice(e); },
-                       std::make_unique<WheelEventMatcher>())
+    , mouseShiftSlice_(
+          "mouseShiftSlice", "Mouse Slice Shift", [this](Event* e) { eventShiftSlice(e); },
+          std::make_unique<WheelEventMatcher>())
 
-    , mouseSetMarker_("mouseSetMarker", "Mouse Set Marker", [this](Event* e) { eventSetMarker(e); },
-                      MouseButton::Left, MouseState::Press | MouseState::Move)
-    , mousePositionTracker_("mousePositionTracker", "Mouse Position Tracker",
-                            [this](Event* e) { eventUpdateMousePos(e); }, MouseButton::None,
-                            MouseState::Move)
+    , mouseSetMarker_(
+          "mouseSetMarker", "Mouse Set Marker", [this](Event* e) { eventSetMarker(e); },
+          MouseButton::Left, MouseState::Press | MouseState::Move)
+    , mousePositionTracker_(
+          "mousePositionTracker", "Mouse Position Tracker",
+          [this](Event* e) { eventUpdateMousePos(e); }, MouseButton::None, MouseState::Move)
 
-    , stepSliceUp_("stepSliceUp", "Key Slice Up", [this](Event* e) { eventStepSliceUp(e); },
-                   IvwKey::W, KeyState::Press)
-    , stepSliceDown_("stepSliceDown", "Key Slice Down", [this](Event* e) { eventStepSliceDown(e); },
-                     IvwKey::S, KeyState::Press)
+    , stepSliceUp_(
+          "stepSliceUp", "Key Slice Up", [this](Event* e) { eventStepSliceUp(e); }, IvwKey::W,
+          KeyState::Press)
+    , stepSliceDown_(
+          "stepSliceDown", "Key Slice Down", [this](Event* e) { eventStepSliceDown(e); }, IvwKey::S,
+          KeyState::Press)
     , gestureShiftSlice_(
           "gestureShiftSlice", "Gesture Slice Shift",
           [this](Event* e) { eventGestureShiftSlice(e); },
@@ -278,7 +281,7 @@ void VolumeSliceGL::initializeResources() {
 void VolumeSliceGL::invokeEvent(Event* event) {
     if (dynamic_cast<InteractionEvent*>(event) && !handleInteractionEvents_) return;
     Processor::invokeEvent(event);
-    if (auto re = event->getAs<ResizeEvent>()) {
+    if (event->getAs<ResizeEvent>()) {
         planeSettingsChanged();
     }
 }

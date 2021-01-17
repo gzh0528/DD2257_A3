@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2013-2020 Inviwo Foundation
+ * Copyright (c) 2013-2021 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -119,7 +119,12 @@ void TFEditorView::wheelEvent(QWheelEvent* event) {
 
         // off-center zooming
         // relative position within current zoom range
+
+#if QT_VERSION < QT_VERSION_CHECK(5, 14, 0)
         auto zoomCenter = event->posF().x() / width() * zoomExtent + horizontal.x;
+#else
+        auto zoomCenter = event->position().x() / width() * zoomExtent + horizontal.x;
+#endif
 
         double lower = zoomCenter + (horizontal.x - zoomCenter) * zoomFactor;
         double upper = zoomCenter + (horizontal.y - zoomCenter) * zoomFactor;

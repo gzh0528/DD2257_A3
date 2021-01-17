@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2017-2020 Inviwo Foundation
+ * Copyright (c) 2017-2021 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -49,11 +49,13 @@ namespace inviwo {
  *
  *     template <>
  *     struct DataTraits<MyDataType> {
- *         static std::string classIdentifier() {
- *             return "org.something.mydatatype";
+ *         static const std::string& classIdentifier() {
+ *             static const std::string id{"org.something.mydatatype"};
+ *             return id;
  *         }
- *         static std::string dataName() {
- *             return "MyDataType";
+ *         static const std::string& dataName() {
+ *             static const std::string name{"MyDataType"};
+ *             return name;
  *         }
  *         static uvec3 colorCode() {
  *             return uvec3{55,66,77};
@@ -77,7 +79,7 @@ struct DataTraits {
      * In case it is not found an empty string will be returned. An empty class identifier will be
      * considered an error in various factories.
      */
-    static std::string classIdentifier() { return util::classIdentifier<T>(); }
+    static const std::string& classIdentifier() { return util::classIdentifier<T>(); }
 
     /**
      * Should return a user friendly version of the above identifier, "MyDataType" for example.
@@ -86,7 +88,7 @@ struct DataTraits {
      * In case it is not found the classIdentifier will be returned.
      */
 
-    static std::string dataName() { return util::dataName<T>(); }
+    static const std::string& dataName() { return util::dataName<T>(); }
     /**
      * Should return a color that will be used to identify ports of this data type
      * The default implementation will look for a static uvec3 member T::colorCode.

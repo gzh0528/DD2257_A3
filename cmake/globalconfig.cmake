@@ -2,7 +2,7 @@
 #
 # Inviwo - Interactive Visualization Workshop
 #
-# Copyright (c) 2013-2020 Inviwo Foundation
+# Copyright (c) 2013-2021 Inviwo Foundation
 # All rights reserved.
 # 
 # Redistribution and use in source and binary forms, with or without
@@ -200,8 +200,6 @@ if(WIN32 AND MSVC)
         )
     endif()
 
-    # For >=VS2015 enable edit and continue "ZI"
-    add_compile_options($<$<CONFIG:Debug>:/ZI>)
     add_compile_options(/bigobj)
     
     # Add debug postfix if WIN32
@@ -226,8 +224,6 @@ if(WIN32 AND MSVC)
             add_compile_options(/MP)
         endif()
     endif()
-
-    set_property(DIRECTORY PROPERTY VS_STARTUP_PROJECT inviwo)
 endif()
 
 # Mac specific

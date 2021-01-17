@@ -31,6 +31,7 @@ set(HEADER_FILES
     include/modules/base/algorithm/volume/volumeramsubsample.h
     include/modules/base/algorithm/volume/volumeramsubset.h
     include/modules/base/algorithm/volume/volumesignificantvoxels.h
+    include/modules/base/algorithm/volume/volumevoronoi.h
     include/modules/base/basemodule.h
     include/modules/base/basemoduledefine.h
     include/modules/base/datastructures/disjointsets.h
@@ -54,6 +55,7 @@ set(HEADER_FILES
     include/modules/base/processors/diffuselightsourceprocessor.h
     include/modules/base/processors/directionallightsourceprocessor.h
     include/modules/base/processors/distancetransformram.h
+    include/modules/base/processors/gridplanes.h
     include/modules/base/processors/heightfieldmapper.h
     include/modules/base/processors/imagecontourprocessor.h
     include/modules/base/processors/imageexport.h
@@ -156,6 +158,7 @@ set(SOURCE_FILES
     src/algorithm/volume/volumeramsubsample.cpp
     src/algorithm/volume/volumeramsubset.cpp
     src/algorithm/volume/volumesignificantvoxels.cpp
+    src/algorithm/volume/volumevoronoi.cpp
     src/basemodule.cpp
     src/datastructures/disjointsets.cpp
     src/datastructures/imagereusecache.cpp
@@ -175,6 +178,7 @@ set(SOURCE_FILES
     src/processors/diffuselightsourceprocessor.cpp
     src/processors/directionallightsourceprocessor.cpp
     src/processors/distancetransformram.cpp
+    src/processors/gridplanes.cpp
     src/processors/heightfieldmapper.cpp
     src/processors/imagecontourprocessor.cpp
     src/processors/imageexport.cpp
@@ -253,6 +257,7 @@ set(TEST_FILES
     tests/unittests/kdtree-test.cpp
     tests/unittests/marchingcubes-test.cpp
     tests/unittests/meshcutting-test.cpp
+    tests/unittests/volumevoronoi-test.cpp
 )
 ivw_add_unittest(${TEST_FILES})
 
@@ -261,4 +266,8 @@ ivw_create_module(${SOURCE_FILES} ${MOC_FILES} ${HEADER_FILES})
 
 if(IVW_TEST_BENCHMARKS)
     add_subdirectory(tests/benchmarks)
+endif()
+
+if(IVW_MODULE_PYTHON3)
+    add_subdirectory(bindings)
 endif()

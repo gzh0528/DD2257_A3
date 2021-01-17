@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2012-2020 Inviwo Foundation
+ * Copyright (c) 2012-2021 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -58,22 +58,41 @@ EntryExitPoints::EntryExitPoints()
     addProperty(camera_);
     addProperty(trackball_);
 
-    for (auto& shader : entryExitHelper_.getShaders()) {
-        shader.get().onReload([this]() { invalidate(InvalidationLevel::InvalidResources); });
-    }
+    onReloadCallback_ =
+        entryExitHelper_.onReload([this]() { invalidate(InvalidationLevel::InvalidResources); });
 }
 
 EntryExitPoints::~EntryExitPoints() = default;
 
 void EntryExitPoints::process() {
-    if (!entryImg_ || !entryImg_->isValid()) {
-        entryImg_ = entryPort_.getEditableData()->getEditableRepresentation<ImageGL>();
+    auto entry = entryPort_.getEditableData();
+
+    if (inport_.getData()->hasBuffer(BufferType::NormalAttrib) &&
+        entry->getNumberOfColorLayers() != 2) {
+
+        entry = std::make_shared<Image>(entry->getDimensions(), DataVec4UInt16::get());
+        // Add a layer for the normals
+        entry->addColorLayer(
+            std::make_shared<Layer>(entry->getDimensions(), DataVec4Int8::get(), LayerType::Color));
+        entryPort_.setData(entry);
+        entryImg_ = entry->getEditableRepresentation<ImageGL>();
+    } else if (!inport_.getData()->hasBuffer(BufferType::NormalAttrib) &&
+               entry->getNumberOfColorLayers() != 1) {
+
+        entry = std::make_shared<Image>(entry->getDimensions(), DataVec4UInt16::get());
+        entryPort_.setData(entry);
+        entryImg_ = entry->getEditableRepresentation<ImageGL>();
+    } else if (!entryImg_ || !entryImg_->isValid()) {
+        entryImg_ = entry->getEditableRepresentation<ImageGL>();
     }
     if (!exitImg_ || !exitImg_->isValid()) {
         exitImg_ = exitPort_.getEditableData()->getEditableRepresentation<ImageGL>();
     }
 
-    entryExitHelper_(*entryImg_, *exitImg_, camera_.get(), *inport_.getData(), capNearClipping_);
+    const bool addNormals = inport_.getData()->hasBuffer(BufferType::NormalAttrib);
+    entryExitHelper_(*entryImg_, *exitImg_, camera_.get(), *inport_.getData(),
+                     capNearClipping_ ? algorithm::CapNearClip::Yes : algorithm::CapNearClip::No,
+                     addNormals ? algorithm::IncludeNormals::Yes : algorithm::IncludeNormals::No);
 }
 
 void EntryExitPoints::deserialize(Deserializer& d) {

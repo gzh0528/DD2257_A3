@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2020 Inviwo Foundation
+ * Copyright (c) 2020-2021 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -104,8 +104,8 @@ private:
     MeshInport trackingInport_;
     ImageOutport outport_;
 
-    FloatProperty aperture_;
-    FloatProperty focusDepth_;
+    DoubleProperty aperture_;
+    DoubleProperty focusDepth_;
     BoolProperty manualFocus_;
     BoolProperty approximate_;
     IntSizeTProperty viewCountExact_;

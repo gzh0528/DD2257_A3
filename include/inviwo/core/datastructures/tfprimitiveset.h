@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2018-2020 Inviwo Foundation
+ * Copyright (c) 2018-2021 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -37,6 +37,8 @@
 #include <inviwo/core/properties/valuewrapper.h>
 #include <inviwo/core/util/fileextension.h>
 #include <inviwo/core/util/transformiterator.h>
+
+#include <string_view>
 
 namespace inviwo {
 
@@ -91,7 +93,7 @@ public:
     void setType(TFPrimitiveSetType type);
     TFPrimitiveSetType getType() const;
 
-    virtual std::string getTitle() const;
+    virtual std::string_view getTitle() const;
 
     /**
      * returns the range of the TF.  For a relative TF this will return [0,1]. In case of an
@@ -144,7 +146,37 @@ public:
      * @return vectors of TFPrimitives' position and color sorted increasingly regarding position
      */
     std::pair<std::vector<double>, std::vector<vec4>> getVectors() const;
+
+    /**
+     * Access TFPrimitives as pair of vectors which can be used, e.g., for setting uniforms of a
+     * shader.
+     *
+     * @return vectors of TFPrimitives' position and color sorted increasingly regarding position
+     */
     std::pair<std::vector<float>, std::vector<vec4>> getVectorsf() const;
+
+    /**
+     * Access TFPrimitives positions as a vector which can be used, e.g., for setting uniforms of a
+     * shader.
+     *
+     * @return vector of TFPrimitives' positions sorted increasingly regarding position
+     */
+    std::vector<double> getPositions() const;
+    /**
+     * Access TFPrimitives positions as a vector which can be used, e.g., for setting uniforms of a
+     * shader.
+     *
+     * @return vector of TFPrimitives' positions sorted increasingly regarding position
+     */
+    std::vector<float> getPositionsf() const;
+
+    /**
+     * Access TFPrimitives colors as a vector which can be used, e.g., for setting uniforms of a
+     * shader.
+     *
+     * @return vector of TFPrimitives' colors sorted increasingly regarding position
+     */
+    std::vector<vec4> getColors() const;
 
     /**
      * Add a TFPrimitive
@@ -266,8 +298,8 @@ protected:
      */
     vec4 interpolateColor(double t) const;
 
-    virtual std::string serializationKey() const;
-    virtual std::string serializationItemKey() const;
+    virtual std::string_view serializationKey() const;
+    virtual std::string_view serializationItemKey() const;
 
     std::vector<std::unique_ptr<TFPrimitive>> values_;
     std::vector<TFPrimitive*> sorted_;

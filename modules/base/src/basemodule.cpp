@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2012-2020 Inviwo Foundation
+ * Copyright (c) 2012-2021 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -36,6 +36,7 @@
 #include <modules/base/processors/diffuselightsourceprocessor.h>
 #include <modules/base/processors/directionallightsourceprocessor.h>
 #include <modules/base/processors/distancetransformram.h>
+#include <modules/base/processors/gridplanes.h>
 #include <modules/base/processors/heightfieldmapper.h>
 #include <modules/base/processors/imageinformation.h>
 #include <modules/base/processors/inputselector.h>
@@ -139,6 +140,7 @@ BaseModule::BaseModule(InviwoApplication* app) : InviwoModule(app, "Base") {
     registerProcessor<DiffuseLightSourceProcessor>();
     registerProcessor<DirectionalLightSourceProcessor>();
     registerProcessor<DistanceTransformRAM>();
+    registerProcessor<GridPlanes>();
     registerProcessor<MeshSource>();
     registerProcessor<HeightFieldMapper>();
     registerProcessor<ImageExport>();

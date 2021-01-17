@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2012-2020 Inviwo Foundation
+ * Copyright (c) 2012-2021 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -53,16 +53,17 @@ namespace inviwo {
 
 namespace psm {
 
-std::string indent(const std::string& block, size_t indent) {
+std::string indent(std::string_view block, size_t indent) {
     std::stringstream ss;
     bool first = true;
-    for (auto&& line : splitString(block, '\n')) {
+    const auto indentStr = std::string(indent, ' ');
+    util::forEachStringPart(block, "\n", [&](std::string_view line) {
         if (!first) {
-            ss << '\n' << std::string(indent, ' ');
+            ss << '\n' << indentStr;
         }
         first = false;
         ss << line;
-    }
+    });
 
     return ss.str();
 }
@@ -80,7 +81,7 @@ struct Error {};
 
 // Events
 struct Char {
-    using It = typename std::string::const_iterator;
+    using It = typename std::string_view::const_iterator;
 
     It curr;
     It end;
@@ -95,9 +96,9 @@ struct Eof {};
 struct State {
     std::ostream& output;
     LineNumberResolver& lnr;
-    const std::string& key;
+    std::string_view key;
     std::unordered_map<typename ShaderSegment::Type, std::vector<ShaderSegment>> replacements;
-    std::function<std::optional<std::pair<std::string, std::string>>(const std::string&)> getSource;
+    std::function<std::optional<std::pair<std::string, std::string>>(std::string_view)> getSource;
     size_t lines = 0;
     size_t column = 0;
 };
@@ -125,17 +126,20 @@ struct Psm {
             if (pathBegin == c.end) {
                 throw OpenGLException{
                     fmt::format("Invalid include found at {}({})", s.key, s.lines + 1),
-                    SourceContext(s.key, s.key, "", static_cast<int>(s.lines + 1))};
+                    SourceContext(std::string{s.key}, std::string{s.key}, "",
+                                  static_cast<int>(s.lines + 1))};
             }
 
             auto pathEnd = std::find(pathBegin + 1, c.end, '"');
             if (pathEnd == c.end) {
                 throw OpenGLException{
                     fmt::format("Invalid include found at {}({})", s.key, s.lines + 1),
-                    SourceContext(s.key, s.key, "", static_cast<int>(s.lines + 1))};
+                    SourceContext(std::string{s.key}, std::string{s.key}, "",
+                                  static_cast<int>(s.lines + 1))};
             }
 
-            auto path = std::string{pathBegin + 1, pathEnd};
+            const auto path =
+                std::string_view{&*(pathBegin + 1), static_cast<size_t>(pathEnd - (pathBegin + 1))};
 
             try {
                 if (auto res = s.getSource(path)) {
@@ -146,8 +150,9 @@ struct Psm {
                     s.lnr.addLine(s.key, ++s.lines);
                 }
             } catch (const OpenGLException& e) {
-                throw OpenGLException(
-                    e.getMessage(), SourceContext(s.key, s.key, "", static_cast<int>(s.lines + 1)));
+                throw OpenGLException(e.getMessage(),
+                                      SourceContext(std::string{s.key}, std::string{s.key}, "",
+                                                    static_cast<int>(s.lines + 1)));
             }
         };
 
@@ -239,11 +244,9 @@ struct Psm {
 }  // namespace psm
 
 void utilgl::parseShaderSource(
-    const std::string& key, const std::string& source, std::ostream& output,
-    LineNumberResolver& lnr,
+    std::string_view key, std::string_view source, std::ostream& output, LineNumberResolver& lnr,
     std::unordered_map<typename ShaderSegment::Type, std::vector<ShaderSegment>> replacements,
-    std::function<std::optional<std::pair<std::string, std::string>>(const std::string&)>
-        getSource) {
+    std::function<std::optional<std::pair<std::string, std::string>>(std::string_view)> getSource) {
 
     size_t lines = 0;
     psm::State state{output, lnr, key, replacements, getSource, lines};
@@ -273,11 +276,13 @@ std::string ShaderObject::OutDeclaration::toString() const {
 }
 
 ShaderObject::ShaderObject(ShaderType shaderType, std::shared_ptr<const ShaderResource> resource)
-    : shaderType_{shaderType}, id_{glCreateShader(shaderType)}, resource_{resource} {
+    : shaderType_{shaderType}, id_{0}, resource_{resource} {
+
     if (!shaderType_) {
-        glDeleteShader(id_);
         throw OpenGLException("Invalid shader type", IVW_CONTEXT);
     }
+
+    LGL_ERROR_CLASS;
 
     // Help developer to spot errors
     std::string fileExtension = filesystem::getFileExtension(resource_->key());
@@ -308,7 +313,7 @@ ShaderObject::ShaderObject(GLenum shaderType, std::string fileName)
 
 ShaderObject::ShaderObject(const ShaderObject& rhs)
     : shaderType_(rhs.shaderType_)
-    , id_(glCreateShader(rhs.shaderType_))
+    , id_(rhs.id_ == 0 ? 0 : glCreateShader(rhs.shaderType_))
     , resource_(rhs.resource_)
     , inDeclarations_(rhs.inDeclarations_)
     , outDeclarations_(rhs.outDeclarations_)
@@ -372,7 +377,11 @@ ShaderObject& ShaderObject::operator=(ShaderObject&& that) noexcept {
     return *this;
 }
 
-ShaderObject::~ShaderObject() { glDeleteShader(id_); }
+ShaderObject::~ShaderObject() {
+    if (id_ != 0) {
+        glDeleteShader(id_);
+    }
+}
 
 GLuint ShaderObject::getID() const { return id_; }
 
@@ -394,6 +403,21 @@ void ShaderObject::build() {
     preprocess();
     upload();
     compile();
+}
+
+void ShaderObject::create() {
+    if (id_ != 0) return;
+    id_ = glCreateShader(shaderType_);
+    if (id_ == 0) {
+        if (auto err = glGetError(); err != GL_NO_ERROR) {
+            throw OpenGLException("Unable to create shader of type: " + shaderType_.name() +
+                                      ". Error: " + getGLErrorString(err),
+                                  IVW_CONTEXT);
+        } else {
+            throw OpenGLException("Unable to create shader of type: " + shaderType_.name(),
+                                  IVW_CONTEXT);
+        }
+    }
 }
 
 void ShaderObject::preprocess() {
@@ -484,7 +508,7 @@ void ShaderObject::parseSource(std::ostringstream& output) {
         resource_->onChange([this](const ShaderResource*) { callbacks_.invoke(this); }));
 
     auto getSource =
-        [this](const std::string& path) -> std::optional<std::pair<std::string, std::string>> {
+        [this](std::string_view path) -> std::optional<std::pair<std::string, std::string>> {
         auto inc = ShaderManager::getPtr()->getShaderResource(path);
         if (!inc) {
             throw OpenGLException(
@@ -515,60 +539,69 @@ void ShaderObject::parseSource(std::ostringstream& output) {
                               getSource);
 }
 
-std::string ShaderObject::resolveLog(const std::string& compileLog) const {
-    std::ostringstream result;
-    std::istringstream origShaderInfoLog(compileLog);
+std::string ShaderObject::resolveLog(std::string_view compileLog) const {
+    std::string result;
 
-    std::string curLine;
-    while (std::getline(origShaderInfoLog, curLine)) {
+    util::forEachStringPart(compileLog, "\n", [&](std::string_view curLine) {
         if (!curLine.empty()) {
             const int origLineNumber = utilgl::getLogLineNumber(curLine);
             if (origLineNumber > 0) {
-                const auto res = lnr_.resolveLine(origLineNumber);
-                result << "\n"
-                       << res.first << " (" << res.second
-                       << "): " << curLine.substr(curLine.find(":") + 1);
+                const auto& [source, line] = lnr_.resolveLine(origLineNumber);
+                fmt::format_to(std::back_inserter(result), "\n{} ({}): {}", source, line,
+                               curLine.substr(curLine.find(":") + 1));
             } else {
-                result << "\n" << curLine;
+                fmt::format_to(std::back_inserter(result), "\n{}", curLine);
             }
         }
-    }
+    });
 
-    return std::move(result).str();
+    return result;
 }
 
 void ShaderObject::upload() {
+    LGL_ERROR_CLASS;
+    create();
     const char* source = sourceProcessed_.c_str();
     glShaderSource(id_, 1, &source, nullptr);
-    LGL_ERROR;
+    if (auto err = glGetError(); err != GL_NO_ERROR) {
+        throw OpenGLException("Unable to upload shader source for " + resource_->key() +
+                                  ". Error: " + getGLErrorString(err),
+                              IVW_CONTEXT);
+    }
 }
 
 bool ShaderObject::isReady() const {
+    if (id_ == 0) return false;
     GLint res = GL_FALSE;
     glGetShaderiv(id_, GL_COMPILE_STATUS, &res);
     return res == GL_TRUE;
 }
 
 void ShaderObject::compile() {
+    LGL_ERROR_CLASS;
+    create();
     glCompileShader(id_);
     if (!isReady()) {
         throw OpenGLException(resource_->key() + " " + resolveLog(utilgl::getShaderInfoLog(id_)),
                               IVW_CONTEXT);
     }
 
-#ifdef IVW_DEBUG
     const auto log = utilgl::getShaderInfoLog(id_);
     if (!log.empty()) {
         util::log(IVW_CONTEXT, resource_->key() + " " + resolveLog(log), LogLevel::Info,
                   LogAudience::User);
     }
-#endif
 }
 
-void ShaderObject::addShaderDefine(const std::string& name, const std::string& value) {
-    shaderDefines_[name] = value;
+void ShaderObject::addShaderDefine(std::string_view name, std::string_view value) {
+    const auto it = shaderDefines_.find(name);
+    if (it == shaderDefines_.end()) {
+        shaderDefines_.emplace(name, value);
+    } else {
+        it->second = value;
+    }
 }
-void ShaderObject::setShaderDefine(const std::string& name, bool exists, const std::string& value) {
+void ShaderObject::setShaderDefine(std::string_view name, bool exists, std::string_view value) {
     if (exists) {
         addShaderDefine(name, value);
     } else {
@@ -576,23 +609,36 @@ void ShaderObject::setShaderDefine(const std::string& name, bool exists, const s
     }
 }
 
-void ShaderObject::removeShaderDefine(const std::string& name) { shaderDefines_.erase(name); }
+void ShaderObject::removeShaderDefine(std::string_view name) {
+    const auto it = shaderDefines_.find(name);
+    if (it != shaderDefines_.end()) {
+        shaderDefines_.erase(it);
+    }
+}
 
-bool ShaderObject::hasShaderDefine(const std::string& name) const {
+bool ShaderObject::hasShaderDefine(std::string_view name) const {
     return shaderDefines_.find(name) != shaderDefines_.end();
 }
 
 void ShaderObject::clearShaderDefines() { shaderDefines_.clear(); }
 
-void ShaderObject::addShaderExtension(const std::string& extName, bool enabled) {
-    shaderExtensions_[extName] = enabled;
+void ShaderObject::addShaderExtension(std::string_view extName, bool enabled) {
+    const auto it = shaderExtensions_.find(extName);
+    if (it == shaderExtensions_.end()) {
+        shaderExtensions_.emplace(extName, enabled);
+    } else {
+        it->second = enabled;
+    }
 }
 
-void ShaderObject::removeShaderExtension(const std::string& extName) {
-    shaderExtensions_.erase(extName);
+void ShaderObject::removeShaderExtension(std::string_view extName) {
+    const auto it = shaderExtensions_.find(extName);
+    if (it != shaderExtensions_.end()) {
+        shaderExtensions_.erase(it);
+    }
 }
 
-bool ShaderObject::hasShaderExtension(const std::string& extName) const {
+bool ShaderObject::hasShaderExtension(std::string_view extName) const {
     return shaderExtensions_.find(extName) != shaderExtensions_.end();
 }
 
@@ -602,7 +648,7 @@ void ShaderObject::addSegment(ShaderSegment segment) {
     shaderSegments_.push_back(std::move(segment));
 }
 
-void ShaderObject::removeSegments(const std::string& name) {
+void ShaderObject::removeSegments(std::string_view name) {
     shaderSegments_.erase(
         std::remove_if(shaderSegments_.begin(), shaderSegments_.end(),
                        [&name](const ShaderSegment& segment) { return segment.name == name; }),
@@ -611,9 +657,8 @@ void ShaderObject::removeSegments(const std::string& name) {
 
 void ShaderObject::clearSegments() { shaderSegments_.clear(); }
 
-void ShaderObject::addOutDeclaration(const std::string& name, int location,
-                                     const std::string& type) {
-    addOutDeclaration(OutDeclaration{name, location, type});
+void ShaderObject::addOutDeclaration(std::string_view name, int location, std::string_view type) {
+    addOutDeclaration(OutDeclaration{std::string{name}, location, std::string{type}});
 }
 
 void ShaderObject::addOutDeclaration(const OutDeclaration& decl) {
@@ -632,9 +677,9 @@ auto ShaderObject::getOutDeclarations() const -> const std::vector<OutDeclaratio
 
 void ShaderObject::clearOutDeclarations() { outDeclarations_.clear(); }
 
-void ShaderObject::ShaderObject::addInDeclaration(const std::string& name, int location,
-                                                  const std::string& type) {
-    addInDeclaration(InDeclaration{name, location, type});
+void ShaderObject::ShaderObject::addInDeclaration(std::string_view name, int location,
+                                                  std::string_view type) {
+    addInDeclaration(InDeclaration{std::string{name}, location, std::string{type}});
 }
 void ShaderObject::addInDeclaration(const InDeclaration& decl) {
     auto it = util::find_if(inDeclarations_,
@@ -659,26 +704,24 @@ std::string ShaderObject::print(bool showSource, bool showPreprocess) {
         preprocess();  // Make sure sourceProcessed_ is set and up to date
         if (showSource) {
             std::string::size_type width = 0;
-            for (auto l : lnr_) {
-                std::string file = splitString(l.first, '/').back();
+            for (const auto& l : lnr_) {
+                const auto file = util::splitByLast(l.first, '/').second;
                 width = std::max(width, file.length());
             }
 
             size_t i = 0;
             std::stringstream out;
-            std::istringstream in(sourceProcessed_);
 
-            std::string line;
-            while (std::getline(in, line)) {
-                const auto res = lnr_.resolveLine(i);
-                const std::string file =
-                    res.first.empty() ? "" : splitString(res.first, '/').back();
-                const size_t lineNumber = res.second;
+            util::forEachStringPart(sourceProcessed_, "\n", [&](std::string_view line) {
+                const auto& res = lnr_.resolveLine(i);
+                const auto file = res.first.empty() ? std::string_view{""}
+                                                    : util::splitByLast(res.first, '/').second;
+                const auto lineNumber = res.second;
 
                 out << std::left << std::setw(width + 1u) << file << std::right << std::setw(4)
                     << lineNumber << ": " << std::left << line << "\n";
                 ++i;
-            }
+            });
             return std::move(out).str();
         } else {
             return sourceProcessed_;
@@ -686,17 +729,16 @@ std::string ShaderObject::print(bool showSource, bool showPreprocess) {
     } else {
         if (showSource) {
             size_t lineNumber = 1;
-            std::string line;
             std::stringstream out;
-            std::istringstream in(resource_->source());
-            while (std::getline(in, line)) {
-                std::string file = resource_->key();
+            util::forEachStringPart(resource_->source(), "\n", [&](std::string_view line) {
+                const auto& file = resource_->key();
 
                 out << std::left << std::setw(file.length() + 1u) << file << std::right
                     << std::setw(4) << lineNumber << ": " << std::left << line << "\n";
                 ++lineNumber;
-            }
-            return out.str();
+            });
+
+            return std::move(out).str();
         } else {
             return resource_->source();
         }

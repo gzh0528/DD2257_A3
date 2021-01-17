@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2012-2020 Inviwo Foundation
+ * Copyright (c) 2012-2021 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -147,9 +147,21 @@ Layer* Image::getLayer(LayerType type, size_t idx) {
     return nullptr;
 }
 
-const Layer* Image::getColorLayer(size_t idx) const { return colorLayers_[idx].get(); }
+const Layer* Image::getColorLayer(size_t idx) const {
+    if (idx < colorLayers_.size()) {
+        return colorLayers_[idx].get();
+    } else {
+        return nullptr;
+    }
+}
 
-Layer* Image::getColorLayer(size_t idx) { return colorLayers_[idx].get(); }
+Layer* Image::getColorLayer(size_t idx) {
+    if (idx < colorLayers_.size()) {
+        return colorLayers_[idx].get();
+    } else {
+        return nullptr;
+    }
+}
 
 void Image::addColorLayer(std::shared_ptr<Layer> layer) { colorLayers_.push_back(layer); }
 
@@ -235,15 +247,20 @@ void Image::copyRepresentationsTo(Image* targetImage) const {
 const DataFormatBase* Image::getDataFormat() const { return getColorLayer()->getDataFormat(); }
 
 dvec4 Image::readPixel(size2_t pos, LayerType layer, size_t index) const {
-    std::vector<std::pair<size_t, ImageRepresentation*>> order;
-    for (const auto& elem : representations_) {
-        order.emplace_back(elem.second->priority(), elem.second.get());
-    }
-    std::sort(order.begin(), order.end(),
-              [](const auto& a, const auto& b) { return a.first < b.first; });
+    const auto it = std::min_element(representations_.begin(), representations_.end(),
+                                     [](const auto& a, const auto& b) {
+                                         if (a.second->isValid() && b.second->isValid()) {
+                                             return a.second->priority() < b.second->priority();
+                                         } else if (a.second->isValid()) {
+                                             return true;
+                                         } else if (b.second->isValid()) {
+                                             return false;
+                                         } else {
+                                             return a.second->priority() < b.second->priority();
+                                         }
+                                     });
 
-    auto it = util::find_if(order, [&](const auto& elem) { return elem.second->isValid(); });
-    if (it != order.end()) {
+    if (it != representations_.end()) {
         return it->second->readPixel(pos, layer, index);
     }
     return dvec4(0.0);

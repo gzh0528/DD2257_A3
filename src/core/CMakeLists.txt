@@ -155,6 +155,7 @@ set(HEADER_FILES
     ${IVW_INCLUDE_DIR}/inviwo/core/network/autolinker.h
     ${IVW_INCLUDE_DIR}/inviwo/core/network/evaluationerrorhandler.h
     ${IVW_INCLUDE_DIR}/inviwo/core/network/lambdanetworkvisitor.h
+    ${IVW_INCLUDE_DIR}/inviwo/core/network/networkedge.h
     ${IVW_INCLUDE_DIR}/inviwo/core/network/networklock.h
     ${IVW_INCLUDE_DIR}/inviwo/core/network/networkutils.h
     ${IVW_INCLUDE_DIR}/inviwo/core/network/networkvisitor.h
@@ -324,11 +325,13 @@ set(HEADER_FILES
     ${IVW_INCLUDE_DIR}/inviwo/core/util/memoryfilehandle.h
     ${IVW_INCLUDE_DIR}/inviwo/core/util/metadatatoproperty.h
     ${IVW_INCLUDE_DIR}/inviwo/core/util/moduleutils.h
+    ${IVW_INCLUDE_DIR}/inviwo/core/util/moveonlyvalue.h
     ${IVW_INCLUDE_DIR}/inviwo/core/util/observer.h
     ${IVW_INCLUDE_DIR}/inviwo/core/util/ostreamjoiner.h
     ${IVW_INCLUDE_DIR}/inviwo/core/util/pathtype.h
     ${IVW_INCLUDE_DIR}/inviwo/core/util/raiiutils.h
     ${IVW_INCLUDE_DIR}/inviwo/core/util/rendercontext.h
+    ${IVW_INCLUDE_DIR}/inviwo/core/util/safecstr.h
     ${IVW_INCLUDE_DIR}/inviwo/core/util/settings/linksettings.h
     ${IVW_INCLUDE_DIR}/inviwo/core/util/settings/settings.h
     ${IVW_INCLUDE_DIR}/inviwo/core/util/settings/systemsettings.h
@@ -341,6 +344,7 @@ set(HEADER_FILES
     ${IVW_INCLUDE_DIR}/inviwo/core/util/spatialsampler.h
     ${IVW_INCLUDE_DIR}/inviwo/core/util/stacktrace.h
     ${IVW_INCLUDE_DIR}/inviwo/core/util/statecoordinator.h
+    ${IVW_INCLUDE_DIR}/inviwo/core/util/staticstring.h
     ${IVW_INCLUDE_DIR}/inviwo/core/util/stdextensions.h
     ${IVW_INCLUDE_DIR}/inviwo/core/util/stringconversion.h
     ${IVW_INCLUDE_DIR}/inviwo/core/util/stringlogger.h
@@ -485,6 +489,7 @@ set(SOURCE_FILES
     network/autolinker.cpp
     network/evaluationerrorhandler.cpp
     network/lambdanetworkvisitor.cpp
+    network/networkedge.cpp
     network/networklock.cpp
     network/networkutils.cpp
     network/networkvisitor.cpp
@@ -623,8 +628,10 @@ set(SOURCE_FILES
     util/memoryfilehandle.cpp
     util/metadatatoproperty.cpp
     util/moduleutils.cpp
+    util/moveonlyvalue.cpp
     util/observer.cpp
     util/rendercontext.cpp
+    util/safecstr.cpp
     util/settings/linksettings.cpp
     util/settings/settings.cpp
     util/settings/systemsettings.cpp
@@ -635,6 +642,7 @@ set(SOURCE_FILES
     util/spatial4dsampler.cpp
     util/stacktrace.cpp
     util/statecoordinator.cpp
+    util/staticstring.cpp
     util/stdextensions.cpp
     util/stringconversion.cpp
     util/stringlogger.cpp
@@ -690,6 +698,8 @@ set(TEST_FILES
     tests/unittests/serialize-container-test.cpp
     tests/unittests/serializer-polymorphic-test.cpp
     tests/unittests/serializer-test.cpp
+    tests/unittests/staticstring-test.cpp
+    tests/unittests/stringconversion-test.cpp
     tests/unittests/tfprimitiveset-test.cpp
     tests/unittests/typedmesh-test.cpp
     tests/unittests/utilities-test.cpp
@@ -766,9 +776,9 @@ target_link_libraries(inviwo-core
         inviwo::span
         inviwo::half
         inviwo::flags
+        inviwo::tracy
         fmt::fmt
         $<$<BOOL:${IVW_USE_OPENMP}>:OpenMP::OpenMP_CXX>
-    PRIVATE
         $<$<BOOL:${IVW_USE_SIGAR}>:inviwo::sigar>
         $<$<BOOL:${UNIX}>:${CMAKE_DL_LIBS}>  # Required for dlopen
         $<$<BOOL:${WIN32}>:inviwo::stackwalker>
@@ -838,4 +848,8 @@ else()
         COMPONENT Application
     )
 endif()
-#--------------------------------------------------------------------
+
+if(IVW_TEST_BENCHMARKS)
+    add_subdirectory(tests/benchmarks)
+endif()
+

@@ -27,7 +27,7 @@
  #
  #################################################################################
 
-cmake_minimum_required(VERSION 3.13...3.17 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.13...3.18 FATAL_ERROR)
 string(TIMESTAMP timeStart "%Y-%m-%d %H:%M:%S")
 
 #--------------------------------------------------------------------
@@ -68,19 +68,7 @@ set(CMAKE_FIND_PACKAGE_PREFER_CONFIG ON)
 file(REMOVE_RECURSE ${CMAKE_BINARY_DIR}/pkg)
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/cmake/modules)
 
-# Make sure we do look for python 3 here, before it is done in any subdirectory or external library.
-# If we do not specify version number on our first call to find_package(PythonLibs) it returns the
-# first python version that is found on the system and then set the PYTHON_FOUND variable, this
-# version may be 2.x and not 3.x and later when we find_package(PythonLibsNew 3) (or find_package(PythonLibs 3))
-# it will detected that PYTHON_FOUND is set and reuse the paths found before and not look for python
-# again resulting in Python 2.x binaries will be used.
-set(PythonLibsNew_FIND_VERSION 3)
-set(Python_ADDITIONAL_VERSIONS 3.5 3.6 3.7 3.8 3.9)
-if(IVW_MODULE_PYTHON3)
-    find_package(PythonLibsNew 3 REQUIRED)
-else()
-    find_package(PythonLibsNew 3)
-endif()
+find_package(Python3 COMPONENTS Interpreter Development NumPy)
 
 include(cmake/globalconfig.cmake)
 
@@ -123,6 +111,7 @@ add_custom_target(uninstall COMMENT "Dummy target to prevent other uninstalls")
 
 add_subdirectory(ext)                        # Add external libraries.
 add_subdirectory(tools/meta)                 # Add inviwo meta library, used in the qt editor
+add_subdirectory(tools/tracy)                # Add tracy wrapper, used for profiling
 if(IVW_TEST_INTEGRATION_TESTS OR IVW_TEST_UNIT_TESTS)
     add_subdirectory(tests/testutil)         # Add test utils, used in the module unit tests
 endif()                    
@@ -134,6 +123,10 @@ if(IVW_TEST_INTEGRATION_TESTS)
     add_subdirectory(tests/integrationtests) # Add integration tests, uses the modules.
 endif()
 add_subdirectory(docs)                       # Generate Doxygen targets
+
+if(MSVC AND TARGET inviwo)
+    set_property(DIRECTORY PROPERTY VS_STARTUP_PROJECT inviwo)
+endif()
 
 string(TIMESTAMP time "%Y-%m-%d %H:%M:%S")
 message(STATUS "Configure started at ${timeStart} and ended at ${time}")

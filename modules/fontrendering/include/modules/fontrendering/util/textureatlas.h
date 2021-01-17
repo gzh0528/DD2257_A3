@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2017-2020 Inviwo Foundation
+ * Copyright (c) 2017-2021 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -69,9 +69,6 @@ private:
      * using the Shelf First Fit algorithm. This function also updates the element positions
      * within the new atlas texture
      *
-     * @param indices ordered indices of atlas entries
-     * @param width   initial texture width
-     * @param margin  margin around each entry in texel
      * @return minimum texture size required to accommodate atlas
      */
     ivec2 calcTexLayout(const std::vector<size_t> indices, std::vector<TexAtlasEntry>& entries,

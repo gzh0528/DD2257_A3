@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2012-2020 Inviwo Foundation
+ * Copyright (c) 2012-2021 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -66,7 +66,8 @@ public:
     size2_t getCustomDimensions() const;
 
     void saveImageLayer();
-    void saveImageLayer(std::string filePath, const FileExtension& extension = FileExtension());
+    void saveImageLayer(std::string_view filePath,
+                        const FileExtension& extension = FileExtension());
     const Layer* getVisibleLayer() const;
 
     std::shared_ptr<const Image> getImage() const;

@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2014-2020 Inviwo Foundation
+ * Copyright (c) 2014-2021 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -84,16 +84,14 @@ signals:
 
 private:
     /**
-     * \brief Outer bounds of circle.
-     *
+     * @brief Outer bounds of circle.
      * @return int Radius in pixes
      */
     int getMaxPixelSpaceRadius() const;
     /**
      * Calculates and sets the angle and radius from the center
      * of the widget to the position.
-     *
-     * @param const QPoint & pos given in pixels
+     * @param pos given in pixels
      */
     void setAngleRadiusAtPosition(const QPoint& pos);
 

@@ -1,15 +1,7 @@
 # Inviwo Python3 Module
 ivw_module(Python3)
 
-#Check if numpy exist 
-execute_process(
-    COMMAND "${PYTHON_EXECUTABLE}" "-c"
-        "try: import numpy; print(numpy.__version__);\nexcept: print('failed')\n"
-    RESULT_VARIABLE NUMPY_STATUS
-    OUTPUT_VARIABLE NUMPY_OUTPUT_VERSION
-    ERROR_VARIABLE NUMPY_ERROR
-    OUTPUT_STRIP_TRAILING_WHITESPACE
-)
+find_package(Python3 COMPONENTS Interpreter Development NumPy REQUIRED)
 
 set(HEADER_FILES
     include/modules/python3/processors/numpymandelbrot.h
@@ -74,10 +66,8 @@ set(TEST_FILES
     tests/unittests/scripts/simple_buffer_test.py
     tests/unittests/scripts/glm.py
     tests/unittests/scripts/option_property.py
+    tests/unittests/numpy-test.cpp
 )
-if(NOT NUMPY_OUTPUT_VERSION MATCHES "failed")
-    list(APPEND TEST_FILES tests/unittests/numpy-test.cpp)
-endif()
 ivw_add_unittest(${TEST_FILES})
 
 # Create module
@@ -85,11 +75,10 @@ ivw_create_module(${SOURCE_FILES} ${HEADER_FILES} ${SCRIPT_FILES})
 
 find_package(pybind11 CONFIG REQUIRED)
 target_link_libraries(inviwo-module-python3 PUBLIC 
-    pybind11::embed 
-    $<BUILD_INTERFACE:${PYTHON_LIBRARIES}>
+    pybind11::embed
+    Python3::Python
 )
 target_include_directories(inviwo-module-python3 PUBLIC
-    ${PYTHON_INCLUDE_DIR}
     ${IVW_EXTENSIONS_DIR}/pybind11/include
 )
 
@@ -110,7 +99,7 @@ if(BUILD_SHARED_LIBS AND IVW_PACKAGE_EMBED_PYTHON)
             set(show "")
         endif()
 
-        set(py_version "${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}.${PYTHON_VERSION_PATCH}")
+        set(py_version "${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}.${Python3_VERSION_PATCH}")
         set(py_url "https://www.python.org/ftp/python/${py_version}/python-${py_version}-embed-amd64.zip")
         set(py_dir "${CMAKE_BINARY_DIR}/py_embedd")
         set(py_file "${py_dir}/py_embedd.${py_version}.zip")
@@ -126,7 +115,7 @@ if(BUILD_SHARED_LIBS AND IVW_PACKAGE_EMBED_PYTHON)
         file(MAKE_DIRECTORY "${py_dir}/python")
         execute_process(COMMAND ${CMAKE_COMMAND} -E tar "xf" ${py_file}
                         WORKING_DIRECTORY "${py_dir}/python")
-        file(APPEND ${py_dir}/python/python${PYTHON_VERSION_MAJOR}${PYTHON_VERSION_MINOR}._pth 
+        file(APPEND ${py_dir}/python/python${Python3_VERSION_MAJOR}${Python3_VERSION_MINOR}._pth 
             "import site")
 
         set(pip_file "${py_dir}/python/get-pip.py")

@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2018-2020 Inviwo Foundation
+ * Copyright (c) 2018-2021 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -152,7 +152,7 @@ protected:
      *
      * @param newPos   new, normalized position of the primitive
      */
-    virtual void onItemPositionChange(const vec2& /*newPos*/) {}
+    virtual void onItemPositionChange([[maybe_unused]] const vec2& newPos) {}
 
     /**
      * gets called in itemChange() when a scene change has happend

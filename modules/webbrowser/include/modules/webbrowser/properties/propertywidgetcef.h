@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2018-2020 Inviwo Foundation
+ * Copyright (c) 2018-2021 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -41,6 +41,8 @@
 #include <include/cef_frame.h>
 #include "include/wrapper/cef_message_router.h"
 #include <warn/pop>
+
+#include <string_view>
 
 namespace inviwo {
 
@@ -85,10 +87,10 @@ public:
      */
     void setFrameIfPartOfFrame(CefRefPtr<CefFrame> frame);
 
-    void setOnChange(std::string onChange) { onChange_ = onChange; }
+    void setOnChange(std::string_view onChange) { onChange_ = onChange; }
     const std::string& getOnChange() const { return onChange_; }
 
-    void setPropertyObserverCallback(std::string propertyObserverCallback) {
+    void setPropertyObserverCallback(std::string_view propertyObserverCallback) {
         propertyObserverCallback_ = propertyObserverCallback;
     }
     const std::string& getPropertyObserverCallback() const { return propertyObserverCallback_; }

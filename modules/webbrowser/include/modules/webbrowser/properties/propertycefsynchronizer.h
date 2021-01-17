@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2018-2020 Inviwo Foundation
+ * Copyright (c) 2018-2021 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -113,8 +113,8 @@ private:
      * @param onChange Callback to execute when the property changes.
      * @param propertyObserverCallback Callback to execute when on PropertyObserver notifications.
      */
-    void startSynchronize(Property* property, std::string onChangeJS,
-                          std::string propertyObserverCallbackJS);
+    void startSynchronize(Property* property, std::string_view onChangeJS,
+                          std::string_view propertyObserverCallbackJS);
     /**
      * Stop property from being synchronized.
      * @param property Property to remove

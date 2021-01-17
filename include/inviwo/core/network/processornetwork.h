@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2012-2020 Inviwo Foundation
+ * Copyright (c) 2012-2021 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -40,6 +40,8 @@
 #include <inviwo/core/links/linkevaluator.h>
 #include <inviwo/core/util/observer.h>
 #include <inviwo/core/util/exception.h>
+
+#include <string_view>
 
 namespace inviwo {
 
@@ -117,7 +119,7 @@ public:
      * @param identifier Identifier of the Processor to be accessed.
      * @see getProcessorsByType(), Processor::setIdentifier(), Processor::getIdentifier()
      */
-    Processor* getProcessorByIdentifier(std::string identifier) const;
+    Processor* getProcessorByIdentifier(std::string_view identifier) const;
 
     /**
      * Returns a vector of Processors which are of type T. In case no Processors match T
@@ -225,7 +227,38 @@ public:
     std::vector<Property*> getPropertiesLinkedTo(Property* property);
     std::vector<PropertyLink> getLinksBetweenProcessors(Processor* p1, Processor* p2);
 
-    Property* getProperty(std::vector<std::string> path) const;
+    /**
+     * @brief Get Property by path
+     * @param path string of dot separated identifiers starting with a processor identifier followed
+     * by property identifiers.
+     * @return the property or nullptr if not found
+     */
+    Property* getProperty(std::string_view path) const;
+
+    /**
+     * @brief Get Port by path
+     * @param path string of dot separated identifiers starting with a processor identifier followed
+     * by a port identifier.
+     * @return the port or nullptr if not found
+     */
+    Port* getPort(std::string_view path) const;
+
+    /**
+     * @brief Get Inport by path
+     * @param path string of dot separated identifiers starting with a processor identifier followed
+     * by a port identifier.
+     * @return the port or nullptr if not found
+     */
+    Inport* getInport(std::string_view path) const;
+
+    /**
+     * @brief Get Outport by path
+     * @param path string of dot separated identifiers starting with a processor identifier followed
+     * by a port identifier.
+     * @return the port or nullptr if not found
+     */
+    Outport* getOutport(std::string_view path) const;
+
     bool isPropertyInNetwork(Property* prop) const;
 
     InviwoApplication* getApplication() const;

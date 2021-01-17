@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2016-2020 Inviwo Foundation
+ * Copyright (c) 2016-2021 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -32,8 +32,10 @@
 
 #include <inviwo/core/common/inviwo.h>
 #include <inviwo/core/datastructures/buffer/buffer.h>
+#include <inviwo/core/datastructures/buffer/bufferram.h>
 #include <inviwo/core/io/serialization/serializable.h>
 #include <inviwo/dataframe/datastructures/dataframe.h>
+#include <inviwo/core/util/zip.h>
 
 namespace inviwo {
 
@@ -49,6 +51,8 @@ void IVW_MODULE_DATAFRAME_API copyBufferRange(std::shared_ptr<const BufferBase> 
 /**
  * \brief create a new DataFrame by appending the columns of DataFrame \p right to DataFrame \p left
  *
+ * @param left
+ * @param right
  * @param ignoreDuplicates duplicate columns, i.e. same column header, are ignored if true
  * @param fillMissingRows  if true, missing rows in either DataFrame are filled with 0 or
  *                         "undefined" (for categorical columns)
@@ -62,7 +66,8 @@ std::shared_ptr<DataFrame> IVW_MODULE_DATAFRAME_API appendColumns(const DataFram
 
 /**
  * \brief create a new DataFrame by appending the rows of DataFrame \p bottom to DataFrame \p top
- *
+ * @param top
+ * @param bottom
  * @param matchByName    if true, column headers are used for matching columns. Otherwise columns
  *                       are matched by order (default)
  * @return joined DataFrame with columns from \p left and \p right DataFrame
@@ -71,13 +76,14 @@ std::shared_ptr<DataFrame> IVW_MODULE_DATAFRAME_API appendColumns(const DataFram
 std::shared_ptr<DataFrame> IVW_MODULE_DATAFRAME_API appendRows(const DataFrame& top,
                                                                const DataFrame& bottom,
                                                                bool matchByName = false);
-
+///@{
 /**
  * \brief create a new DataFrame by using an inner join of DataFrame \p left and DataFrame \p right.
  * That is only rows with matching keys are kept.
  *
  * It is assumed that the entries in the key columns are unique. Otherwise results are undefined.
- *
+ * @param left
+ * @param right
  * @param keyColumn   header of the column used as key for the join operation (default: index
  * column)
  * @return inner join of \p left and \p right DataFrame
@@ -87,7 +93,9 @@ std::shared_ptr<DataFrame> IVW_MODULE_DATAFRAME_API
 innerJoin(const DataFrame& left, const DataFrame& right, const std::string& keyColumn = "index");
 std::shared_ptr<DataFrame> IVW_MODULE_DATAFRAME_API innerJoin(
     const DataFrame& left, const DataFrame& right, const std::vector<std::string>& keyColumns);
+///@}
 
+///@{
 /**
  * \brief create a new DataFrame by using an outer left join of DataFrame \p left and DataFrame \p
  * right. That is all rows of \p left are augmented with matching rows from \p right.
@@ -95,6 +103,8 @@ std::shared_ptr<DataFrame> IVW_MODULE_DATAFRAME_API innerJoin(
  * It is assumed that the entries in the key columns of \p right are unique. Otherwise results are
  * undefined.
  *
+ * @param left
+ * @param right
  * @param keyColumn   header of the column used as key for the join operation (default: index
  * column)
  * @return left join of \p left and \p right DataFrame
@@ -104,12 +114,71 @@ std::shared_ptr<DataFrame> IVW_MODULE_DATAFRAME_API
 leftJoin(const DataFrame& left, const DataFrame& right, const std::string& keyColumn = "index");
 std::shared_ptr<DataFrame> IVW_MODULE_DATAFRAME_API
 leftJoin(const DataFrame& left, const DataFrame& right, const std::vector<std::string>& keyColumns);
+///@}
 
 std::shared_ptr<DataFrame> IVW_MODULE_DATAFRAME_API
 combineDataFrames(std::vector<std::shared_ptr<DataFrame>> dataframes, bool skipIndexColumn = false,
                   std::string skipcol = "index");
 
+/**
+ * \brief apply predicate \p pred to each value of column \p col and return the row indices where
+ * the predicate evaluates to true.
+ *
+ * Note: the predicate function needs to take care of the different column datatypes
+ * \code{.cpp}
+ * auto pred = [](const auto& arg) {
+ *                 if  constexpr(std::is_same_v<decltype(arg), float>) {
+ *                     return  arg == 4.5f
+ *                 } else {
+ *                     return true;
+ *                 }};
+ * \endcode
+ *
+ * Alternatively, predicate overloads can be used.
+ * \code{.cpp}
+ * #include <inviwo/core/util/stdextensions.h>
+ *
+ * auto pred = util::overloaded{[](const std::string& arg) { return arg == "bla"; },
+ *                              [](const int& arg) { return arg == 5;  },
+ *                              [](const auto&) { return true; });
+ * \endcode
+ *
+ * @param col   column containing data for filtering
+ * @param pred  predicate to check values from \p col
+ * @return list of row indices where rows fulfill the predicate
+ */
+template <typename Pred>
+std::vector<size_t> filteredRows(std::shared_ptr<const Column> col, Pred pred);
+
 std::string IVW_MODULE_DATAFRAME_API createToolTipForRow(const DataFrame& dataframe, size_t rowId);
+
+#include <warn/push>
+#include <warn/ignore/conversion>
+template <typename Pred>
+std::vector<size_t> filteredRows(std::shared_ptr<const Column> col, Pred pred) {
+    if (auto catCol = dynamic_cast<const CategoricalColumn*>(col.get())) {
+        std::vector<size_t> rows;
+        for (auto&& [row, v] : util::enumerate(catCol->getValues())) {
+            if (pred(v)) {
+                rows.push_back(row);
+            }
+        }
+        return rows;
+    } else {
+        return col->getBuffer()->getRepresentation<BufferRAM>()->dispatch<std::vector<size_t>>(
+            [pred](auto typedBuf) {
+                std::vector<size_t> rows;
+                for (auto&& [row, value] : util::enumerate(typedBuf->getDataContainer())) {
+                    // find all rows fulfilling the predicate
+                    if (pred(value)) {
+                        rows.push_back(row);
+                    }
+                }
+                return rows;
+            });
+    }
+}
+#include <warn/pop>
 
 }  // namespace dataframe
 

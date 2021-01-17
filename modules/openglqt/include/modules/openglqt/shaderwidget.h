@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2015-2020 Inviwo Foundation
+ * Copyright (c) 2015-2021 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -69,6 +69,7 @@ private:
     ShaderObject* obj_;
     std::shared_ptr<typename ShaderObject::Callback> shaderObjOnChange_;
     CodeEdit* shadercode_;
+    std::vector<std::shared_ptr<std::function<void()>>> codeCallbacks_;
     QAction* preprocess_;
     QAction* save_;
 

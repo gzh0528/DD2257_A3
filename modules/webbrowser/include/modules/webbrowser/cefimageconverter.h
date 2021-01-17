@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2018-2020 Inviwo Foundation
+ * Copyright (c) 2018-2021 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -51,7 +51,7 @@ public:
                  const ImageInport* optionalBackground = nullptr);
 
 protected:
-    Shader shader_{"img_convert_cef.frag", true};  ///< Flip image y compoenent
+    Shader shader_{"img_convert_cef.frag", Shader::Build::Yes};  ///< Flip image y compoenent
 };
 
 }  // namespace inviwo

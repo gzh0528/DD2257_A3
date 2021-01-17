@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2018-2020 Inviwo Foundation
+ * Copyright (c) 2018-2021 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -99,13 +99,12 @@ private:
 
 template <typename T>
 T ColorLineEdit::getColor() const {
-    return util::glm_convert<T>(color_);
+    if constexpr (std::is_floating_point_v<T>) {
+        return util::glm_convert<T>(color_);
+    } else {
+        return util::glm_convert<T>(color_ * 255.0);
+    }
 }
-
-template <>
-dvec3 ColorLineEdit::getColor<dvec3>() const;
-template <>
-dvec4 ColorLineEdit::getColor<dvec4>() const;
 
 namespace util {
 

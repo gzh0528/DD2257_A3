@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2012-2020 Inviwo Foundation
+ * Copyright (c) 2012-2021 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -36,6 +36,7 @@
 class QDropEvent;
 class QDragEnterEvent;
 class QDragMoveEvent;
+class QHBoxLayout;
 
 namespace inviwo {
 
@@ -59,11 +60,13 @@ protected:
     virtual void dragEnterEvent(QDragEnterEvent*) override;
     virtual void dragMoveEvent(QDragMoveEvent*) override;
 
-private:
+    virtual void initEditor();
+    void addEditor();
     void setPropertyValue();
 
     FileProperty* property_;
     FilePathLineEditQt* lineEdit_;
+    QHBoxLayout* hWidgetLayout_;
     std::unique_ptr<TextEditorDockWidget> editor_;
 };
 

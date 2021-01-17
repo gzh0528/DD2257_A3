@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2013-2020 Inviwo Foundation
+ * Copyright (c) 2013-2021 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,8 +27,7 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_OPENGLCAPABILITIES_H
-#define IVW_OPENGLCAPABILITIES_H
+#pragma once
 
 #include <modules/opengl/openglmoduledefine.h>
 #include <inviwo/core/util/capabilities.h>
@@ -46,7 +45,7 @@ public:
     public:
         GLSLShaderVersion();
         GLSLShaderVersion(int num);
-        GLSLShaderVersion(int num, std::string pro);
+        GLSLShaderVersion(int num, std::string_view pro);
 
         const std::string& getProfile() const;
         int getVersion() const;
@@ -180,5 +179,3 @@ private:
 };
 
 }  // namespace inviwo
-
-#endif  // IVW_OPENGLCAPABILITIES_H
