@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2012-2019 Inviwo Foundation
+ * Copyright (c) 2012-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,8 +27,7 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_RAIIUTILS_H
-#define IVW_RAIIUTILS_H
+#pragma once
 
 #include <inviwo/core/common/inviwocoredefine.h>
 #include <functional>
@@ -70,7 +69,7 @@ private:
  * The action can be changed at any time by calling setAction() or release().
  */
 struct IVW_CORE_API OnScopeExit {
-    typedef std::function<void(void)> ExitAction;
+    using ExitAction = std::function<void(void)>;
 
     OnScopeExit() = delete;
     OnScopeExit(OnScopeExit const&) = delete;
@@ -95,6 +94,11 @@ struct IVW_CORE_API OnScopeExit {
 
     void setAction(ExitAction action = nullptr) { action_ = action; }
     void release() { setAction(); }
+    void call() {
+        if (action_) action_();
+        action_ = nullptr;
+    }
+    operator bool() const { return static_cast<bool>(action_); }
 
 private:
 #include <warn/push>
@@ -116,5 +120,3 @@ OnScopeExit::ExitAction RevertValue(T& t) {
 }  // namespace util
 
 }  // namespace inviwo
-
-#endif  // IVW_RAIIUTILS_H

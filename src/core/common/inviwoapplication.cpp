@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2012-2019 Inviwo Foundation
+ * Copyright (c) 2012-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,7 +30,8 @@
 #include <inviwo/core/common/inviwoapplication.h>
 #include <inviwo/core/common/inviwomodule.h>
 #include <inviwo/core/common/moduleaction.h>
-#include <inviwo/core/datastructures/camerafactory.h>
+#include <inviwo/core/inviwocommondefines.h>
+#include <inviwo/core/datastructures/camera/camerafactory.h>
 #include <inviwo/core/interaction/pickingmanager.h>
 #include <inviwo/core/io/datareaderfactory.h>
 #include <inviwo/core/io/datawriterfactory.h>
@@ -57,6 +58,7 @@
 #include <inviwo/core/util/capabilities.h>
 #include <inviwo/core/util/dialogfactory.h>
 #include <inviwo/core/util/fileobserver.h>
+#include <inviwo/core/util/filesystemobserver.h>
 #include <inviwo/core/util/filesystem.h>
 #include <inviwo/core/util/rendercontext.h>
 #include <inviwo/core/util/settings/settings.h>
@@ -66,16 +68,34 @@
 #include <inviwo/core/util/filelogger.h>
 #include <inviwo/core/util/timer.h>
 #include <inviwo/core/util/settings/systemsettings.h>
+#include <inviwo/core/util/commandlineparser.h>
+
+#include <inviwo/core/resourcemanager/resourcemanagerobserver.h>
 
 namespace inviwo {
+
+struct AppResourceManagerObserver : ResourceManagerObserver {
+    AppResourceManagerObserver(SystemSettings* settings, ResourceManager* manager)
+        : settings{settings}, manager{manager} {
+
+        manager->addObserver(this);
+    }
+
+    virtual void onResourceManagerEnableStateChanged() override {
+        settings->enableResourceManager_.set(manager->isEnabled());
+    }
+
+    SystemSettings* settings = nullptr;
+    ResourceManager* manager = nullptr;
+};
 
 InviwoApplication* InviwoApplication::instance_ = nullptr;
 
 InviwoApplication::InviwoApplication(int argc, char** argv, std::string displayName)
     : displayName_(displayName)
-    , commandLineParser_(argc, argv)
+    , commandLineParser_(std::make_unique<CommandLineParser>(argc, argv))
     , consoleLogger_{[&]() {
-        if (commandLineParser_.getLogToConsole()) {
+        if (commandLineParser_->getLogToConsole()) {
             auto clog = std::make_shared<ConsoleLogger>();
             LogCentral::getPtr()->registerLogger(clog);
             return clog;
@@ -84,10 +104,10 @@ InviwoApplication::InviwoApplication(int argc, char** argv, std::string displayN
         }
     }()}
     , filelogger_{[&]() {
-        if (commandLineParser_.getLogToFile()) {
-            auto filename = commandLineParser_.getLogToFileFileName();
+        if (commandLineParser_->getLogToFile()) {
+            auto filename = commandLineParser_->getLogToFileFileName();
             if (!filesystem::isAbsolutePath(filename)) {
-                auto outputDir = commandLineParser_.getOutputPath();
+                auto outputDir = commandLineParser_->getOutputPath();
                 if (!outputDir.empty()) {
                     filename = outputDir + "/" + filename;
                 } else {
@@ -131,6 +151,8 @@ InviwoApplication::InviwoApplication(int argc, char** argv, std::string displayN
     , representationMetaFactory_{std::make_unique<RepresentationMetaFactory>()}
     , representationConverterMetaFactory_{std::make_unique<RepresentationConverterMetaFactory>()}
     , systemSettings_{std::make_unique<SystemSettings>(this)}
+    , resourcemanagerobserver_{std::make_unique<AppResourceManagerObserver>(systemSettings_.get(),
+                                                                            resourceManager_.get())}
     , systemCapabilities_{std::make_unique<SystemCapabilities>()}
     , moduleCallbackActions_{}
     , moduleManager_{this}
@@ -143,7 +165,7 @@ InviwoApplication::InviwoApplication(int argc, char** argv, std::string displayN
 
     // Keep the pool at size 0 if are quiting directly to make sure that we don't have
     // unfinished results in the worker threads
-    if (!commandLineParser_.getQuitApplicationAfterStartup()) {
+    if (!commandLineParser_->getQuitApplicationAfterStartup()) {
         resizePool(systemSettings_->poolSize_);
         systemSettings_->poolSize_.onChange([this]() { resizePool(systemSettings_->poolSize_); });
     }
@@ -151,10 +173,10 @@ InviwoApplication::InviwoApplication(int argc, char** argv, std::string displayN
     resourceManager_->setEnabled(systemSettings_->enableResourceManager_.get());
     systemSettings_->enableResourceManager_.onChange(
         [this]() { resourceManager_->setEnabled(systemSettings_->enableResourceManager_.get()); });
-    if (commandLineParser_.getDisableResourceManager()) {
+    if (commandLineParser_->getDisableResourceManager()) {
         resourceManager_->setEnabled(false);
     }
-    resourceManager_->addObserver(this);
+
     moduleManager_.onModulesDidRegister([this]() {
         if (resourceManager_->isEnabled() && resourceManager_->numberOfResources() > 0) {
             LogWarn(
@@ -173,6 +195,7 @@ InviwoApplication::InviwoApplication(int argc, char** argv, std::string displayN
     workspaceManager_->registerFactory(getPropertyFactory());
     workspaceManager_->registerFactory(getInportFactory());
     workspaceManager_->registerFactory(getOutportFactory());
+    workspaceManager_->registerFactory(getCameraFactory());
 
     networkClearHandle_ = workspaceManager_->onClear([&]() {
         portInspectorManager_->clear();
@@ -258,13 +281,13 @@ DataVisualizerManager* InviwoApplication::getDataVisualizerManager() {
 }
 
 const CommandLineParser& InviwoApplication::getCommandLineParser() const {
-    return commandLineParser_;
+    return *commandLineParser_;
 }
 
-CommandLineParser& InviwoApplication::getCommandLineParser() { return commandLineParser_; }
+CommandLineParser& InviwoApplication::getCommandLineParser() { return *commandLineParser_; }
 
 void InviwoApplication::printApplicationInfo() {
-    LogInfoCustom("InviwoInfo", "Inviwo Version: " << IVW_VERSION);
+    LogInfoCustom("InviwoInfo", "Inviwo Version: " << build::version);
     if (systemCapabilities_->getBuildInfo().year != 0) {
         LogInfoCustom("InviwoInfo",
                       "Build Date: " << systemCapabilities_->getBuildInfo().getDate());
@@ -349,10 +372,6 @@ void InviwoApplication::setApplicationUsageMode(UsageMode mode) {
     systemSettings_->applicationUsageMode_.set(mode);
 }
 
-void InviwoApplication::onResourceManagerEnableStateChanged() {
-    getSystemSettings().enableResourceManager_.set(resourceManager_->isEnabled());
-}
-
 std::locale InviwoApplication::getUILocale() const { return std::locale(); }
 
 void InviwoApplication::dispatchFrontAndForget(std::function<void()> fun) {
@@ -363,28 +382,35 @@ void InviwoApplication::dispatchFrontAndForget(std::function<void()> fun) {
     if (queue_.postEnqueue) queue_.postEnqueue();
 }
 
-void InviwoApplication::processFront() {
-    NetworkLock netlock(processorNetwork_.get());
-    std::function<void()> task;
-    while (true) {
-        {
-            std::unique_lock<std::mutex> lock{queue_.mutex};
-            if (queue_.tasks.empty()) return;
-            task = std::move(queue_.tasks.front());
-            queue_.tasks.pop();
+size_t InviwoApplication::processFront() {
+    {
+        NetworkLock netlock(processorNetwork_.get());
+        std::function<void()> task;
+        while (true) {
+            {
+                std::unique_lock<std::mutex> lock{queue_.mutex};
+                if (queue_.tasks.empty()) break;
+                task = std::move(queue_.tasks.front());
+                queue_.tasks.pop();
+            }
+            task();
         }
-        task();
     }
+    std::unique_lock<std::mutex> lock{queue_.mutex};
+    return queue_.tasks.size();
 }
 
 void InviwoApplication::setProgressCallback(std::function<void(std::string)> progressCallback) {
     progressCallback_ = progressCallback;
 }
 
+ThreadPool& InviwoApplication::getThreadPool() { return pool_; }
+
 void InviwoApplication::waitForPool() {
     size_t old_size = pool_.getSize();
     resizePool(0);  // This will wait until all tasks are done;
-    processFront();
+    while (processFront())
+        ;
     resizePool(old_size);
 }
 
@@ -395,41 +421,13 @@ TimerThread& InviwoApplication::getTimerThread() {
     return *timerThread_;
 }
 
-void InviwoApplication::closeInviwoApplication() {
-    LogWarn("this application have not implemented the closeInviwoApplication function");
-}
-void InviwoApplication::registerFileObserver(FileObserver*) {
-    LogWarn("this application have not implemented the registerFileObserver function");
-}
-void InviwoApplication::unRegisterFileObserver(FileObserver*) {}
-void InviwoApplication::startFileObservation(std::string) {
-    LogWarn("this application have not implemented the startFileObservation function");
-}
-void InviwoApplication::stopFileObservation(std::string) {}
-void InviwoApplication::playSound(Message) {
-    LogWarn("this application have not implemented the playSound function");
-}
+void InviwoApplication::closeInviwoApplication() {}
 
-namespace util {
-
-InviwoApplication* getInviwoApplication() { return InviwoApplication::getPtr(); }
-
-InviwoApplication* getInviwoApplication(ProcessorNetwork* network) {
-    return network ? network->getApplication() : nullptr;
+void InviwoApplication::setFileSystemObserver(std::unique_ptr<FileSystemObserver> observer) {
+    fileSystemObserver_ = std::move(observer);
 }
-
-InviwoApplication* getInviwoApplication(Processor* processor) {
-    return processor ? getInviwoApplication(processor->getNetwork()) : nullptr;
+FileSystemObserver* InviwoApplication::getFileSystemObserver() const {
+    return fileSystemObserver_.get();
 }
-
-InviwoApplication* getInviwoApplication(Property* property) {
-    return property ? getInviwoApplication(property->getOwner()) : nullptr;
-}
-
-InviwoApplication* getInviwoApplication(PropertyOwner* owner) {
-    return owner ? owner->getInviwoApplication() : nullptr;
-}
-
-}  // namespace util
 
 }  // namespace inviwo

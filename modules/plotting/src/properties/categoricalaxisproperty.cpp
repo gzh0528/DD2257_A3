@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2019 Inviwo Foundation
+ * Copyright (c) 2019-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -168,7 +168,7 @@ void CategoricalAxisProperty::adjustAlignment() {
     captionSettings_.font_.anchorPos_.set(anchor);
 }
 
-bool CategoricalAxisProperty::getVisible() const { return visible_.get(); }
+bool CategoricalAxisProperty::getAxisVisible() const { return visible_.get(); }
 
 bool CategoricalAxisProperty::getFlipped() const { return flipped_.get(); }
 

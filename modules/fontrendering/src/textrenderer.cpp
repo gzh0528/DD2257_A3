@@ -3,7 +3,7 @@
  * Inviwo - Interactive Visualization Workshop
  * Version 0.9
  *
- * Copyright (c) 2012-2019 Inviwo Foundation
+ * Copyright (c) 2012-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -28,6 +28,8 @@
  *
  *********************************************************************************/
 
+#include <modules/fontrendering/textrenderer.h>
+
 #include <inviwo/core/datastructures/buffer/bufferramprecision.h>
 #include <inviwo/core/util/exception.h>
 #include <inviwo/core/util/zip.h>
@@ -40,17 +42,17 @@
 #include <modules/opengl/texture/textureutils.h>
 #include <modules/opengl/sharedopenglresources.h>
 
-#include <modules/fontrendering/textrenderer.h>
-
 #include <utf8.h>
+
+#include <type_traits>
 
 namespace inviwo {
 
 TextRenderer::TextRenderer(const std::string& fontPath)
-    : fontface_(nullptr), fontSize_(10), lineSpacing_(0.2), glyphMargin_(2), shader_{getShader()} {
+    : fontface_(nullptr), fontSize_(10), lineSpacing_(0.2), shader_{getShader()} {
 
     if (FT_Init_FreeType(&fontlib_)) {
-        throw Exception("Could not initialize FreeType library");
+        throw Exception("Could not initialize FreeType library", IVW_CONTEXT);
     }
 
     setFont(fontPath);
@@ -60,18 +62,59 @@ TextRenderer::TextRenderer(const std::string& fontPath)
     fbo_.deactivate();
 }
 
-TextRenderer::~TextRenderer() { FT_Done_Face(fontface_); }
+TextRenderer::TextRenderer(TextRenderer&& rhs) noexcept
+    : glyphAtlas_(std::move(rhs.glyphAtlas_))
+    , fontlib_(rhs.fontlib_)
+    , fontface_(rhs.fontface_)
+    , fontSize_(rhs.fontSize_)
+    , lineSpacing_(rhs.lineSpacing_)
+    , shader_(std::move(rhs.shader_))
+    , fbo_(std::move(rhs.fbo_))
+    , prevTexture_(std::move(rhs.prevTexture_)) {
+    rhs.fontlib_ = nullptr;
+    rhs.fontface_ = nullptr;
+}
+
+TextRenderer& TextRenderer::operator=(TextRenderer&& rhs) noexcept {
+    if (this != &rhs) {
+        if (fontlib_) {
+            FT_Done_FreeType(fontlib_);
+        }
+
+        glyphAtlas_ = std::move(rhs.glyphAtlas_);
+        fontlib_ = rhs.fontlib_;
+        fontface_ = rhs.fontface_;
+        fontSize_ = rhs.fontSize_;
+        lineSpacing_ = rhs.lineSpacing_;
+        shader_ = std::move(rhs.shader_);
+        fbo_ = std::move(rhs.fbo_);
+        prevTexture_ = std::move(rhs.prevTexture_);
+
+        rhs.fontlib_ = nullptr;
+        rhs.fontface_ = nullptr;
+    }
+    return *this;
+}
+
+TextRenderer::~TextRenderer() {
+    if (fontlib_) {
+        FT_Done_FreeType(fontlib_);
+    }
+}
 
 void TextRenderer::setFont(const std::string& fontPath) {
     // free previous font face
-    FT_Done_Face(fontface_);
+    if (fontface_) {
+        FT_Done_Face(fontface_);
+    }
     fontface_ = nullptr;
 
     int error = FT_New_Face(fontlib_, fontPath.c_str(), 0, &fontface_);
     if (error == FT_Err_Unknown_File_Format) {
-        throw Exception(std::string("Unsupported font format: \"") + fontPath + "\"");
+        throw Exception(std::string("Unsupported font format: \"") + fontPath + "\"", IVW_CONTEXT);
     } else if (error) {
-        throw FileException(std::string("Could not open font file: \"") + fontPath + "\"");
+        throw FileException(std::string("Could not open font file: \"") + fontPath + "\"",
+                            IVW_CONTEXT);
     }
 
     FT_Select_Charmap(fontface_, ft_encoding_unicode);
@@ -320,8 +363,6 @@ void TextRenderer::renderToTexture(std::shared_ptr<Texture2D> texture,
         vec2 textPos(computeBoundingBox(get<2>(elem)).glyphPenOffset);
         render(get<2>(elem), vec2(-1.0f, 1.0f) - textPos * scale, scale, color);
     }
-
-    fbo_.deactivate();
 }
 
 void TextRenderer::renderToTexture(std::shared_ptr<Texture2D> texture,
@@ -340,8 +381,6 @@ void TextRenderer::renderToTexture(std::shared_ptr<Texture2D> texture,
         vec2 textPos(computeBoundingBox(elem.value).glyphPenOffset);
         render(elem.value, vec2(-1.0f, 1.0f) - textPos * scale, scale, elem.color);
     }
-
-    fbo_.deactivate();
 }
 
 vec2 TextRenderer::computeTextSize(const std::string& str, const vec2& scale) {
@@ -479,7 +518,7 @@ TextRenderer::FontCache& TextRenderer::getFontCache() {
         createDefaultGlyphAtlas();
         fontCacheIt = glyphAtlas_.find(font);
         if (fontCacheIt == glyphAtlas_.end()) {
-            throw Exception("Could not create font atlas");
+            throw Exception("Could not create font atlas", IVW_CONTEXT);
         }
     }
     return fontCacheIt->second;
@@ -522,8 +561,10 @@ void TextRenderer::createDefaultGlyphAtlas() {
             continue;
         }
         const auto& elem = it->second;
-        glTexSubImage2D(GL_TEXTURE_2D, 0, elem.texAtlasPos.x, elem.texAtlasPos.y, elem.size.x,
-                        elem.size.y, GL_RED, GL_UNSIGNED_BYTE, fontface_->glyph->bitmap.buffer);
+        if (fontface_->glyph->bitmap.buffer) {
+            glTexSubImage2D(GL_TEXTURE_2D, 0, elem.texAtlasPos.x, elem.texAtlasPos.y, elem.size.x,
+                            elem.size.y, GL_RED, GL_UNSIGNED_BYTE, fontface_->glyph->bitmap.buffer);
+        }
     }
 
     // insert font cache into global map
@@ -593,7 +634,7 @@ std::shared_ptr<Texture2D> TextRenderer::createAtlasTexture(FontCache& fc) {
     while (texSize.y > width) {
         width *= 2;
         if (width > maxTexSize) {
-            throw Exception("TextRenderer: font size too large (max size for font atlas exceeded)");
+            throw Exception("Font size too large (max size for font atlas exceeded)", IVW_CONTEXT);
         }
 
         texSize = calcTexLayout(width, glyphMargin_);
@@ -644,6 +685,8 @@ TextTextureObject createTextTextureObject(TextRenderer& textRenderer, std::strin
                                           vec4 fontColor, std::shared_ptr<Texture2D> tex) {
 
     auto bbox = textRenderer.computeBoundingBox(text);
+    // Prevent OpenGL errors due to 0 size
+    bbox.glyphsExtent = glm::max(bbox.glyphsExtent, size2_t(1));
 
     if (!tex || tex->getDimensions() != bbox.glyphsExtent) {
         tex = std::make_shared<Texture2D>(bbox.glyphsExtent, GL_RGBA, GL_RGBA, GL_UNSIGNED_BYTE,
@@ -659,6 +702,11 @@ std::shared_ptr<Texture2D> createTextTexture(TextRenderer& textRenderer, std::st
     auto texObj = createTextTextureObject(textRenderer, text, fontColor, tex);
     return texObj.texture;
 }
+
+static_assert(std::is_copy_constructible_v<TextTextureObject>);
+static_assert(std::is_copy_assignable_v<TextTextureObject>);
+static_assert(std::is_nothrow_move_constructible_v<TextTextureObject>);
+static_assert(std::is_nothrow_move_assignable_v<TextTextureObject>);
 
 }  // namespace util
 

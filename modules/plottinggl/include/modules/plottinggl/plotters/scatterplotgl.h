@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2016-2019 Inviwo Foundation
+ * Copyright (c) 2016-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,9 +27,7 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_SCATTERPLOTGL_H
-#define IVW_SCATTERPLOTGL_H
-
+#pragma once
 #include <modules/plottinggl/plottingglmoduledefine.h>
 #include <inviwo/core/common/inviwo.h>
 #include <inviwo/core/datastructures/transferfunction.h>
@@ -37,16 +35,27 @@
 #include <inviwo/core/interaction/pickingmapper.h>
 #include <inviwo/core/properties/transferfunctionproperty.h>
 #include <inviwo/core/ports/imageport.h>
+#include <inviwo/core/util/dispatcher.h>
+
+#include <modules/base/algorithm/dataminmax.h>
+#include <modules/basegl/properties/stipplingproperty.h>
+#include <modules/basegl/properties/linesettingsproperty.h>
+
 #include <modules/opengl/texture/textureutils.h>
 #include <modules/opengl/shader/shader.h>
-#include <modules/base/algorithm/dataminmax.h>
 
 #include <inviwo/dataframe/datastructures/dataframe.h>
+
+#include <modules/plotting/interaction/boxselectioninteractionhandler.h>
 #include <modules/plotting/properties/marginproperty.h>
 #include <modules/plotting/properties/axisproperty.h>
 #include <modules/plotting/properties/axisstyleproperty.h>
 
+#include <modules/plottinggl/rendering/boxselectionrenderer.h>
 #include <modules/plottinggl/utils/axisrenderer.h>
+
+#include <optional>
+#include <unordered_set>
 
 namespace inviwo {
 
@@ -56,8 +65,13 @@ class BufferObjectArray;
 
 namespace plot {
 
-class IVW_MODULE_PLOTTINGGL_API ScatterPlotGL {
+class IVW_MODULE_PLOTTINGGL_API ScatterPlotGL : public InteractionHandler {
 public:
+    using ToolTipFunc = void(PickingEvent*, size_t);
+    using ToolTipCallbackHandle = std::shared_ptr<std::function<ToolTipFunc>>;
+    using SelectionFunc = void(const std::vector<bool>&);
+    using SelectionCallbackHandle = std::shared_ptr<std::function<SelectionFunc>>;
+
     class Properties : public CompositeProperty {
     public:
         virtual std::string getClassIdentifier() const override;
@@ -67,8 +81,8 @@ public:
                    InvalidationLevel invalidationLevel = InvalidationLevel::InvalidResources,
                    PropertySemantics semantics = PropertySemantics::Default);
 
-        Properties(const Properties &rhs);
-        virtual Properties *clone() const override;
+        Properties(const Properties& rhs);
+        virtual Properties* clone() const override;
         virtual ~Properties() = default;
 
         BoolProperty useCircle_;
@@ -77,6 +91,8 @@ public:
         TransferFunctionProperty tf_;
         FloatVec4Property color_;
         FloatVec4Property hoverColor_;
+        FloatVec4Property selectionColor_;
+        BoxSelectionProperty boxSelectionSettings_;  ///! (Mouse) Drag selection/filtering
         MarginProperty margins_;
         FloatProperty axisMargin_;
 
@@ -91,32 +107,32 @@ public:
 
     private:
         auto props() {
-            return std::tie(radiusRange_, useCircle_, minRadius_, tf_, color_, hoverColor_, 
-                            margins_, axisMargin_, borderWidth_, borderColor_, hovering_,
-                            axisStyle_, xAxis_, yAxis_);
+            return std::tie(radiusRange_, useCircle_, minRadius_, tf_, color_, hoverColor_,
+                            selectionColor_, boxSelectionSettings_, margins_, axisMargin_,
+                            borderWidth_, borderColor_, hovering_, axisStyle_, xAxis_, yAxis_);
         }
         auto props() const {
-            return std::tie(radiusRange_, useCircle_, minRadius_, tf_, color_, hoverColor_, 
-                            margins_, axisMargin_, borderWidth_, borderColor_, hovering_,
-                            axisStyle_, xAxis_, yAxis_);
+            return std::tie(radiusRange_, useCircle_, minRadius_, tf_, color_, hoverColor_,
+                            selectionColor_, boxSelectionSettings_, margins_, axisMargin_,
+                            borderWidth_, borderColor_, hovering_, axisStyle_, xAxis_, yAxis_);
         }
     };
 
-    explicit ScatterPlotGL(Processor *processor = nullptr);
+    explicit ScatterPlotGL(Processor* processor = nullptr);
     virtual ~ScatterPlotGL() = default;
 
-    void plot(Image &dest, IndexBuffer *indices = nullptr, bool useAxisRanges = false);
-    void plot(Image &dest, const Image &src, IndexBuffer *indices = nullptr,
+    void plot(Image& dest, IndexBuffer* indices = nullptr, bool useAxisRanges = false);
+    void plot(Image& dest, const Image& src, IndexBuffer* indices = nullptr,
               bool useAxisRanges = false);
-    void plot(ImageOutport &dest, IndexBuffer *indices = nullptr, bool useAxisRanges = false);
-    void plot(ImageOutport &dest, ImageInport &src, IndexBuffer *indices = nullptr,
+    void plot(ImageOutport& dest, IndexBuffer* indices = nullptr, bool useAxisRanges = false);
+    void plot(ImageOutport& dest, ImageInport& src, IndexBuffer* indices = nullptr,
               bool useAxisRanges = false);
-    void plot(const ivec2 &start, const ivec2 &size, IndexBuffer *indices = nullptr,
+    void plot(const ivec2& start, const ivec2& size, IndexBuffer* indices = nullptr,
               bool useAxisRanges = false);
 
-    void setXAxisLabel(const std::string &label);
+    void setXAxisLabel(const std::string& label);
 
-    void setYAxisLabel(const std::string &label);
+    void setYAxisLabel(const std::string& label);
 
     void setXAxis(std::shared_ptr<const Column> col);
 
@@ -128,15 +144,29 @@ public:
     void setRadiusData(std::shared_ptr<const BufferBase> buffer);
     void setIndexColumn(std::shared_ptr<const TemplateColumn<uint32_t>> indexcol);
 
+    void setSelectedIndices(const std::unordered_set<size_t>& indices);
+
+    ToolTipCallbackHandle addToolTipCallback(std::function<ToolTipFunc> callback);
+    SelectionCallbackHandle addSelectionChangedCallback(std::function<SelectionFunc> callback);
+    SelectionCallbackHandle addFilteringChangedCallback(std::function<SelectionFunc> callback);
+
+    // InteractionHandler
+    virtual void invokeEvent(Event* event) override;
+    virtual std::string getClassIdentifier() const override { return "org.inviwo.scatterplotgl"; };
+
     Properties properties_;
     Shader shader_;
 
 protected:
-    void plot(const size2_t &dims, IndexBuffer *indices, bool useAxisRanges);
-    void renderAxis(const size2_t &dims);
+    void plot(const size2_t& dims, IndexBuffer* indices, bool useAxisRanges);
+    void renderAxis(const size2_t& dims);
 
-    void objectPicked(PickingEvent *p);
+    void objectPicked(PickingEvent* p);
     uint32_t getGlobalPickId(uint32_t localIndex) const;
+    /*
+     * Resizes selected_ and filtered_ according to currently set axes buffer size.
+     */
+    void ensureSelectAndFilterSizes();
 
     std::shared_ptr<const BufferBase> xAxis_;
     std::shared_ptr<const BufferBase> yAxis_;
@@ -154,16 +184,34 @@ protected:
     std::array<AxisRenderer, 2> axisRenderers_;
 
     PickingMapper picking_;
-    std::set<uint32_t> hoveredIndices_;
+    std::vector<bool> filtered_;
+    std::vector<bool> selected_;
+    size_t nSelectedButNotFiltered_ = 0;
+    bool filteringDirty_ = true;
+    bool selectedIndicesGLDirty_ = true;
+    BufferObject selectedIndicesGL_ = BufferObject(sizeof(uint32_t), DataUInt32::get(),
+                                                   BufferUsage::Dynamic, BufferTarget::Index);
+    std::optional<uint32_t> hoverIndex_;
+    bool hoverIndexDirty_ = true;
+    BufferObject hoverIndexGL_ = BufferObject(sizeof(uint32_t), DataUInt32::get(),
+                                              BufferUsage::Dynamic, BufferTarget::Index);
 
     std::unique_ptr<IndexBuffer> indices_;
     std::unique_ptr<BufferObjectArray> boa_;
 
-    Processor *processor_;
+    Processor* processor_;
+
+    Dispatcher<ToolTipFunc> tooltipCallback_;
+    Dispatcher<SelectionFunc> selectionChangedCallback_;
+    Dispatcher<SelectionFunc> filteringChangedCallback_;
+
+    BoxSelectionInteractionHandler::SelectionCallbackHandle boxSelectionChangedCallBack_;
+    BoxSelectionInteractionHandler::SelectionCallbackHandle boxFilteringChangedCallBack_;
+
+    BoxSelectionInteractionHandler boxSelectionHandler_;
+    BoxSelectionRenderer selectionRectRenderer_;
 };
 
 }  // namespace plot
 
 }  // namespace inviwo
-
-#endif  // IVW_SCATTERPLOT_H

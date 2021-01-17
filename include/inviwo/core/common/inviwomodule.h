@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2012-2019 Inviwo Foundation
+ * Copyright (c) 2012-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,15 +27,13 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_INVIWOMODULE_H
-#define IVW_INVIWOMODULE_H
+#pragma once
 
-#include <inviwo/core/common/inviwo.h>
 #include <inviwo/core/common/inviwocoredefine.h>
 #include <inviwo/core/common/inviwoapplication.h>
 
-#include <inviwo/core/datastructures/camerafactory.h>
-#include <inviwo/core/datastructures/camerafactoryobject.h>
+#include <inviwo/core/datastructures/camera/camerafactory.h>
+#include <inviwo/core/datastructures/camera/camerafactoryobject.h>
 
 #include <inviwo/core/datastructures/representationfactory.h>
 #include <inviwo/core/datastructures/representationfactoryobject.h>
@@ -65,6 +63,10 @@
 #include <inviwo/core/util/stringconversion.h>
 
 #include <type_traits>
+#include <fmt/format.h>
+
+#include <vector>
+#include <memory>
 
 namespace inviwo {
 
@@ -406,9 +408,11 @@ void InviwoModule::registerPort() {
     try {
         registerPortInternal<T>();
     } catch (const Exception& e) {
-        LogError("Error registering port \"" << parseTypeIdName(std::string(typeid(T).name()))
-                                             << "\" in module " << getIdentifier()
-                                             << ". Reason: " << e.getMessage());
+        LogError(fmt::format(
+            "Error registering port '{0}' in module {1}. Reason: {2}. Have you provided a "
+            "DataTraits<{0}> specialization?",
+            parseTypeIdName(std::string(typeid(typename T::type).name())), getIdentifier(),
+            e.getMessage()));
     }
 }
 
@@ -462,5 +466,3 @@ void InviwoModule::registerRepresentationFactoryObject(
 }
 
 }  // namespace inviwo
-
-#endif  // IVW_INVIWOMODULE_H

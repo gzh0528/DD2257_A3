@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2014-2019 Inviwo Foundation
+ * Copyright (c) 2014-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -58,6 +58,9 @@ public:
 
     BufferObject(size_t sizeInBytes, const DataFormatBase* format, BufferUsage usage,
                  BufferTarget target = BufferTarget::Data);
+
+    BufferObject(size_t sizeInBytes, GLFormat format, GLenum usage, GLenum target);
+
     BufferObject(const BufferObject& rhs);
     BufferObject(BufferObject&& rhs);
     BufferObject& operator=(const BufferObject& other);
@@ -69,11 +72,36 @@ public:
     GLenum getTarget() const;
     GLuint getId() const;
 
-    GLFormats::GLFormat getGLFormat() const;
+    GLFormat getGLFormat() const;
     const DataFormatBase* getDataFormat() const;
 
+    /**
+     * \brief Calls glBindBuffer.
+     */
     void bind() const;
+
+    /**
+     * \brief Calls glBindBuffer with buffer name 0
+     */
     void unbind() const;
+
+    /**
+     * \brief Calls glBindBufferBase.
+     * Binds the buffer at index of the array of targets
+     * specified by the associated target ( @see getTarget )
+     * Targets must be one of GL_ATOMIC_COUNTER_BUFFER,
+     * GL_TRANSFORM_FEEDBACK_BUFFER, GL_UNIFORM_BUFFER or GL_SHADER_STORAGE_BUFFER
+     */
+    void bindBase(GLuint index) const;
+
+    /**
+     * \brief Calls glBindBufferRange.
+     * Binds the range (offset, offset + size) of the buffer at index of the array of targets
+     * specified by the associated target ( @see getTarget )
+     * Targets must be one of GL_ATOMIC_COUNTER_BUFFER,
+     * GL_TRANSFORM_FEEDBACK_BUFFER, GL_UNIFORM_BUFFER or GL_SHADER_STORAGE_BUFFER
+     */
+    void bindRange(GLuint index, GLintptr offset, GLsizeiptr size) const;
 
     /**
      * \brief bind the buffer object and set the vertex attribute pointer
@@ -97,7 +125,11 @@ public:
      * Convenience function for calling initialize(nullptr, sizeInBytes)
      * @param sizeInBytes
      */
-    void setSize(GLsizeiptr sizeInBytes);
+    void setSizeInBytes(GLsizeiptr sizeInBytes);
+    /**
+     * Get the size of the buffer in bytes.
+     */
+    GLsizeiptr getSizeInBytes() const;
 
     void upload(const void* data, GLsizeiptr sizeInBytes);
 
@@ -109,13 +141,14 @@ private:
     GLuint id_;
     GLenum usageGL_;
     GLenum target_;
-    GLFormats::GLFormat glFormat_;
+    GLFormat glFormat_;
     GLsizeiptr sizeInBytes_;
-    const DataFormatBase* dataFormat_;
 };
 
-inline GLFormats::GLFormat BufferObject::getGLFormat() const { return glFormat_; }
-inline const DataFormatBase* BufferObject::getDataFormat() const { return dataFormat_; }
+inline GLFormat BufferObject::getGLFormat() const { return glFormat_; }
+inline const DataFormatBase* BufferObject::getDataFormat() const {
+    return DataFormatBase::get(GLFormats::get(glFormat_));
+}
 
 }  // namespace inviwo
 

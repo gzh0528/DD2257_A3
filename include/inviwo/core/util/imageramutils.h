@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2016-2019 Inviwo Foundation
+ * Copyright (c) 2016-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,24 +27,28 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_IMAGERAMUTILS_H
-#define IVW_IMAGERAMUTILS_H
+#pragma once
 
 #include <inviwo/core/common/inviwocoredefine.h>
-#include <inviwo/core/common/inviwo.h>
+#include <inviwo/core/common/inviwoapplication.h>
+#include <inviwo/core/util/glmvec.h>
 #include <inviwo/core/datastructures/image/layerram.h>
 
-#include <inviwo/core/datastructures/image/imageram.h>
-#include <inviwo/core/datastructures/image/image.h>
-#include <inviwo/core/util/settings/systemsettings.h>
+#include <memory>
+#include <vector>
+#include <future>
 
 namespace inviwo {
+class Image;
 
 namespace util {
 
+namespace detail {
+IVW_CORE_API size_t getPoolSize();
+}
+
 template <typename C>
-void forEachPixel(const LayerRAM &layer, C callback) {
-    const auto &dims = layer.getDimensions();
+void forEachPixel(const size2_t dims, C callback) {
     size2_t pos;
     for (pos.y = 0; pos.y < dims.y; pos.y++) {
         for (pos.x = 0; pos.x < dims.x; pos.x++) {
@@ -54,14 +58,16 @@ void forEachPixel(const LayerRAM &layer, C callback) {
 }
 
 template <typename C>
-void forEachPixelParallel(const LayerRAM &layer, C callback, size_t jobs = 0) {
-    const auto dims = layer.getDimensions();
+void forEachPixel(const LayerRAM& layer, C callback) {
+    forEachPixel(layer.getDimensions(), callback);
+}
 
+template <typename C>
+void forEachPixelParallel(const size2_t dims, C callback, size_t jobs = 0) {
     if (jobs == 0) {
-        auto settings = InviwoApplication::getPtr()->getSettingsByType<SystemSettings>();
-        jobs = 4 * settings->poolSize_.get();
+        jobs = 4 * detail::getPoolSize();
         if (jobs == 0) {  // if poolsize is zero
-            forEachPixel(layer, callback);
+            forEachPixel(dims, callback);
             return;
         }
     }
@@ -82,9 +88,14 @@ void forEachPixelParallel(const LayerRAM &layer, C callback, size_t jobs = 0) {
         }));
     }
 
-    for (const auto &e : futures) {
+    for (const auto& e : futures) {
         e.wait();
     }
+}
+
+template <typename C>
+void forEachPixelParallel(const LayerRAM& layer, C callback, size_t jobs = 0) {
+    forEachPixelParallel(layer.getDimensions(), callback, jobs);
 }
 
 IVW_CORE_API std::shared_ptr<Image> readImageFromDisk(std::string filename);
@@ -92,5 +103,3 @@ IVW_CORE_API std::shared_ptr<Image> readImageFromDisk(std::string filename);
 }  // namespace util
 
 }  // namespace inviwo
-
-#endif  // IVW_IMAGERAMUTILS_H

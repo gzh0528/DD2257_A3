@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2013-2019 Inviwo Foundation
+ * Copyright (c) 2013-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,10 +27,8 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_PROCESSOR_WIDGET_METADATA_H
-#define IVW_PROCESSOR_WIDGET_METADATA_H
+#pragma once
 
-#include <inviwo/core/common/inviwo.h>
 #include <inviwo/core/common/inviwocoredefine.h>
 #include <inviwo/core/metadata/metadata.h>
 #include <inviwo/core/metadata/positionmetadata.h>
@@ -66,8 +64,8 @@ public:
 
     void setPosition(const ivec2& pos);
     ivec2 getPosition() const;
-    void setDimensions(const ivec2& dim);
-    ivec2 getDimensions() const;
+    void setDimensions(const size2_t& dim);
+    size2_t getDimensions() const;
     void setVisibile(bool visibility);
     bool isVisible() const;
 
@@ -75,10 +73,8 @@ public:
 
 private:
     ivec2 position_;
-    ivec2 dimensions_;
+    size2_t dimensions_;
     bool visibility_;
 };
 
 }  // namespace inviwo
-
-#endif  // IVW_PROCESSOR_WIDGET_METADATA_H

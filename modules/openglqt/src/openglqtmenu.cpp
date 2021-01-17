@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2012-2019 Inviwo Foundation
+ * Copyright (c) 2012-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -98,7 +98,7 @@ void OpenGLQtMenu::addShaderObjects(Shader* shader, QMenu* menuItem) {
     }
 }
 
-void OpenGLQtMenu::showShader(const ShaderObject* obj) {
+void OpenGLQtMenu::showShader(ShaderObject* obj) {
     auto mainWindow = utilqt::getApplicationMainWindow();
 
     auto it = editors_.find(obj->getID());
@@ -118,7 +118,6 @@ void OpenGLQtMenu::showShader(const ShaderObject* obj) {
                 editors_.erase(i);
             }
         });
-        editor->resize(900, 800);
         editor->show();
         editor->raise();
         editor->activateWindow();

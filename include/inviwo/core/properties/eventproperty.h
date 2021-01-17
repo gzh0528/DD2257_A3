@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2013-2019 Inviwo Foundation
+ * Copyright (c) 2013-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,16 +27,16 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_EVENTPROPERTY_H
-#define IVW_EVENTPROPERTY_H
+#pragma once
 
 #include <inviwo/core/common/inviwocoredefine.h>
-#include <inviwo/core/common/inviwo.h>
 #include <inviwo/core/properties/property.h>
 #include <inviwo/core/interaction/events/eventmatcher.h>
 #include <inviwo/core/interaction/events/event.h>
 #include <inviwo/core/interaction/events/mousebuttons.h>
 #include <inviwo/core/interaction/events/keyboardkeys.h>
+
+#include <functional>
 
 namespace inviwo {
 
@@ -110,5 +110,3 @@ private:
 };
 
 }  // namespace inviwo
-
-#endif  // IVW_EVENTPROPERTY_H

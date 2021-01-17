@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2016-2019 Inviwo Foundation
+ * Copyright (c) 2016-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,11 +27,9 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_FILEDIALOG_H
-#define IVW_FILEDIALOG_H
+#pragma once
 
 #include <inviwo/core/common/inviwocoredefine.h>
-#include <inviwo/core/common/inviwo.h>
 #include <inviwo/core/util/dialog.h>
 #include <inviwo/core/util/filedialogstate.h>
 #include <inviwo/core/util/fileextension.h>
@@ -53,7 +51,7 @@ public:
     virtual void setFileMode(FileMode mode) = 0;
     virtual FileMode getFileMode() const = 0;
 
-    virtual void setContentType(const std::string& contentType) = 0;
+    virtual void setContentType(const std::string &contentType) = 0;
     virtual std::string getContentType() const = 0;
 
     /**
@@ -84,5 +82,3 @@ public:
 };
 
 }  // namespace inviwo
-
-#endif  // IVW_FILEDIALOG_H

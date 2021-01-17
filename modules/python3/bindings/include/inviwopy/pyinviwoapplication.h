@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2018-2019 Inviwo Foundation
+ * Copyright (c) 2018-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,8 +27,7 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_PYINVIWOAPPLICATION_H
-#define IVW_PYINVIWOAPPLICATION_H
+#pragma once
 
 #include <warn/push>
 #include <warn/ignore/shadow>
@@ -40,5 +39,3 @@ namespace inviwo {
 void exposeInviwoApplication(pybind11::module &m);
 
 }  // namespace inviwo
-
-#endif  // IVW_PYINVIWOAPPLICATION_H

@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2018-2019 Inviwo Foundation
+ * Copyright (c) 2018-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -55,10 +55,9 @@ KeyframeWidgetQt::KeyframeWidgetQt(Keyframe& keyframe, QGraphicsItem* parent)
     setSelected(keyframe_.isSelected());
 }
 
-void KeyframeWidgetQt::paint(QPainter* painter, const QStyleOptionGraphicsItem* options,
-                             QWidget* widget) {
-    IVW_UNUSED_PARAM(options);
-    IVW_UNUSED_PARAM(widget);
+void KeyframeWidgetQt::paint(QPainter* painter,
+                             [[maybe_unused]] const QStyleOptionGraphicsItem* options,
+                             [[maybe_unused]] QWidget* widget) {
     painter->setRenderHint(QPainter::Antialiasing, true);
     QPen pen = QPen();
     pen.setWidthF(1);

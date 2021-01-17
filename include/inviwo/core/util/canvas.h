@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2012-2019 Inviwo Foundation
+ * Copyright (c) 2012-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,13 +27,12 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_CANVAS_H
-#define IVW_CANVAS_H
+#pragma once
 
-#include <inviwo/core/common/inviwo.h>
 #include <inviwo/core/common/inviwocoredefine.h>
 #include <inviwo/core/datastructures/image/imagetypes.h>
 #include <inviwo/core/interaction/pickingcontroller.h>
+#include <inviwo/core/util/glmvec.h>
 
 namespace inviwo {
 
@@ -83,9 +82,9 @@ public:
      * @see setFullScreenInternal
      */
     void setFullScreen(bool fullscreen);
+    void propagateEvent(Event* e);
 
 protected:
-    void propagateEvent(Event* e);
     /**
      * Derived classes should override to implement actual window state.
      */
@@ -99,5 +98,3 @@ protected:
 };
 
 }  // namespace inviwo
-
-#endif  // IVW_CANVAS_H

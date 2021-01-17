@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2017-2019 Inviwo Foundation
+ * Copyright (c) 2017-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,15 +27,18 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_COMPOSITEPROCESSORFACTORYOBJECT_H
-#define IVW_COMPOSITEPROCESSORFACTORYOBJECT_H
+#pragma once
 
 #include <inviwo/core/common/inviwocoredefine.h>
-#include <inviwo/core/common/inviwo.h>
 #include <inviwo/core/processors/compositeprocessor.h>
 #include <inviwo/core/processors/processorfactoryobject.h>
 
+#include <string>
+#include <memory>
+
 namespace inviwo {
+
+class InviwoApplication;
 
 /**
  * \class CompositeProcessorFactoryObject
@@ -53,5 +56,3 @@ private:
 };
 
 }  // namespace inviwo
-
-#endif  // IVW_COMPOSITEPROCESSORFACTORYOBJECT_H

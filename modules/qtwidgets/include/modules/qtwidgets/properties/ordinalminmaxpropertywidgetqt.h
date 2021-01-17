@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2014-2019 Inviwo Foundation
+ * Copyright (c) 2014-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,8 +27,7 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_ORDINALMINMAXPROPERTYWIDGETQT_H
-#define IVW_ORDINALMINMAXPROPERTYWIDGETQT_H
+#pragma once
 
 #include <modules/qtwidgets/qtwidgetsmoduledefine.h>
 #include <modules/qtwidgets/inviwoqtutils.h>
@@ -38,6 +37,7 @@
 #include <modules/qtwidgets/numberlineedit.h>
 #include <modules/qtwidgets/editablelabelqt.h>
 #include <modules/qtwidgets/rangesliderqt.h>
+#include <modules/qtwidgets/inviwoqtutils.h>
 #include <inviwo/core/properties/propertyowner.h>
 #include <inviwo/core/util/stringconversion.h>
 
@@ -98,7 +98,7 @@ private:
     int transformIncrementToSpinnerDecimals();
     void showSettings();
 
-    TemplateMinMaxPropertySettingsWidgetQt<T>* settingsWidget_;
+    MinMaxPropertySettingsWidgetQt<T>* settingsWidget_;
     RangeSliderQt* slider_;
     NumberLineEdit* spinBoxMin_;
     NumberLineEdit* spinBoxMax_;
@@ -138,13 +138,13 @@ OrdinalMinMaxPropertyWidgetQt<T>::OrdinalMinMaxPropertyWidgetQt(MinMaxProperty<T
     hSliderLayout->setContentsMargins(0, 0, 0, 0);
 
     spinBoxMin_->setKeyboardTracking(false);  // don't emit the valueChanged() signal while typing
-    spinBoxMin_->setFixedWidth(50);
+    spinBoxMin_->setFixedWidth(utilqt::emToPx(this, 4.6));
     hSliderLayout->addWidget(spinBoxMin_);
 
     hSliderLayout->addWidget(slider_);
 
     spinBoxMax_->setKeyboardTracking(false);  // don't emit the valueChanged() signal while typing
-    spinBoxMax_->setFixedWidth(50);
+    spinBoxMax_->setFixedWidth(utilqt::emToPx(this, 4.6));
     hSliderLayout->addWidget(spinBoxMax_);
 
     hLayout->addWidget(sliderWidget);
@@ -295,28 +295,16 @@ std::unique_ptr<QMenu> OrdinalMinMaxPropertyWidgetQt<T>::getContextMenu() {
 
 template <typename T>
 int OrdinalMinMaxPropertyWidgetQt<T>::transformIncrementToSpinnerDecimals() {
-    const static QLocale locale;
-    double inc = Transformer<T>::valueToSpinbox(minMaxProperty_, minMaxProperty_->getIncrement());
-    std::ostringstream buff;
-    utilqt::localizeStream(buff);
-    buff << inc;
-    const std::string str(buff.str());
-    auto periodPosition = str.find(locale.decimalPoint().toLatin1());
-    if (periodPosition == std::string::npos) {
-        return 0;
-    } else {
-        return static_cast<int>(str.length() - periodPosition - 1);
-    }
+    return utilqt::decimals<T>(
+        Transformer<T>::valueToSpinbox(minMaxProperty_, minMaxProperty_->getIncrement()));
 }
 
 template <typename T>
 void OrdinalMinMaxPropertyWidgetQt<T>::showSettings() {
     if (!settingsWidget_) {
-        settingsWidget_ = new TemplateMinMaxPropertySettingsWidgetQt<T>(minMaxProperty_, this);
+        settingsWidget_ = new MinMaxPropertySettingsWidgetQt<T>(minMaxProperty_, this);
     }
     settingsWidget_->showWidget();
 }
 
 }  // namespace inviwo
-
-#endif  // IVW_ORDINALMINMAXPROPERTYWIDGETQT_H

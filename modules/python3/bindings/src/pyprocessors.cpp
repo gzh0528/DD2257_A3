@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2017-2019 Inviwo Foundation
+ * Copyright (c) 2017-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -39,11 +39,13 @@
 #include <inviwo/core/processors/processorwidgetfactory.h>
 #include <inviwo/core/processors/processorwidgetfactoryobject.h>
 #include <inviwo/core/metadata/processormetadata.h>
+#include <inviwo/core/common/inviwoapplication.h>
 
 #include <inviwo/core/datastructures/image/layer.h>
 #include <inviwo/core/datastructures/image/layerram.h>
 #include <inviwo/core/io/datawriterfactory.h>
 #include <inviwo/core/util/filesystem.h>
+#include <inviwo/core/util/rendercontext.h>
 
 #include <modules/python3/processors/pythonscriptprocessor.h>
 
@@ -122,10 +124,16 @@ void exposeProcessors(pybind11::module &m) {
         .def(py::init())
         .def(py::init<std::string>())
         .def(py::init<Tag>())
-        .def("getString", &Tag::getString);
+        .def("getString", &Tag::getString)
+        .def_readonly_static("CPU", &Tag::CPU)
+        .def_readonly_static("GL", &Tag::GL)
+        .def_readonly_static("CL", &Tag::CL)
+        .def_readonly_static("PY", &Tag::PY);
 
     py::class_<Tags>(m, "Tags")
         .def(py::init())
+        .def(py::init<Tag>())
+        .def(py::init<std::vector<Tag>>())
         .def(py::init<std::string>())
         .def(py::init<Tags>())
         .def("addTag", &Tags::addTag)
@@ -137,6 +145,7 @@ void exposeProcessors(pybind11::module &m) {
         .def_readwrite("tags", &Tags::tags_)
         .def(py::self == py::self)
         .def(py::self < py::self)
+        .def_readonly_static("None", &Tags::None)
         .def_readonly_static("CPU", &Tags::CPU)
         .def_readonly_static("GL", &Tags::GL)
         .def_readonly_static("CL", &Tags::CL)
@@ -286,19 +295,54 @@ void exposeProcessors(pybind11::module &m) {
         .def_property_readonly("image", [](CanvasProcessor *cp) { return cp->getImage().get(); },
                                py::return_value_policy::reference)
         .def_property_readonly("ready", &CanvasProcessor::isReady)
-        .def("snapshot", [](CanvasProcessor *canvas, std::string filepath) {
+        .def("snapshot",
+             [](CanvasProcessor *canvas, std::string filepath) {
+                 auto ext = filesystem::getFileExtension(filepath);
+
+                 auto writer = canvas->getNetwork()
+                                   ->getApplication()
+                                   ->getDataWriterFactory()
+                                   ->getWriterForTypeAndExtension<Layer>(ext);
+                 if (!writer) {
+                     throw Exception("No writer for extension " + ext,
+                                     IVW_CONTEXT_CUSTOM("exposeProcessors"));
+                 }
+
+                 if (auto layer = canvas->getVisibleLayer()) {
+                     writer->writeData(layer, filepath);
+                 } else {
+                     throw Exception("No image in canvas " + canvas->getIdentifier(),
+                                     IVW_CONTEXT_CUSTOM("exposeProcessors"));
+                 }
+             })
+
+        .def("snapshotAsync", [](CanvasProcessor *canvas, std::string filepath) {
             auto ext = filesystem::getFileExtension(filepath);
 
-            auto writer = canvas->getNetwork()
-                              ->getApplication()
-                              ->getDataWriterFactory()
-                              ->getWriterForTypeAndExtension<Layer>(ext);
+            auto writer = std::shared_ptr<DataWriterType<Layer>>{
+                canvas->getNetwork()
+                    ->getApplication()
+                    ->getDataWriterFactory()
+                    ->getWriterForTypeAndExtension<Layer>(ext)};
             if (!writer) {
-                throw Exception("No write for extension " + ext);
+                throw Exception("No writer for extension " + ext,
+                                IVW_CONTEXT_CUSTOM("exposeProcessors"));
             }
 
-            auto layer = canvas->getVisibleLayer();
-            writer->writeData(layer, filepath);
+            if (auto layer = canvas->getVisibleLayer()) {
+                /* Unfortunately we need to clone the layer here since in most cases the layer comes
+                 * from an ImageOutport and that will generally render new data into the layer on
+                 * the next evaluation.
+                 */
+                dispatchPool(
+                    [layerClone = std::shared_ptr<Layer>{layer->clone()}, writer, filepath]() {
+                        RenderContext::getPtr()->activateLocalRenderContext();
+                        writer->writeData(layerClone.get(), filepath);
+                    });
+            } else {
+                throw Exception("No image in canvas " + canvas->getIdentifier(),
+                                IVW_CONTEXT_CUSTOM("exposeProcessors"));
+            }
         });
 
     py::class_<PythonScriptProcessor, Processor, ProcessorPtr<PythonScriptProcessor>>(

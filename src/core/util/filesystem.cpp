@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2014-2019 Inviwo Foundation
+ * Copyright (c) 2014-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,6 +31,9 @@
 #include <inviwo/core/util/exception.h>
 #include <inviwo/core/util/tinydirinterface.h>
 #include <inviwo/core/util/stringconversion.h>
+#include <inviwo/core/util/stdextensions.h>
+#include <inviwo/core/util/logcentral.h>
+#include <inviwo/core/inviwocommondefines.h>
 
 // For directory exists
 #include <sys/types.h>
@@ -42,8 +45,6 @@
 #include <cctype>  // isdigit()
 
 #ifdef WIN32
-#define NOMINMAX
-#define WIN32_LEAN_AND_MEAN
 struct IUnknown;  // Workaround for "combaseapi.h(229): error C2187: syntax error: 'identifier' was
                   // unexpected here" when using /permissive-
 #include <windows.h>
@@ -67,6 +68,9 @@ struct IUnknown;  // Workaround for "combaseapi.h(229): error C2187: syntax erro
 
 #include <array>
 #include <algorithm>
+#include <string_view>
+
+#include <fmt/format.h>
 
 namespace inviwo {
 
@@ -144,10 +148,12 @@ std::string getWorkingDirectory() {
     std::array<char, FILENAME_MAX> workingDir;
 #ifdef WIN32
     if (!GetCurrentDirectoryA(static_cast<DWORD>(workingDir.size()), workingDir.data()))
-        throw Exception("Error querying current directory");
+        throw Exception("Error querying current directory",
+                        IVW_CONTEXT_CUSTOM("filesystem::getWorkingDirectory"));
 #else
     if (!getcwd(workingDir.data(), workingDir.size()))
-        throw Exception("Error querying current directory");
+        throw Exception("Error querying current directory",
+                        IVW_CONTEXT_CUSTOM("filesystem::getWorkingDirectory"));
 #endif
     return cleanupPath(std::string(workingDir.data()));
 }
@@ -161,17 +167,22 @@ std::string getExecutablePath() {
 
     auto size = GetModuleFileNameA(nullptr, executablePath.data(),
                                    static_cast<DWORD>(executablePath.size()));
-    if (size == 0) throw Exception("Error retrieving executable path");
+    if (size == 0)
+        throw Exception("Error retrieving executable path",
+                        IVW_CONTEXT_CUSTOM("filesystem::getExecutablePath"));
     while (size == executablePath.size()) {
         // buffer is too small, enlarge
         auto newSize = executablePath.size() * 2;
         if (newSize > maxBufSize) {
-            throw Exception("Insufficient buffer size");
+            throw Exception("Insufficient buffer size",
+                            IVW_CONTEXT_CUSTOM("filesystem::getExecutablePath"));
         }
         executablePath.resize(newSize);
         size = GetModuleFileNameA(nullptr, executablePath.data(),
                                   static_cast<DWORD>(executablePath.size()));
-        if (size == 0) throw Exception("Error retrieving executable path");
+        if (size == 0)
+            throw Exception("Error retrieving executable path",
+                            IVW_CONTEXT_CUSTOM("filesystem::getExecutablePath"));
     }
     retVal = std::string(executablePath.data());
 #elif __APPLE__
@@ -180,7 +191,8 @@ std::string getExecutablePath() {
     auto pid = getpid();
     if (proc_pidpath(pid, executablePath.data(), executablePath.size()) <= 0) {
         // Error retrieving path
-        throw Exception("Error retrieving executable path");
+        throw Exception("Error retrieving executable path",
+                        IVW_CONTEXT_CUSTOM("filesystem::getExecutablePath"));
     }
     retVal = std::string(executablePath.data());
 #else  // Linux
@@ -191,7 +203,8 @@ std::string getExecutablePath() {
         executablePath[size] = '\0';
     } else {
         // Error retrieving path
-        throw Exception("Error retrieving executable path");
+        throw Exception("Error retrieving executable path",
+                        IVW_CONTEXT_CUSTOM("filesystem::getExecutablePath"));
     }
     retVal = std::string(executablePath.data());
 #endif
@@ -327,25 +340,31 @@ std::vector<std::string> getDirectoryContents(const std::string& path, ListMode 
     if (path.empty()) {
         return {};
     }
-    TinyDirInterface tinydir;
-    switch (mode) {
-        case ListMode::Files:
-            tinydir.setListMode(TinyDirInterface::ListMode::FilesOnly);
-            break;
-        case ListMode::Directories:
-            tinydir.setListMode(TinyDirInterface::ListMode::DirectoriesOnly);
-            break;
-        case ListMode::FilesAndDirectories:
-            tinydir.setListMode(TinyDirInterface::ListMode::FilesAndDirectories);
-            break;
+    if (!directoryExists(path)) {
+        return {};
     }
-    tinydir.open(path);
-
+    const auto tdmode = [&]() {
+        switch (mode) {
+            case ListMode::Files:
+                return TinyDirInterface::ListMode::FilesOnly;
+            case ListMode::Directories:
+                return TinyDirInterface::ListMode::DirectoriesOnly;
+            case ListMode::FilesAndDirectories:
+                return TinyDirInterface::ListMode::FilesAndDirectories;
+            default:
+                return TinyDirInterface::ListMode::FilesOnly;
+        }
+    }();
+    TinyDirInterface tinydir(path, tdmode);
     return tinydir.getContents();
 }
 
 std::vector<std::string> getDirectoryContentsRecursively(const std::string& path,
                                                          ListMode mode /*= ListMode::Files*/) {
+    if (!directoryExists(path)) {
+        return {};
+    }
+
     auto content = filesystem::getDirectoryContents(path, mode);
     auto directories = filesystem::getDirectoryContents(path, filesystem::ListMode::Directories);
     if (mode == ListMode::Directories || mode == ListMode::FilesAndDirectories) {
@@ -530,20 +549,38 @@ std::string findBasePath() {
         }
     }
 #endif
+    // Search process:
+    // Modules folder might exist during development, so first try with
+    // both data/workspaces and modules folder.
+    // If they are not found we might be running through a debugger, so try source directory.
+    // If neither of above works then we probably have an application withouth a data/workspaces
+    // folder, so become less restrictive and only search for the modules folder. If nothing works
+    // then use the executable path, but warn that this might have negative effects.
+
     // locate Inviwo base path matching the subfolders data/workspaces and modules
     std::string basePath = inviwo::filesystem::getParentFolderWithChildren(
         inviwo::filesystem::getExecutablePath(), {"data/workspaces", "modules"});
 
     if (basePath.empty()) {
         // could not locate base path relative to executable, try CMake source path
-        if (directoryExists(IVW_TRUNK + "/data/workspaces") &&
-            directoryExists(IVW_TRUNK + "/modules")) {
-            basePath = IVW_TRUNK;
-        } else {
-            throw Exception("Could not locate Inviwo base path");
+        if (directoryExists(fmt::format("{}/{}", build::sourceDirectory, "data/workspaces")) &&
+            directoryExists(fmt::format("{}/{}", build::sourceDirectory, "modules"))) {
+            basePath = build::sourceDirectory;
         }
     }
-    return basePath;
+    if (basePath.empty()) {
+        // Relax the criterion, only require the modules folder
+        basePath = inviwo::filesystem::getParentFolderWithChildren(
+            inviwo::filesystem::getExecutablePath(), {"modules"});
+    }
+    if (basePath.empty()) {
+        LogErrorCustom(
+            "filesystem::findBasePath",
+            "Could not locate Inviwo base path meaning that application data might not be found.");
+        return inviwo::filesystem::getExecutablePath();
+    } else {
+        return basePath;
+    }
 }
 
 IVW_CORE_API std::string getPath(PathType pathType, const std::string& suffix,
@@ -732,8 +769,7 @@ std::string getRelativePath(const std::string& basePath, const std::string& abso
 std::string getCanonicalPath(const std::string& url) {
 #ifdef WIN32
     const DWORD buffSize = 4096;  // MAX_PATH
-    std::wstring urlWStr;
-    urlWStr.assign(url.begin(), url.end());
+    std::wstring urlWStr = util::toWstring(url);
     std::string result{url};
 
     WCHAR buffer[buffSize + 1];
@@ -747,11 +783,14 @@ std::string getCanonicalPath(const std::string& url) {
         return result;
     } else {
         std::wstring resultWStr{buffer};
-        result.assign(resultWStr.begin(), resultWStr.end());
+        result = util::fromWstring(resultWStr);
     }
 
     return result;
 #else
+#ifndef PATH_MAX
+    const int PATH_MAX = 4096;
+#endif
     char buffer[PATH_MAX + 1];
     char* retVal = realpath(url.c_str(), buffer);
     if (retVal == nullptr) {
@@ -765,13 +804,17 @@ std::string getCanonicalPath(const std::string& url) {
 
 bool isAbsolutePath(const std::string& path) {
 #ifdef WIN32
-    if (path.size() < 2) {
-        return false;
-    }
+    if (path.empty()) return false;
 
-    // check for '[A-Z]:' in the begin of path
-    char driveLetter = static_cast<char>(toupper(path[0]));
-    return ((driveLetter >= 'A') && (driveLetter <= 'Z') && (path[1] == ':'));
+    // check for '[A-Z]:' in the begin of path, which might be quoted
+    std::string_view str{path};
+    if (str[0] == '\"') {
+        str.remove_prefix(1);
+    }
+    if (str.length() < 2) return false;
+
+    char driveLetter = static_cast<char>(toupper(str[0]));
+    return ((driveLetter >= 'A') && (driveLetter <= 'Z') && (str[1] == ':'));
 
 #else
 
@@ -825,6 +868,14 @@ std::string cleanupPath(const std::string& path) {
     if ((result.size() > 1) && (result.front() == '\"') && (result.back() == '\"')) {
         result = result.substr(1, result.size() - 2);
     }
+    if (result.size() > 2) {
+        // ensure that drive letter is an uppercase character, but there might be an unmatched quote
+        const size_t driveLetter = (result[0] == '\"') ? 1 : 0;
+        if (result[driveLetter + 1] == ':') {
+            result[driveLetter] = static_cast<char>(toupper(result[driveLetter]));
+        }
+    }
+
     return result;
 }
 

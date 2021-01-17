@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2013-2019 Inviwo Foundation
+ * Copyright (c) 2013-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,13 +27,10 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_TRANSFERFUNCTIONPROPERTY_H
-#define IVW_TRANSFERFUNCTIONPROPERTY_H
+#pragma once
 
 #include <inviwo/core/common/inviwocoredefine.h>
-
-#include <inviwo/core/properties/templateproperty.h>
-
+#include <inviwo/core/properties/property.h>
 #include <inviwo/core/datastructures/transferfunction.h>
 #include <inviwo/core/datastructures/volume/volume.h>
 #include <inviwo/core/datastructures/histogram.h>
@@ -62,7 +59,7 @@ protected:
  * \ingroup properties
  * A property holding a TransferFunction data structure
  */
-class IVW_CORE_API TransferFunctionProperty : public TemplateProperty<TransferFunction>,
+class IVW_CORE_API TransferFunctionProperty : public Property,
                                               public TFPrimitiveSetObserver,
                                               public TFPropertyObservable {
 
@@ -87,6 +84,15 @@ public:
     virtual TransferFunctionProperty* clone() const override;
     virtual ~TransferFunctionProperty();
 
+    TransferFunction& get();
+    const TransferFunction& get() const;
+    void set(const TransferFunction& tf);
+
+    const TransferFunction& operator*() const;
+    TransferFunction& operator*();
+    const TransferFunction* operator->() const;
+    TransferFunction* operator->();
+
     TransferFunctionProperty& setMask(double maskMin, double maskMax);
     const dvec2 getMask() const;
     TransferFunctionProperty& clearMask();
@@ -107,10 +113,9 @@ public:
     virtual void serialize(Serializer& s) const override;
     virtual void deserialize(Deserializer& d) override;
 
-    // Override
-    virtual void set(const TransferFunction& property) override;
-    void set(const IsoTFProperty& p);
     virtual void set(const Property* property) override;
+    void set(const TransferFunctionProperty* p);
+    void set(const IsoTFProperty* p);
 
     // Override TFPrimitiveSetObserver
     virtual void onTFPrimitiveAdded(TFPrimitive& p) override;
@@ -119,6 +124,7 @@ public:
     virtual void onTFTypeChanged(const TFPrimitiveSet& primitiveSet) override;
 
 private:
+    ValueWrapper<TransferFunction> tf_;
     ValueWrapper<dvec2> zoomH_;
     ValueWrapper<dvec2> zoomV_;
     ValueWrapper<HistogramMode> histogramMode_;
@@ -127,5 +133,3 @@ private:
 };
 
 }  // namespace inviwo
-
-#endif  // IVW_TRANSFERFUNCTIONPROPERTY_H

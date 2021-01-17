@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2017-2019 Inviwo Foundation
+ * Copyright (c) 2017-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -250,8 +250,8 @@ std::unique_ptr<Mesh> generateTicksMesh(const std::vector<double>& tickmarks, dv
     std::vector<uint32_t> indices(numTicks * 2);
     std::iota(indices.begin(), indices.end(), 0);
 
-    mesh->addIndicies(Mesh::MeshInfo(DrawType::Lines, ConnectivityType::None),
-                      inviwo::util::makeIndexBuffer(std::move(indices)));
+    mesh->addIndices(Mesh::MeshInfo(DrawType::Lines, ConnectivityType::None),
+                     inviwo::util::makeIndexBuffer(std::move(indices)));
 
     return mesh;
 }
@@ -415,8 +415,8 @@ std::unique_ptr<Mesh> generateAxisMesh3D(const vec3& startPos, const vec3& endPo
         auto pickingBuffer = util::makeBuffer<uint32_t>({id, id});
         m->addBuffer(BufferType::PickingAttrib, pickingBuffer);
     }
-    m->addIndicies(Mesh::MeshInfo(DrawType::Lines, ConnectivityType::None),
-                   util::makeIndexBuffer({0, 1}));
+    m->addIndices(Mesh::MeshInfo(DrawType::Lines, ConnectivityType::None),
+                  util::makeIndexBuffer({0, 1}));
 
     return m;
 }
@@ -473,7 +473,8 @@ std::vector<std::pair<double, vec2>> getLabelPositions(const AxisSettings& setti
             });
 
     } else {
-        const vec2 scaling(axisDir * static_cast<float>(screenLength / (tickmarks.size() - 1)));
+        const auto denom = tickmarks.size() > 1 ? tickmarks.size() - 1 : 1.f;
+        const vec2 scaling(axisDir * static_cast<float>(screenLength / denom));
         auto seq = util::make_sequence(size_t{0}, tickmarks.size(), size_t{1});
         std::transform(tickmarks.begin(), tickmarks.end(), seq.begin(), labelPositions.begin(),
                        [&](double pos, size_t i) -> std::pair<double, vec2> {

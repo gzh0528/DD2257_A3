@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2017-2019 Inviwo Foundation
+ * Copyright (c) 2017-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -35,12 +35,13 @@
 #include <inviwopy/pynetwork.h>
 #include <inviwopy/pyglmtypes.h>
 #include <modules/python3/pybindutils.h>
-#include <inviwopy/pyport.h>
+#include <modules/python3/pyportutils.h>
 
 #include <warn/push>
 #include <warn/ignore/shadow>
 #include <pybind11/pybind11.h>
 #include <pybind11/numpy.h>
+#include <pybind11/stl_bind.h>
 #include <warn/pop>
 
 #include <inviwo/core/datastructures/volume/volume.h>
@@ -48,19 +49,28 @@
 #include <inviwo/core/datastructures/volume/volumeramprecision.h>
 #include <inviwo/core/ports/volumeport.h>
 
+PYBIND11_MAKE_OPAQUE(VolumeSequence)
+
 namespace inviwo {
 
 void exposeVolume(pybind11::module &m) {
     namespace py = pybind11;
     py::class_<Volume, std::shared_ptr<Volume>>(m, "Volume")
         .def(py::init<size3_t, const DataFormatBase *>())
+        .def(py::init<size3_t, const DataFormatBase *, const SwizzleMask &, InterpolationType,
+                      const Wrapping3D &>())
         .def(py::init([](py::array data) { return pyutil::createVolume(data).release(); }))
         .def("clone", [](Volume &self) { return self.clone(); })
         .def_property("modelMatrix", &Volume::getModelMatrix, &Volume::setModelMatrix)
         .def_property("worldMatrix", &Volume::getWorldMatrix, &Volume::setWorldMatrix)
+        .def_property("basis", &Volume::getBasis, &Volume::setBasis)
+        .def_property("offset", &Volume::getOffset, &Volume::setOffset)
         .def("copyMetaDataFrom", [](Volume &self, Volume &other) { self.copyMetaDataFrom(other); })
         .def("copyMetaDataTo", [](Volume &self, Volume &other) { self.copyMetaDataTo(other); })
         .def_property_readonly("dimensions", &Volume::getDimensions)
+        .def_property("swizzlemask", &Volume::getSwizzleMask, &Volume::setSwizzleMask)
+        .def_property("interpolation", &Volume::getInterpolation, &Volume::setInterpolation)
+        .def_property("wrapping", &Volume::getWrapping, &Volume::setWrapping)
         .def_readwrite("dataMap", &Volume::dataMap_)
         .def_property(
             "data",
@@ -97,7 +107,10 @@ void exposeVolume(pybind11::module &m) {
             return oss.str();
         });
 
+    py::bind_vector<VolumeSequence>(m, "VolumeSequence", py::module_local(false));
+
     exposeStandardDataPorts<Volume>(m, "Volume");
+    exposeStandardDataPorts<VolumeSequence>(m, "VolumeSequence");
 }
 
 }  // namespace inviwo

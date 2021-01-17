@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2015-2019 Inviwo Foundation
+ * Copyright (c) 2015-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,11 +27,9 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_COMPOSITEPROPERTYOBSERVER_H
-#define IVW_COMPOSITEPROPERTYOBSERVER_H
+#pragma once
 
 #include <inviwo/core/common/inviwocoredefine.h>
-#include <inviwo/core/common/inviwo.h>
 #include <inviwo/core/util/observer.h>
 
 namespace inviwo {
@@ -51,5 +49,3 @@ protected:
 };
 
 }  // namespace inviwo
-
-#endif  // IVW_COMPOSITEPROPERTYOBSERVER_H

@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2019 Inviwo Foundation
+ * Copyright (c) 2019-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -59,8 +59,8 @@ void TrianglesToWireframe::process() {
 
     auto indicesRam = std::make_shared<IndexBufferRAM>();
     auto &vec = indicesRam->getDataContainer();
-    wireframe->addIndicies(Mesh::MeshInfo(DrawType::Lines, ConnectivityType::None),
-                           std::make_shared<IndexBuffer>(indicesRam));
+    wireframe->addIndices(Mesh::MeshInfo(DrawType::Lines, ConnectivityType::None),
+                          std::make_shared<IndexBuffer>(indicesRam));
 
     for (auto &ib : mesh->getIndexBuffers()) {
         if (ib.first.dt == DrawType::Triangles) {

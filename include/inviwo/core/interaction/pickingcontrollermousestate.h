@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2018-2019 Inviwo Foundation
+ * Copyright (c) 2018-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -26,15 +26,18 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  *********************************************************************************/
+
 #pragma once
 
 #include <inviwo/core/common/inviwocoredefine.h>
-#include <inviwo/core/common/inviwo.h>
+
+#include <memory>
 
 namespace inviwo {
 
 struct PickingControllerMouseStateSM;
 class MouseEvent;
+class WheelEvent;
 class EventPropagator;
 class PickingManager;
 
@@ -46,6 +49,7 @@ public:
     ~PickingControllerMouseState();
 
     void propagateEvent(MouseEvent* e, EventPropagator* propagator, size_t globalId);
+    void propagateEvent(WheelEvent* e, EventPropagator* propagator, size_t globalId);
 
     std::unique_ptr<PickingControllerMouseStateSM> msm;
 };

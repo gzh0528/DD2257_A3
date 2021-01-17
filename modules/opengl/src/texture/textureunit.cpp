@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2013-2019 Inviwo Foundation
+ * Copyright (c) 2013-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -94,7 +94,11 @@ TextureUnitContainer& TextureUnitContainer::operator=(TextureUnitContainer&& tha
 
 void TextureUnitContainer::push_back(TextureUnit&& unit) { units_.push_back(std::move(unit)); }
 
+TextureUnit& TextureUnitContainer::emplace_back() { return units_.emplace_back(); }
+
 TextureUnit& TextureUnitContainer::operator[](size_t i) { return units_[i]; }
+const TextureUnit& TextureUnitContainer::operator[](size_t i) const { return units_[i]; }
 size_t TextureUnitContainer::size() const { return units_.size(); }
+void TextureUnitContainer::clear() { units_.clear(); }
 
 }  // namespace inviwo

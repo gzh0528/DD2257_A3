@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2014-2019 Inviwo Foundation
+ * Copyright (c) 2014-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -53,8 +53,6 @@ private:
 
     std::shared_ptr<StringShaderResource> fragmentShader_;
     StringProperty fragmentSrc_;
-
-    static std::string getDefaultFragmentShader();
 };
 
 }  // namespace inviwo

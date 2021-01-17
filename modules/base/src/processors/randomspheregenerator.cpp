@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2017-2019 Inviwo Foundation
+ * Copyright (c) 2017-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -37,6 +37,7 @@
 #include <inviwo/core/datastructures/geometry/mesh.h>
 #include <inviwo/core/datastructures/buffer/bufferramprecision.h>
 #include <inviwo/core/datastructures/buffer/buffer.h>
+#include <inviwo/core/algorithm/boundingbox.h>
 
 #include <numeric>
 
@@ -62,14 +63,13 @@ RandomSphereGenerator::RandomSphereGenerator()
     , gridDim_("gridDim", "Grid Dimension", ivec3(12, 12, 12), ivec3(1), ivec3(128))
     , jigglePos_("jigglePos", "Jiggle Positions", true)
     , enablePicking_("enablePicking", "Enable Picking", false)
-    , camera_("camera", "Camera")
+    , camera_("camera", "Camera", util::boundingBox(meshOut_))
     , spherePicking_(
           this, gridDim_.get().x * gridDim_.get().y * gridDim_.get().z, [&](PickingEvent* p) {
               handlePicking(p, [&](vec3 delta) {
-                  if (positionBuffer_) {
-                      auto& pos = positionBuffer_->getDataContainer();
+                  if (positions_) {
+                      auto& pos = positions_->getEditableRAMRepresentation()->getDataContainer();
                       pos[p->getPickedId()] += delta;
-                      positionBuffer_->getOwner()->invalidateAllOther(positionBuffer_.get());
                   }
               });
           }) {
@@ -110,7 +110,7 @@ void RandomSphereGenerator::process() {
     const bool dirty = seed_.isModified() || size_.isModified() || scale_.isModified() ||
                        enablePicking_.isModified();
 
-    if (gridDim_.isModified() || dirty || !positionBuffer_) {
+    if (gridDim_.isModified() || dirty || !positions_) {
         const auto dim = gridDim_.get();
         const int numSpheres = dim.x * dim.y * dim.z;
         spherePicking_.resize(numSpheres);
@@ -122,14 +122,13 @@ void RandomSphereGenerator::process() {
         auto radiiRAM = std::make_shared<BufferRAMPrecision<float>>(numSpheres);
 
         // keep a reference to vertex position buffer for picking
-        positionBuffer_ = vertexRAM;
+        positions_ = std::make_shared<Buffer<vec3>>(vertexRAM);
+        radii_ = std::make_shared<Buffer<float>>(radiiRAM);
 
-        mesh->addBuffer(Mesh::BufferInfo(BufferType::PositionAttrib),
-                        std::make_shared<Buffer<vec3>>(vertexRAM));
+        mesh->addBuffer(Mesh::BufferInfo(BufferType::PositionAttrib), positions_);
         mesh->addBuffer(Mesh::BufferInfo(BufferType::ColorAttrib),
                         std::make_shared<Buffer<vec4>>(colorRAM));
-        mesh->addBuffer(Mesh::BufferInfo(BufferType::RadiiAttrib),
-                        std::make_shared<Buffer<float>>(radiiRAM));
+        mesh->addBuffer(Mesh::BufferInfo(BufferType::RadiiAttrib), radii_);
         if (enablePicking_.get()) {
             auto pickingRAM = std::make_shared<BufferRAMPrecision<uint32_t>>(numSpheres);
             auto& data = pickingRAM->getDataContainer();
@@ -202,6 +201,18 @@ void RandomSphereGenerator::handlePicking(PickingEvent* p, std::function<void(ve
                 invalidate(InvalidationLevel::InvalidOutput);
                 p->markAsUsed();
             }
+        } else if (p->getState() == PickingState::Updated &&
+                   p->getEvent()->hash() == WheelEvent::chash()) {
+            auto we = p->getEventAs<WheelEvent>();
+            if (radii_) {
+                auto& radii = radii_->getEditableRAMRepresentation()->getDataContainer();
+                auto radius =
+                    radii[p->getPickedId()] * (1.0f - 0.05f * static_cast<float>(-we->delta().y));
+                radii[p->getPickedId()] = glm::clamp(radius, scale_ * 0.05f, scale_ * 20.0f);
+            }
+
+            invalidate(InvalidationLevel::InvalidOutput);
+            p->markAsUsed();
         }
     }
 }

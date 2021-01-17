@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2015-2019 Inviwo Foundation
+ * Copyright (c) 2015-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,11 +27,9 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_PROCESSORNETWORKCONVERTER_H
-#define IVW_PROCESSORNETWORKCONVERTER_H
+#pragma once
 
 #include <inviwo/core/common/inviwocoredefine.h>
-#include <inviwo/core/common/inviwo.h>
 #include <inviwo/core/io/serialization/versionconverter.h>
 
 #include <set>
@@ -66,6 +64,7 @@ private:
     void updateTransferfunctions(TxElement* node);
     void updateProcessorIdentifiersStriped(TxElement* node);
     void updatePropertyEditorMetadata(TxElement* node);
+    void updateCameraPropertyToRefs(TxElement* node);
 
     void traverseNodes(TxElement* node, updateType update);
 
@@ -73,5 +72,3 @@ private:
 };
 
 }  // namespace inviwo
-
-#endif  // IVW_PROCESSORNETWORKCONVERTER_H

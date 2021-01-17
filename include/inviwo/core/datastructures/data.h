@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2012-2019 Inviwo Foundation
+ * Copyright (c) 2012-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -26,6 +26,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  *********************************************************************************/
+
 #pragma once
 
 #include <inviwo/core/common/inviwocoredefine.h>
@@ -293,7 +294,7 @@ template <typename Self, typename Repr>
 std::shared_ptr<Repr> Data<Self, Repr>::addRepresentationInternal(
     std::shared_ptr<Repr> repr) const {
     repr->setValid(true);
-    repr->setOwner(static_cast<Self*>(const_cast<Data<Self, Repr>*>(this)));
+    repr->setOwner(static_cast<const Self*>(this));
     representations_[repr->getTypeIndex()] = repr;
     return repr;
 }

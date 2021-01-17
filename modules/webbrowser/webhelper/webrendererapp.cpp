@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2018-2019 Inviwo Foundation
+ * Copyright (c) 2018-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,8 +31,8 @@
 
 namespace inviwo {
 
-WebRendererApp::WebRendererApp() = default;
+CefWebRendererApp::CefWebRendererApp() = default;
 
-CefRefPtr<CefRenderProcessHandler> WebRendererApp::GetRenderProcessHandler() { return this; }
+CefRefPtr<CefRenderProcessHandler> CefWebRendererApp::GetRenderProcessHandler() { return this; }
 
 }  // namespace inviwo

@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2018-2019 Inviwo Foundation
+ * Copyright (c) 2018-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -317,10 +317,10 @@ void SplitImage::updateTriMesh() {
     mesh->addBuffer(Mesh::BufferInfo(BufferType::ColorAttrib),
                     util::makeBuffer(std::vector<vec4>{6, triColor_}));
 
-    mesh->addIndicies(Mesh::MeshInfo(DrawType::Triangles, ConnectivityType::None),
-                      util::makeIndexBuffer({0, 1, 2}));
-    mesh->addIndicies(Mesh::MeshInfo(DrawType::Triangles, ConnectivityType::None),
-                      util::makeIndexBuffer({3, 4, 5}));
+    mesh->addIndices(Mesh::MeshInfo(DrawType::Triangles, ConnectivityType::None),
+                     util::makeIndexBuffer({0, 1, 2}));
+    mesh->addIndices(Mesh::MeshInfo(DrawType::Triangles, ConnectivityType::None),
+                     util::makeIndexBuffer({3, 4, 5}));
 
     triangleMesh_ = mesh;
 }

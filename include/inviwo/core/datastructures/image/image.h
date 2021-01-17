@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2012-2019 Inviwo Foundation
+ * Copyright (c) 2012-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,8 +27,7 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_IMAGE_H
-#define IVW_IMAGE_H
+#pragma once
 
 #include <inviwo/core/common/inviwocoredefine.h>
 #include <inviwo/core/datastructures/datagroup.h>
@@ -51,7 +50,7 @@ public:
 
     Image(size2_t dimensions = size2_t(8, 8), const DataFormatBase* format = DataVec4UInt8::get());
     Image(std::shared_ptr<Layer> layer);
-    Image(const Image&);
+    Image(const Image& rhs);
     Image& operator=(const Image& that);
     virtual Image* clone() const;
     virtual ~Image() = default;
@@ -116,8 +115,7 @@ protected:
     static std::shared_ptr<Layer> createColorLayer(
         size2_t dimensions = size2_t(8, 8), const DataFormatBase* format = DataVec4UInt8::get());
     static std::shared_ptr<Layer> createDepthLayer(size2_t dimensions = size2_t(8, 8));
-    static std::shared_ptr<Layer> createPickingLayer(
-        size2_t dimensions = size2_t(8, 8), const DataFormatBase* format = DataVec4UInt8::get());
+    static std::shared_ptr<Layer> createPickingLayer(size2_t dimensions = size2_t(8, 8));
 
     std::vector<std::shared_ptr<Layer>> colorLayers_;
     std::shared_ptr<Layer> depthLayer_;
@@ -129,5 +127,3 @@ extern template class IVW_CORE_TMPL_EXP DataReaderType<Image>;
 extern template class IVW_CORE_TMPL_EXP DataWriterType<Image>;
 
 }  // namespace inviwo
-
-#endif  // IVW_IMAGE_H

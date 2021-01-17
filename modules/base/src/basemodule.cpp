@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2012-2019 Inviwo Foundation
+ * Copyright (c) 2012-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -48,10 +48,12 @@
 #include <modules/base/processors/imagecontourprocessor.h>
 #include <modules/base/processors/imagestackvolumesource.h>
 #include <modules/base/processors/meshclipping.h>
+#include <modules/base/processors/meshcolorfromnormals.h>
 #include <modules/base/processors/meshcreator.h>
 #include <modules/base/processors/meshexport.h>
 #include <modules/base/processors/meshinformation.h>
 #include <modules/base/processors/meshmapping.h>
+#include <modules/base/processors/meshplaneclipping.h>
 #include <modules/base/processors/meshsequenceelementselectorprocessor.h>
 #include <modules/base/processors/meshsource.h>
 #include <modules/base/processors/noiseprocessor.h>
@@ -67,12 +69,16 @@
 #include <modules/base/processors/spotlightsourceprocessor.h>
 #include <modules/base/processors/stereocamerasyncer.h>
 #include <modules/base/processors/surfaceextractionprocessor.h>
+#include <modules/base/processors/transform.h>
 #include <modules/base/processors/trianglestowireframe.h>
+#include <modules/base/processors/volumeboundaryplanes.h>
+#include <modules/base/processors/volumeconverter.h>
 #include <modules/base/processors/volumecreator.h>
 #include <modules/base/processors/volumesequenceelementselectorprocessor.h>
 #include <modules/base/processors/volumesource.h>
 #include <modules/base/processors/volumeexport.h>
 #include <modules/base/processors/volumebasistransformer.h>
+#include <modules/base/processors/volumeshifter.h>
 #include <modules/base/processors/volumeslice.h>
 #include <modules/base/processors/volumesubsample.h>
 #include <modules/base/processors/volumesubset.h>
@@ -84,13 +90,14 @@
 #include <modules/base/processors/volumegradientcpuprocessor.h>
 #include <modules/base/processors/volumelaplacianprocessor.h>
 #include <modules/base/processors/volumesequencetospatial4dsampler.h>
-#include <modules/base/processors/worldtransform.h>
+#include <modules/base/processors/worldtransformdeprecated.h>
 #include <modules/base/processors/camerafrustum.h>
 #include <modules/base/processors/imagetospatialsampler.h>
 #include <modules/base/processors/volumesequencesingletimestepsampler.h>
 
 // Properties
 #include <modules/base/properties/basisproperty.h>
+#include <modules/base/properties/datarangeproperty.h>
 #include <modules/base/properties/gaussianproperty.h>
 #include <modules/base/properties/imageinformationproperty.h>
 #include <modules/base/properties/layerinformationproperty.h>
@@ -120,8 +127,11 @@ namespace inviwo {
 using BasisTransformMesh = BasisTransform<Mesh>;
 using BasisTransformVolume = BasisTransform<Volume>;
 
-using WorldTransformMesh = WorldTransform<Mesh>;
-using WorldTransformVolume = WorldTransform<Volume>;
+using TransformMesh = Transform<Mesh>;
+using TransformVolume = Transform<Volume>;
+
+using WorldTransformMeshDeprecated = WorldTransformDeprecated<Mesh>;
+using WorldTransformVolumeDeprecated = WorldTransformDeprecated<Volume>;
 
 BaseModule::BaseModule(InviwoApplication* app) : InviwoModule(app, "Base") {
     registerProcessor<ConvexHull2DProcessor>();
@@ -139,22 +149,28 @@ BaseModule::BaseModule(InviwoApplication* app) : InviwoModule(app, "Base") {
     registerProcessor<ImageStackVolumeSource>();
     registerProcessor<LayerDistanceTransformRAM>();
     registerProcessor<MeshClipping>();
+    registerProcessor<MeshColorFromNormals>();
     registerProcessor<MeshCreator>();
     registerProcessor<MeshInformation>();
     registerProcessor<MeshMapping>();
+    registerProcessor<MeshPlaneClipping>();
     registerProcessor<NoiseProcessor>();
     registerProcessor<PixelToBufferProcessor>();
     registerProcessor<PointLightSourceProcessor>();
     registerProcessor<OrdinalPropertyAnimator>();
     registerProcessor<SpotLightSourceProcessor>();
     registerProcessor<SurfaceExtraction>();
+    registerProcessor<VolumeBoundaryPlanes>();
     registerProcessor<VolumeSource>();
     registerProcessor<VolumeExport>();
     registerProcessor<BasisTransformMesh>();
     registerProcessor<BasisTransformVolume>();
     registerProcessor<TrianglesToWireframe>();
-    registerProcessor<WorldTransformMesh>();
-    registerProcessor<WorldTransformVolume>();
+    registerProcessor<TransformMesh>();
+    registerProcessor<TransformVolume>();
+    registerProcessor<VolumeConverter>();
+    registerProcessor<WorldTransformMeshDeprecated>();
+    registerProcessor<WorldTransformVolumeDeprecated>();
     registerProcessor<VolumeSlice>();
     registerProcessor<VolumeSubsample>();
     registerProcessor<VolumeSubset>();
@@ -188,24 +204,32 @@ BaseModule::BaseModule(InviwoApplication* app) : InviwoModule(app, "Base") {
     registerProcessor<MeshConverterProcessor>();
     registerProcessor<VolumeInformation>();
     registerProcessor<TFSelector>();
+    registerProcessor<VolumeShifter>();
 
     // input selectors
     registerProcessor<InputSelector<MultiDataInport<Volume>, VolumeOutport>>();
     registerProcessor<InputSelector<MultiDataInport<Mesh>, MeshOutport>>();
     registerProcessor<InputSelector<ImageMultiInport, ImageOutport>>();
 
-    registerProperty<SequenceTimerProperty>();
     registerProperty<BasisProperty>();
-    registerProperty<ImageInformationProperty>();
-    registerProperty<LayerInformationProperty>();
-    registerProperty<MeshInformationProperty>();
     registerProperty<BufferInformationProperty>();
-    registerProperty<MeshBufferInformationProperty>();
+    registerProperty<DataRangeProperty>();
+    registerProperty<ImageInformationProperty>();
     registerProperty<IndexBufferInformationProperty>();
+    registerProperty<LayerInformationProperty>();
+    registerProperty<MeshBufferInformationProperty>();
+    registerProperty<MeshInformationProperty>();
+    registerProperty<SequenceTimerProperty>();
     registerProperty<VolumeInformationProperty>();
 
     registerProperty<Gaussian1DProperty>();
     registerProperty<Gaussian2DProperty>();
+
+    registerProperty<transform::TranslateProperty>();
+    registerProperty<transform::RotateProperty>();
+    registerProperty<transform::ScaleProperty>();
+    registerProperty<transform::CustomTransformProperty>();
+    registerProperty<TransformListProperty>();
 
     // Register Data readers
     registerDataReader(std::make_unique<DatVolumeSequenceReader>());
@@ -221,7 +245,7 @@ BaseModule::BaseModule(InviwoApplication* app) : InviwoModule(app, "Base") {
     util::for_each_type<OrdinalPropertyAnimator::Types>{}(RegHelper{}, *this);
 }
 
-int BaseModule::getVersion() const { return 3; }
+int BaseModule::getVersion() const { return 4; }
 
 std::unique_ptr<VersionConverter> BaseModule::getConverter(int version) const {
     return std::make_unique<Converter>(version);
@@ -313,6 +337,15 @@ bool BaseModule::Converter::convert(TxElement* root) {
         repl.push_back(ir2);
     }
 
+    std::vector<xml::IdentifierReplacement> replV3 = {
+        // WorldTransform (Deprecated)
+        {{xml::Kind::processor("org.inviwo.WorldTransformMeshDeprecated")},
+         "World Transform Mesh",
+         "World Transform Mesh (Deprecated)"},
+        {{xml::Kind::processor("org.inviwo.WorldTransformVolumeDeprecated")},
+         "World Transform Volume",
+         "World Transform Volume (Deprecated)"}};
+
     bool res = false;
     switch (version_) {
         case 0: {
@@ -355,6 +388,16 @@ bool BaseModule::Converter::convert(TxElement* root) {
             }};
 
             conv.convert(root);
+            [[fallthrough]];
+        }
+        case 3: {
+            res |= xml::changeAttribute(
+                root, {{xml::Kind::processor("org.inviwo.WorldTransformGeometry")}}, "type",
+                "org.inviwo.WorldTransformGeometry", "org.inviwo.WorldTransformMeshDeprecated");
+            res |= xml::changeAttribute(
+                root, {{xml::Kind::processor("org.inviwo.WorldTransformVolume")}}, "type",
+                "org.inviwo.WorldTransformVolume", "org.inviwo.WorldTransformVolumeDeprecated");
+            res |= xml::changeIdentifiers(root, replV3);
             return res;
         }
 

@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2015-2019 Inviwo Foundation
+ * Copyright (c) 2015-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -49,24 +49,18 @@ const ProcessorInfo VectorFieldGenerator2D::getProcessorInfo() const { return pr
 VectorFieldGenerator2D::VectorFieldGenerator2D()
     : Processor()
     , outport_("outport", DataVec2Float32::get(), false)
-    , size_("size", "Field size", ivec2(16), ivec2(1), ivec2(1024))
+    , size_("size", "Field size", size2_t(16), size2_t(1), size2_t(1024))
     , xRange_("xRange", "X Range", -1, 1, -10, 10)
     , yRange_("yRange", "Y Range", -1, 1, -10, 10)
     , xValue_("x", "X", "-x", InvalidationLevel::InvalidResources)
     , yValue_("y", "Y", "y", InvalidationLevel::InvalidResources)
-    , shader_("vectorfieldgenerator2d.frag", false)
-    , fbo_() {
+    , shader_("vectorfieldgenerator2d.frag", false) {
     addPort(outport_);
 
-    addProperty(size_);
-    addProperty(xValue_);
-    addProperty(yValue_);
-
-    addProperty(xRange_);
-    addProperty(yRange_);
+    addProperties(size_, xValue_, yValue_, xRange_, yRange_);
 }
 
-VectorFieldGenerator2D::~VectorFieldGenerator2D() {}
+VectorFieldGenerator2D::~VectorFieldGenerator2D() = default;
 
 void VectorFieldGenerator2D::initializeResources() {
     shader_.getFragmentShaderObject()->addShaderDefine("X_VALUE(x,y)", xValue_.get());
@@ -77,11 +71,12 @@ void VectorFieldGenerator2D::initializeResources() {
 
 void VectorFieldGenerator2D::process() {
 
-    image_ = std::make_shared<Image>(size_.get(), DataVec2Float32::get());
-    image_->getColorLayer()->setSwizzleMask(
-        {{ImageChannel::Red, ImageChannel::Green, ImageChannel::Zero, ImageChannel::One}});
+    auto layer = std::make_shared<Layer>(
+        size_, DataVec2Float32::get(), LayerType::Color,
+        SwizzleMask{ImageChannel::Red, ImageChannel::Green, ImageChannel::Zero, ImageChannel::One});
+    auto image = std::make_shared<Image>(layer);
 
-    utilgl::activateAndClearTarget(*(image_.get()), ImageType::ColorOnly);
+    utilgl::activateAndClearTarget(*image, ImageType::ColorOnly);
 
     shader_.activate();
     utilgl::setUniforms(shader_, xRange_, yRange_);
@@ -91,7 +86,7 @@ void VectorFieldGenerator2D::process() {
     shader_.deactivate();
     utilgl::deactivateCurrentTarget();
 
-    outport_.setData(image_);
+    outport_.setData(image);
 }
 
 }  // namespace inviwo

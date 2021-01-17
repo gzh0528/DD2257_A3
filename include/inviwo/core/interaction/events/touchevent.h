@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2014-2019 Inviwo Foundation
+ * Copyright (c) 2014-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,15 +27,14 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_TOUCHEVENT_H
-#define IVW_TOUCHEVENT_H
+#pragma once
 
 #include <inviwo/core/common/inviwocoredefine.h>
-#include <inviwo/core/common/inviwo.h>
 #include <inviwo/core/interaction/events/interactionevent.h>
 #include <inviwo/core/interaction/events/touchstate.h>
 #include <inviwo/core/interaction/pickingstate.h>
 #include <inviwo/core/util/constexprhash.h>
+#include <inviwo/core/util/glmvec.h>
 
 namespace inviwo {
 
@@ -178,7 +177,8 @@ private:
 class IVW_CORE_API TouchEvent : public InteractionEvent {
 public:
     TouchEvent();
-    TouchEvent(const std::vector<TouchPoint>& touchPoints, const TouchDevice* source);
+    TouchEvent(const std::vector<TouchPoint>& touchPoints, const TouchDevice* source,
+               KeyModifiers modifiers);
 
     virtual TouchEvent* clone() const override;
     virtual ~TouchEvent() = default;
@@ -257,5 +257,3 @@ private:
 };
 
 }  // namespace inviwo
-
-#endif  // IVW_TOUCHEVENT_H

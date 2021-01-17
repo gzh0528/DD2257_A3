@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2012-2019 Inviwo Foundation
+ * Copyright (c) 2012-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,16 +27,13 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_PROCESSOR_H
-#define IVW_PROCESSOR_H
+#pragma once
 
 #include <inviwo/core/common/inviwocoredefine.h>
-#include <inviwo/core/common/inviwo.h>
 #include <inviwo/core/ports/inport.h>
 #include <inviwo/core/ports/outport.h>
 #include <inviwo/core/processors/processorobserver.h>
 #include <inviwo/core/interaction/events/eventpropagator.h>
-#include <inviwo/core/interaction/events/eventlistener.h>
 #include <inviwo/core/properties/propertyowner.h>
 #include <inviwo/core/processors/processorinfo.h>
 #include <inviwo/core/processors/processorstate.h>
@@ -48,8 +45,8 @@ namespace inviwo {
 class Event;
 class InteractionHandler;
 class ProcessorWidget;
-class ResizeEvent;
 class ProcessorNetwork;
+class NetworkVisitor;
 
 /**
  * \defgroup processors Processors
@@ -210,7 +207,7 @@ public:
     ProcessorWidget* getProcessorWidget() const;
     bool hasProcessorWidget() const;
 
-    void setNetwork(ProcessorNetwork* network);
+    virtual void setNetwork(ProcessorNetwork* network);
     ProcessorNetwork* getNetwork() const;
 
     /**
@@ -370,6 +367,24 @@ public:
     Inport* removePort(Inport* port);
     Outport* removePort(Outport* port);
 
+    /**
+     * Return true if ProcessorNetworkEvaluator should evaluate the connection during
+     * ProcessorNetwork traversal. An inactive connection will propagate invalidations and events
+     * but will not be processed. Useful if the Processor has states in which it does not use an
+     * inport.
+     * @param This processor's inport
+     * @param Another processor's outport
+     * @see InputSelector for an example
+     */
+    virtual bool isConnectionActive(Inport*, Outport*) const { return true; }
+
+    /**
+     * @brief Accept a NetworkVisitor, the visitor will visit this and then each Property of the
+     * Processor in an undefined order. The Visitor will then visit each Properties's properties and
+     * so on.
+     */
+    virtual void accept(NetworkVisitor& visitor);
+
 protected:
     std::unique_ptr<ProcessorWidget> processorWidget_;
     StateCoordinator<bool> isReady_;
@@ -432,5 +447,3 @@ T& Processor::addPort(T& port, const std::string& portGroup) {
 }
 
 }  // namespace inviwo
-
-#endif  // IVW_PROCESSOR_H

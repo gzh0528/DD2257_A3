@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2013-2019 Inviwo Foundation
+ * Copyright (c) 2013-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,15 +27,16 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_OUTPORT_H
-#define IVW_OUTPORT_H
+#pragma once
 
-#include <inviwo/core/common/inviwo.h>
 #include <inviwo/core/common/inviwocoredefine.h>
 #include <inviwo/core/ports/port.h>
 #include <inviwo/core/properties/invalidationlevel.h>
 #include <inviwo/core/util/statecoordinator.h>
 #include <inviwo/core/util/callback.h>
+
+#include <vector>
+#include <functional>
 
 namespace inviwo {
 
@@ -72,7 +73,7 @@ public:
     /**
      * Propagate events upwards, i.e. to the owning processor.
      */
-    virtual void propagateEvent(Event* event);
+    virtual void propagateEvent(Event* event, Inport* source);
 
     bool isConnectedTo(const Inport* port) const;
     const std::vector<Inport*>& getConnectedInports() const;
@@ -92,6 +93,16 @@ public:
      */
     virtual void setValid();
 
+    /**
+     * Query if the outport has any data
+     */
+    virtual bool hasData() const = 0;
+
+    /**
+     * Clear the outport of any data
+     */
+    virtual void clear() = 0;
+
 protected:
     Outport(std::string identifier = "");
 
@@ -108,5 +119,3 @@ protected:
 };
 
 }  // namespace inviwo
-
-#endif  // IVW_OUTPORT_H

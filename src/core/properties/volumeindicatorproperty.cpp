@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2013-2019 Inviwo Foundation
+ * Copyright (c) 2013-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -52,6 +52,7 @@ VolumeIndicatorProperty::VolumeIndicatorProperty(std::string identifier, std::st
     addProperty(plane3_);
 
     setCollapsed(true);
+    setCurrentStateAsDefault();
 }
 
 VolumeIndicatorProperty::VolumeIndicatorProperty(const VolumeIndicatorProperty& rhs)

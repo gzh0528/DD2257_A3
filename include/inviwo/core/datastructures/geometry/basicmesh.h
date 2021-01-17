@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2014-2019 Inviwo Foundation
+ * Copyright (c) 2014-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,7 +27,6 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_BASICMESH_H
-#define IVW_BASICMESH_H
+#pragma once
+
 #include <inviwo/core/datastructures/geometry/typedmesh.h>
-#endif  // IVW_BASICMESH_H

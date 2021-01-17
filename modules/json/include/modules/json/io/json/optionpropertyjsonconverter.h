@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2019 Inviwo Foundation
+ * Copyright (c) 2019-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -32,9 +32,9 @@
 #include <inviwo/core/properties/optionproperty.h>
 #include <nlohmann/json.hpp>
 
-using json = nlohmann::json;
-
 namespace inviwo {
+
+using json = nlohmann::json;
 
 /**
  * Converts an OptionPropertyOption to a JSON object.
@@ -101,8 +101,11 @@ void from_json(const json& j, OptionPropertyOption<T>& o) {
  */
 template <typename T>
 void to_json(json& j, const TemplateOptionProperty<T>& p) {
-    j = json{
-        {"value", p.get()}, {"selectedIndex", p.getSelectedIndex()}, {"options", p.getOptions()}};
+    if (!p.getOptions().empty()) {
+        j = json{{"value", p.get()},
+                 {"selectedIndex", p.getSelectedIndex()},
+                 {"options", p.getOptions()}};
+    }
 }
 
 /**

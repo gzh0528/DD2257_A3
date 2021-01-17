@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2019 Inviwo Foundation
+ * Copyright (c) 2019-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -52,7 +52,7 @@ std::string PCPDataFrameVisualizer::getName() const { return "Parallel Coordinat
 Document PCPDataFrameVisualizer::getDescription() const {
     Document doc;
     auto b = doc.append("html").append("body");
-    b.append("", "Construct Parallel Coordinates Plot from the given data frame");
+    b.append("", "Construct Parallel Coordinates Plot from the given DataFrame");
     return doc;
 }
 

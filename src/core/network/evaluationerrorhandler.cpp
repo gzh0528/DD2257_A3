@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2017-2019 Inviwo Foundation
+ * Copyright (c) 2017-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -39,6 +39,8 @@ void StandardEvaluationErrorHandler::operator()(Processor* processor, Evaluation
         switch (type) {
             case EvaluationType::InitResource:
                 return "InitializeResources";
+            case EvaluationType::PortOnChange:
+                return "PortOnChange";
             case EvaluationType::Process:
                 return "Process";
             case EvaluationType::NotReady:

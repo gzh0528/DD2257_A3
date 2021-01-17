@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2013-2019 Inviwo Foundation
+ * Copyright (c) 2013-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,6 +31,7 @@
 #include <inviwo/core/common/inviwoapplication.h>
 #include <inviwo/core/util/exception.h>
 #include <inviwo/core/util/stdextensions.h>
+#include <inviwo/core/util/threadutil.h>
 
 #include <warn/push>
 #include <warn/ignore/all>
@@ -43,12 +44,40 @@ namespace inviwo {
 TimerThread::TimerThread()
     : sort_(false)
     , stop_(false)
-    , thread_{std::make_unique<std::thread>([this]() { TimerLoop(); })} {}
+    , thread_{std::make_unique<std::thread>([this]() { TimerLoop(); })} {
+
+    util::setThreadDescription(*thread_, "Inviwo Timer Thread");
+}
 
 TimerThread::~TimerThread() {
     stop_ = true;
     condition_.notify_all();
     thread_->join();
+}
+
+std::optional<TimerThread::clock_t::time_point> TimerThread::lastDelay() {
+    std::scoped_lock lock(mutex_);
+
+    return std::accumulate(timers_.begin(), timers_.end(), std::optional<clock_t::time_point>{},
+                           [](std::optional<clock_t::time_point> a,
+                              TimerInfo &item) -> std::optional<clock_t::time_point> {
+                               std::optional<clock_t::time_point> b;
+                               if (auto cb = item.controlBlock_.lock()) {
+                                   if (!cb->repeating_) {
+                                       b = item.timePoint_;
+                                   }
+                               }
+
+                               if (a && b) {
+                                   return std::max(*a, *b);
+                               } else if (a) {
+                                   return a;
+                               } else if (b) {
+                                   return b;
+                               } else {
+                                   return std::nullopt;
+                               }
+                           });
 }
 
 void TimerThread::add(std::weak_ptr<ControlBlock> controlBlock) {
@@ -105,7 +134,7 @@ void TimerThread::TimerLoop() {
 
         if (callTimer) {
             if (auto cb = timers_.back().controlBlock_.lock()) {
-                if (cb->interval_ > Milliseconds(0)) {
+                if (cb->repeating_) {
                     timers_.back().timePoint_ += cb->interval_;
                     sort_ = true;
                 } else {
@@ -114,7 +143,7 @@ void TimerThread::TimerLoop() {
                 if (!cb->finished_.valid() ||
                     cb->finished_.wait_for(std::chrono::duration<int, std::milli>(0)) ==
                         std::future_status::ready) {
-                    cb->finished_ = dispatchFront([ctrlblk = timers_.back().controlBlock_]() {
+                    cb->finished_ = dispatchFront([ctrlblk = std::weak_ptr<ControlBlock>{cb}]() {
                         if (auto cb2 = ctrlblk.lock()) {
                             cb2->callback_();
                         }
@@ -125,10 +154,11 @@ void TimerThread::TimerLoop() {
             }
         }
     }
-}
+}  // namespace inviwo
 
-TimerThread::ControlBlock::ControlBlock(std::function<void()> callback, Milliseconds interval)
-    : callback_(std::move(callback)), interval_{interval} {}
+TimerThread::ControlBlock::ControlBlock(std::function<void()> callback, Milliseconds interval,
+                                        bool repeating)
+    : callback_(std::move(callback)), interval_{interval}, repeating_{repeating} {}
 
 TimerThread::TimerInfo::TimerInfo(clock_t::time_point tp, std::weak_ptr<ControlBlock> controlBlock)
     : timePoint_(tp), controlBlock_(std::move(controlBlock)) {}
@@ -138,11 +168,16 @@ Timer::Timer(Milliseconds interval, std::function<void()> callback, TimerThread 
 
 Timer::~Timer() { stop(); }
 
-void Timer::start(Milliseconds interval) {
+void Timer::start(Milliseconds interval, std::function<void()> callback) {
     interval_ = interval;
-    controlblock_ = std::make_shared<TimerThread::ControlBlock>(callback_, interval);
+    callback_ = callback;
+    controlblock_ = std::make_shared<TimerThread::ControlBlock>(callback, interval, true);
     thread_.add(controlblock_);
 }
+void Timer::start(Milliseconds interval) { start(interval, callback_); }
+
+void Timer::start(std::function<void()> callback) { start(interval_, callback); }
+void Timer::start() { start(interval_, callback_); }
 
 void Timer::setInterval(Milliseconds interval) {
     if (controlblock_) {
@@ -159,7 +194,8 @@ void Timer::setCallback(std::function<void()> callback) {
     }
 }
 
-void Timer::start() { start(interval_); }
+std::function<void()> Timer::getCallback() const { return callback_; }
+
 Timer::Milliseconds Timer::getInterval() const {
     if (controlblock_) {
         return controlblock_->interval_;
@@ -172,17 +208,26 @@ bool Timer::isRunning() const { return controlblock_ != nullptr; }
 
 void Timer::stop() { controlblock_.reset(); }
 
-Delay::Delay(Milliseconds interval, std::function<void()> callback, TimerThread &thread)
-    : callback_{std::move(callback)}, interval_{interval}, thread_{thread} {}
+Delay::Delay(Milliseconds defaultDelay, std::function<void()> callback, TimerThread &thread)
+    : defaultCallback_{std::move(callback)}, defaultDelay_{defaultDelay}, thread_{thread} {}
 
 Delay::~Delay() { cancel(); }
 
-void Delay::start() {
-    controlblock_ = std::make_shared<TimerThread::ControlBlock>(callback_, interval_);
+void Delay::start(Milliseconds delay, std::function<void()> callback) {
+    controlblock_ = std::make_shared<TimerThread::ControlBlock>(callback, delay, false);
     thread_.add(controlblock_);
 }
+void Delay::start(Milliseconds delay) { start(delay, defaultCallback_); }
+void Delay::start(std::function<void()> callback) { start(defaultDelay_, callback); }
+void Delay::start() { start(defaultDelay_, defaultCallback_); }
 
 void Delay::cancel() { controlblock_.reset(); }
+
+void Delay::setDefaultDelay(Milliseconds delay) { defaultDelay_ = delay; }
+auto Delay::getDefaultDelay() const -> Milliseconds { return defaultDelay_; }
+
+void Delay::setDefaultCallback(std::function<void()> callback) { defaultCallback_ = callback; }
+std::function<void()> Delay::getDefaultCallback() const { return defaultCallback_; }
 
 namespace util {
 

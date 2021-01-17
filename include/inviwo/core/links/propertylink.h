@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2013-2019 Inviwo Foundation
+ * Copyright (c) 2013-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,11 +27,11 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_PROPERYLINK_H
-#define IVW_PROPERYLINK_H
+#pragma once
 
-#include <inviwo/core/common/inviwo.h>
 #include <inviwo/core/common/inviwocoredefine.h>
+#include <inviwo/core/io/serialization/serialization.h>
+#include <inviwo/core/util/hashcombine.h>
 
 namespace inviwo {
 
@@ -60,16 +60,13 @@ public:
     virtual void deserialize(Deserializer& d);
 
     friend bool IVW_CORE_API operator==(const PropertyLink& lhs, const PropertyLink& rhs);
+    friend bool IVW_CORE_API operator!=(const PropertyLink& lhs, const PropertyLink& rhs);
     friend bool IVW_CORE_API operator<(const PropertyLink& lhs, const PropertyLink& rhs);
 
 private:
     Property* src_;
     Property* dst_;
 };
-
-bool IVW_CORE_API operator==(const PropertyLink& lhs, const PropertyLink& rhs);
-bool IVW_CORE_API operator!=(const PropertyLink& lhs, const PropertyLink& rhs);
-bool IVW_CORE_API operator<(const PropertyLink& lhs, const PropertyLink& rhs);
 
 }  // namespace inviwo
 
@@ -86,5 +83,3 @@ struct hash<inviwo::PropertyLink> {
 };
 
 }  // namespace std
-
-#endif  // IVW_PROPERYLINK_H

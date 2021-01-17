@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2018-2019 Inviwo Foundation
+ * Copyright (c) 2018-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,8 +27,7 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_DEFAULTVALUES_H
-#define IVW_DEFAULTVALUES_H
+#pragma once
 
 #include <inviwo/core/common/inviwocoredefine.h>
 #include <inviwo/core/util/glm.h>
@@ -49,6 +48,16 @@ struct InviwoDefaultData {
 
 template <typename T>
 struct InviwoDefaults {};
+
+template <>
+struct InviwoDefaults<char> {
+    static InviwoDefaultData<char> get() { return {"Char", uvec2(1, 1), 0, -100, 100, 1}; }
+};
+
+template <>
+struct InviwoDefaults<unsigned char> {
+    static InviwoDefaultData<unsigned char> get() { return {"UChar", uvec2(1, 1), 0, 0, 100, 1}; }
+};
 
 template <>
 struct InviwoDefaults<int> {
@@ -163,5 +172,3 @@ public:
 };
 
 }  // namespace inviwo
-
-#endif  // IVW_DEFAULTVALUES_H

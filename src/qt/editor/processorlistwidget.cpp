@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2012-2019 Inviwo Foundation
+ * Copyright (c) 2012-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -156,9 +156,25 @@ ProcessorTreeWidget::ProcessorTreeWidget(InviwoMainWindow* parent, HelpWidget* h
     vLayout->setContentsMargins(space, space, space, space);
     lineEdit_ = new QLineEdit(centralWidget);
     lineEdit_->setPlaceholderText("Filter processor list...");
-    lineEdit_->setClearButtonEnabled(true);
+    QIcon clearIcon;
+    clearIcon.addFile(":/svgicons/lineedit-clear.svg", utilqt::emToPx(this, QSizeF(0.3, 0.3)),
+                      QIcon::Normal);
+    clearIcon.addFile(":/svgicons/lineedit-clear-active.svg",
+                      utilqt::emToPx(this, QSizeF(0.3, 0.3)), QIcon::Active);
+    clearIcon.addFile(":/svgicons/lineedit-clear-active.svg",
+                      utilqt::emToPx(this, QSizeF(0.3, 0.3)), QIcon::Selected);
+    auto clearAction = lineEdit_->addAction(clearIcon, QLineEdit::TrailingPosition);
+    clearAction->setVisible(false);
+    connect(clearAction, &QAction::triggered, lineEdit_, &QLineEdit::clear);
+    connect(lineEdit_, &QLineEdit::textChanged, this, [this, clearAction](const QString& str) {
+        addProcessorsToTree();
+        clearAction->setVisible(!str.isEmpty());
 
-    connect(lineEdit_, &QLineEdit::textChanged, this, [this]() { addProcessorsToTree(); });
+        QSettings settings;
+        settings.beginGroup(objectName());
+        settings.setValue("filterText", QVariant(lineEdit_->text()));
+        settings.endGroup();
+    });
     vLayout->addWidget(lineEdit_);
     QHBoxLayout* listViewLayout = new QHBoxLayout();
     listViewLayout->addWidget(new QLabel("Group by", centralWidget));
@@ -171,7 +187,14 @@ ProcessorTreeWidget::ProcessorTreeWidget(InviwoMainWindow* parent, HelpWidget* h
     listView_->addItem("Most Used", QVariant::fromValue(Grouping::MostUsed));
     listView_->setCurrentIndex(1);
     connect(listView_, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged), this,
-            [this]() { addProcessorsToTree(); });
+            [this]() {
+                addProcessorsToTree();
+
+                QSettings settings;
+                settings.beginGroup(objectName());
+                settings.setValue("currentView", QVariant(listView_->currentIndex()));
+                settings.endGroup();
+            });
     listView_->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Preferred);
     listViewLayout->addWidget(listView_);
     vLayout->addLayout(listViewLayout);

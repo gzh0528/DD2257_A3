@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2015-2019 Inviwo Foundation
+ * Copyright (c) 2015-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,14 +27,14 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_PROCESSORINFO_H
-#define IVW_PROCESSORINFO_H
+#pragma once
 
 #include <inviwo/core/common/inviwocoredefine.h>
-#include <inviwo/core/common/inviwo.h>
 #include <inviwo/core/processors/processorstate.h>
 #include <inviwo/core/processors/processortags.h>
 
+#include <tuple>
+#include <string>
 #include <utility>
 
 namespace inviwo {
@@ -54,15 +54,16 @@ public:
     const CodeState codeState;
     const Tags tags;     ///< Searchable tags, platform tags are shown in ProcessorTreeWidget
     const bool visible;  ///< Show in processor list (ProcessorTreeWidget), enabling drag&drop
+
+    friend inline bool operator==(const ProcessorInfo& a, const ProcessorInfo& b) {
+        return std::tie(a.classIdentifier, a.displayName, a.category, a.codeState, a.tags,
+                        a.visible) == std::tie(b.classIdentifier, b.displayName, b.category,
+                                               b.codeState, b.tags, b.visible);
+    }
+
+    friend inline bool operator!=(const ProcessorInfo& a, const ProcessorInfo& b) {
+        return !(a == b);
+    }
 };
 
-inline bool operator==(const ProcessorInfo& a, const ProcessorInfo& b) {
-    return std::tie(a.classIdentifier, a.displayName, a.category, a.codeState, a.tags, a.visible) ==
-           std::tie(b.classIdentifier, b.displayName, b.category, b.codeState, b.tags, b.visible);
-}
-
-inline bool operator!=(const ProcessorInfo& a, const ProcessorInfo& b) { return !(a == b); }
-
 }  // namespace inviwo
-
-#endif  // IVW_PROCESSORINFO_H

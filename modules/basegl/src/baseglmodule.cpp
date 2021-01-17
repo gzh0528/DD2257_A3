@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2013-2019 Inviwo Foundation
+ * Copyright (c) 2013-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -34,6 +34,7 @@
 #include <modules/basegl/processors/cuberenderer.h>
 #include <modules/basegl/processors/drawlines.h>
 #include <modules/basegl/processors/drawpoints.h>
+#include <modules/basegl/processors/embeddedvolumeslice.h>
 #include <modules/basegl/processors/entryexitpointsprocessor.h>
 #include <modules/basegl/processors/firstivwprocessor.h>
 #include <modules/basegl/processors/geometryentryexitpoints.h>
@@ -58,11 +59,12 @@
 #include <modules/basegl/processors/imageprocessing/imageoverlaygl.h>
 #include <modules/basegl/processors/imageprocessing/imageresample.h>
 #include <modules/basegl/processors/imageprocessing/imagescaling.h>
+#include <modules/basegl/processors/imageprocessing/imagesubsetgl.h>
 #include <modules/basegl/processors/imageprocessing/jacobian2d.h>
 #include <modules/basegl/processors/isoraycaster.h>
 #include <modules/basegl/processors/lightingraycaster.h>
 #include <modules/basegl/processors/lightvolumegl.h>
-#include <modules/basegl/processors/linerenderer.h>
+#include <modules/basegl/processors/linerendererprocessor.h>
 #include <modules/basegl/processors/mesh2drenderprocessorgl.h>
 #include <modules/basegl/processors/meshpicking.h>
 #include <modules/basegl/processors/meshrenderprocessorgl.h>
@@ -84,9 +86,12 @@
 #include <modules/basegl/processors/volumeraycaster.h>
 #include <modules/basegl/processors/volumeslicegl.h>
 #include <modules/basegl/processors/volumeprocessing/volumeshader.h>
+#include <modules/basegl/properties/linesettingsproperty.h>
+#include <modules/basegl/properties/stipplingproperty.h>
 #include <modules/basegl/datavisualizer/volumeraycastvisualizer.h>
 #include <modules/basegl/datavisualizer/volumeslicevisualizer.h>
 #include <modules/basegl/datavisualizer/imagevisualizer.h>
+#include <modules/basegl/datavisualizer/imagebackgroundvisualizer.h>
 #include <modules/basegl/datavisualizer/meshvisualizer.h>
 
 #include <modules/opengl/shader/shadermanager.h>
@@ -100,11 +105,15 @@ BaseGLModule::BaseGLModule(InviwoApplication* app) : InviwoModule(app, "BaseGL")
 
     basegl::addShaderResources(ShaderManager::getPtr(), {getPath(ModulePath::GLSL)});
 
+    registerProperty<LineSettingsProperty>();
+    registerProperty<StipplingProperty>();
+
     registerProcessor<AxisAlignedCutPlane>();
     registerProcessor<Background>();
     registerProcessor<CubeRenderer>();
     registerProcessor<DrawLines>();
     registerProcessor<DrawPoints>();
+    registerProcessor<EmbeddedVolumeSlice>();
     registerProcessor<EntryExitPoints>();
     registerProcessor<FirstIvwProcessor>();
     registerProcessor<GeometryEntryExitPoints>();
@@ -117,7 +126,7 @@ BaseGLModule::BaseGLModule(InviwoApplication* app) : InviwoModule(app, "BaseGL")
     registerProcessor<Jacobian2D>();
     registerProcessor<LightingRaycaster>();
     registerProcessor<LightVolumeGL>();
-    registerProcessor<LineRenderer>();
+    registerProcessor<LineRendererProcessor>();
     registerProcessor<Mesh2DRenderProcessorGL>();
     registerProcessor<MeshPicking>();
     registerProcessor<MeshRenderProcessorGL>();
@@ -145,6 +154,7 @@ BaseGLModule::BaseGLModule(InviwoApplication* app) : InviwoModule(app, "BaseGL")
     registerProcessor<ImageNormalizationProcessor>();
     registerProcessor<ImageResample>();
     registerProcessor<ImageScaling>();
+    registerProcessor<ImageSubsetGL>();
     registerProcessor<SplitImage>();
 
     // volume processing
@@ -162,6 +172,7 @@ BaseGLModule::BaseGLModule(InviwoApplication* app) : InviwoModule(app, "BaseGL")
     registerDataVisualizer(std::make_unique<VolumeRaycastVisualizer>(app));
     registerDataVisualizer(std::make_unique<VolumeSliceVisualizer>(app));
     registerDataVisualizer(std::make_unique<ImageVisualizer>(app));
+    registerDataVisualizer(std::make_unique<ImageBackgroundVisualizer>(app));
     registerDataVisualizer(std::make_unique<MeshVisualizer>(app));
 }
 

@@ -9,7 +9,12 @@ set(HEADER_FILES
     include/modules/basegl/algorithm/imageconvolution.h
     include/modules/basegl/baseglmodule.h
     include/modules/basegl/baseglmoduledefine.h
+    include/modules/basegl/datastructures/linesettings.h
+    include/modules/basegl/datastructures/linesettingsinterface.h
     include/modules/basegl/datastructures/meshshadercache.h
+    include/modules/basegl/datastructures/stipplingsettings.h
+    include/modules/basegl/datastructures/stipplingsettingsinterface.h
+    include/modules/basegl/datavisualizer/imagebackgroundvisualizer.h
     include/modules/basegl/datavisualizer/imagevisualizer.h
     include/modules/basegl/datavisualizer/meshvisualizer.h
     include/modules/basegl/datavisualizer/volumeraycastvisualizer.h
@@ -19,6 +24,7 @@ set(HEADER_FILES
     include/modules/basegl/processors/cuberenderer.h
     include/modules/basegl/processors/drawlines.h
     include/modules/basegl/processors/drawpoints.h
+    include/modules/basegl/processors/embeddedvolumeslice.h
     include/modules/basegl/processors/entryexitpointsprocessor.h
     include/modules/basegl/processors/firstivwprocessor.h
     include/modules/basegl/processors/geometryentryexitpoints.h
@@ -43,11 +49,12 @@ set(HEADER_FILES
     include/modules/basegl/processors/imageprocessing/imageoverlaygl.h
     include/modules/basegl/processors/imageprocessing/imageresample.h
     include/modules/basegl/processors/imageprocessing/imagescaling.h
+    include/modules/basegl/processors/imageprocessing/imagesubsetgl.h
     include/modules/basegl/processors/imageprocessing/jacobian2d.h
     include/modules/basegl/processors/isoraycaster.h
     include/modules/basegl/processors/lightingraycaster.h
     include/modules/basegl/processors/lightvolumegl.h
-    include/modules/basegl/processors/linerenderer.h
+    include/modules/basegl/processors/linerendererprocessor.h
     include/modules/basegl/processors/mesh2drenderprocessorgl.h
     include/modules/basegl/processors/meshpicking.h
     include/modules/basegl/processors/meshrenderprocessorgl.h
@@ -70,6 +77,9 @@ set(HEADER_FILES
     include/modules/basegl/processors/volumeprocessing/volumeshader.h
     include/modules/basegl/processors/volumeraycaster.h
     include/modules/basegl/processors/volumeslicegl.h
+    include/modules/basegl/properties/linesettingsproperty.h
+    include/modules/basegl/properties/stipplingproperty.h
+    include/modules/basegl/rendering/linerenderer.h
     include/modules/basegl/viewmanager.h
 )
 ivw_group("Header Files" ${HEADER_FILES})
@@ -80,7 +90,12 @@ set(SOURCE_FILES
     src/algorithm/entryexitpoints.cpp
     src/algorithm/imageconvolution.cpp
     src/baseglmodule.cpp
+    src/datastructures/linesettings.cpp
+    src/datastructures/linesettingsinterface.cpp
     src/datastructures/meshshadercache.cpp
+    src/datastructures/stipplingsettings.cpp
+    src/datastructures/stipplingsettingsinterface.cpp
+    src/datavisualizer/imagebackgroundvisualizer.cpp
     src/datavisualizer/imagevisualizer.cpp
     src/datavisualizer/meshvisualizer.cpp
     src/datavisualizer/volumeraycastvisualizer.cpp
@@ -90,6 +105,7 @@ set(SOURCE_FILES
     src/processors/cuberenderer.cpp
     src/processors/drawlines.cpp
     src/processors/drawpoints.cpp
+    src/processors/embeddedvolumeslice.cpp
     src/processors/entryexitpointsprocessor.cpp
     src/processors/firstivwprocessor.cpp
     src/processors/geometryentryexitpoints.cpp
@@ -114,11 +130,12 @@ set(SOURCE_FILES
     src/processors/imageprocessing/imageoverlaygl.cpp
     src/processors/imageprocessing/imageresample.cpp
     src/processors/imageprocessing/imagescaling.cpp
+    src/processors/imageprocessing/imagesubsetgl.cpp
     src/processors/imageprocessing/jacobian2d.cpp
     src/processors/isoraycaster.cpp
     src/processors/lightingraycaster.cpp
     src/processors/lightvolumegl.cpp
-    src/processors/linerenderer.cpp
+    src/processors/linerendererprocessor.cpp
     src/processors/mesh2drenderprocessorgl.cpp
     src/processors/meshpicking.cpp
     src/processors/meshrenderprocessorgl.cpp
@@ -141,6 +158,9 @@ set(SOURCE_FILES
     src/processors/volumeprocessing/volumeshader.cpp
     src/processors/volumeraycaster.cpp
     src/processors/volumeslicegl.cpp
+    src/properties/linesettingsproperty.cpp
+    src/properties/stipplingproperty.cpp
+    src/rendering/linerenderer.cpp
     src/viewmanager.cpp
 )
 ivw_group("Source Files" ${SOURCE_FILES})
@@ -148,6 +168,8 @@ ivw_group("Source Files" ${SOURCE_FILES})
 #--------------------------------------------------------------------
 # Add shaders
 set(SHADER_FILES
+    glsl/embeddedvolumeslice.frag
+    glsl/embeddedvolumeslice.vert
     glsl/axisalignedcutplaneboundingbox.frag
     glsl/axisalignedcutplaneslice.frag
     glsl/background.frag

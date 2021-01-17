@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2017-2019 Inviwo Foundation
+ * Copyright (c) 2017-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -89,7 +89,8 @@ private:
 
     PickingMapper spherePicking_;
 
-    std::shared_ptr<BufferRAMPrecision<vec3>> positionBuffer_;
+    std::shared_ptr<Buffer<vec3>> positions_;
+    std::shared_ptr<Buffer<float>> radii_;
 
     mutable std::mt19937 rand_;
     mutable std::uniform_real_distribution<float> dis_;

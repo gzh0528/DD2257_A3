@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2015-2019 Inviwo Foundation
+ * Copyright (c) 2015-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,10 +27,10 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_TINYDIR_INTERFACE_H
-#define IVW_TINYDIR_INTERFACE_H
+#pragma once
 
 #include <inviwo/core/common/inviwocoredefine.h>
+
 #include <functional>
 #include <string>
 #include <vector>
@@ -52,11 +52,17 @@ public:
         FilesAndDirectories,
     };
 
-    TinyDirInterface();
+    TinyDirInterface(ListMode mode = ListMode::FilesOnly);
+    /**
+     * @brief Opens the given path as directory resource.
+     * @param path Path of the directory whose contents will be queried.
+     * @throws FileException if opening the directory resource is unsuccessful.
+     */
+    TinyDirInterface(const std::string& path, ListMode mode = ListMode::FilesOnly);
     TinyDirInterface(TinyDirInterface const&) = delete;
     TinyDirInterface& operator=(TinyDirInterface const&) = delete;
 
-    virtual ~TinyDirInterface();
+    ~TinyDirInterface();
 
     /**
      * \brief Opens the given path as directory resource.
@@ -64,9 +70,9 @@ public:
      * \see close isOpen
      *
      * @param path Path of the directory whose contents will be queried.
-     * @return True if opening the directory resource is successful.
+     * @throws FileException if opening the directory resource is unsuccessful.
      */
-    bool open(const std::string& path);
+    void open(const std::string& path);
     /**
      * \brief Closes any open directory resource. Directory contents can
      * no longer be listed. The resource will automatically be closed on
@@ -157,12 +163,8 @@ protected:
     std::string getNextEntry(bool includeBasePath);
 
 private:
-    bool isOpen_;
     ListMode mode_;
-    std::string path_;
     std::unique_ptr<tinydir_dir_hack> resource_;
 };
 
 }  // namespace inviwo
-
-#endif  // IVW_TINYDIR_INTERFACE_H

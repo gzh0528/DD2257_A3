@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2016-2019 Inviwo Foundation
+ * Copyright (c) 2016-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,6 +30,9 @@
 #include <modules/plottinggl/processors/scatterplotprocessor.h>
 #include <inviwo/core/util/zip.h>
 #include <modules/opengl/openglutils.h>
+#include <inviwo/core/interaction/events/pickingevent.h>
+
+#include <inviwo/dataframe/util/dataframeutil.h>
 
 namespace inviwo {
 
@@ -66,6 +69,41 @@ ScatterPlotProcessor::ScatterPlotProcessor()
     brushingPort_.setOptional(true);
     backgroundPort_.setOptional(true);
 
+    tooltipCallBack_ = scatterPlot_.addToolTipCallback([this](PickingEvent* p, size_t rowId) {
+        if (!p) return;
+        if (auto dataframe = dataFramePort_.getData()) {
+            p->setToolTip(dataframe::createToolTipForRow(*dataFramePort_.getData(), rowId));
+        }
+    });
+    selectionChangedCallBack_ =
+        scatterPlot_.addSelectionChangedCallback([this](const std::vector<bool>& selected) {
+            if (brushingPort_.isConnected()) {
+                std::unordered_set<size_t> selectedIndices;
+                auto iCol = dataFramePort_.getData()->getIndexColumn();
+                auto& indexCol = iCol->getTypedBuffer()->getRAMRepresentation()->getDataContainer();
+                for (size_t i = 0; i < selected.size(); ++i) {
+                    if (selected[i]) selectedIndices.insert(indexCol[i]);
+                }
+                brushingPort_.sendSelectionEvent(selectedIndices);
+            } else {
+                invalidate(InvalidationLevel::InvalidOutput);
+            }
+        });
+    filteringChangedCallBack_ =
+        scatterPlot_.addFilteringChangedCallback([this](const std::vector<bool>& filtered) {
+            if (brushingPort_.isConnected()) {
+                std::unordered_set<size_t> filteredIndices;
+                auto iCol = dataFramePort_.getData()->getIndexColumn();
+                auto& indexCol = iCol->getTypedBuffer()->getRAMRepresentation()->getDataContainer();
+                for (size_t i = 0; i < filtered.size(); ++i) {
+                    if (filtered[i]) filteredIndices.insert(indexCol[i]);
+                }
+                brushingPort_.sendFilterEvent(filteredIndices);
+            } else {
+                invalidate(InvalidationLevel::InvalidOutput);
+            }
+        });
+    addInteractionHandler(&scatterPlot_);
     scatterPlot_.properties_.margins_.setLowerLeftMargin({50.0f, 40.0f});
     scatterPlot_.properties_.xAxis_.captionSettings_.setChecked(true);
     scatterPlot_.properties_.xAxis_.captionSettings_.offset_.set(20.0f);
@@ -100,20 +138,23 @@ void ScatterPlotProcessor::process() {
     auto dataframe = dataFramePort_.getData();
 
     if (brushingPort_.isConnected()) {
+        if (brushingPort_.isChanged()) {
+            scatterPlot_.setSelectedIndices(brushingPort_.getSelectedIndices());
+        }
 
         auto dfSize = dataframe->getNumberOfRows();
 
         auto iCol = dataframe->getIndexColumn();
-        auto &indexCol = iCol->getTypedBuffer()->getRAMRepresentation()->getDataContainer();
+        auto& indexCol = iCol->getTypedBuffer()->getRAMRepresentation()->getDataContainer();
 
         auto brushedIndicies = brushingPort_.getFilteredIndices();
         IndexBuffer indicies;
-        auto &vec = indicies.getEditableRAMRepresentation()->getDataContainer();
+        auto& vec = indicies.getEditableRAMRepresentation()->getDataContainer();
         vec.reserve(dfSize - brushedIndicies.size());
 
         auto seq = util::sequence<uint32_t>(0, static_cast<uint32_t>(dfSize), 1);
         std::copy_if(seq.begin(), seq.end(), std::back_inserter(vec),
-                     [&](const auto &id) { return !brushingPort_.isFiltered(indexCol[id]); });
+                     [&](const auto& id) { return !brushingPort_.isFiltered(indexCol[id]); });
 
         if (backgroundPort_.hasData()) {
             scatterPlot_.plot(*outport_.getEditableData(), *backgroundPort_.getData(), &indicies,

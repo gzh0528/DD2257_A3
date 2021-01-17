@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2012-2019 Inviwo Foundation
+ * Copyright (c) 2012-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,9 +27,9 @@
  *
  *********************************************************************************/
 
+#include <modules/opengl/image/imagegl.h>
 #include <inviwo/core/util/formats.h>
 #include <inviwo/core/datastructures/image/image.h>
-#include <modules/opengl/image/imagegl.h>
 #include <modules/opengl/texture/textureunit.h>
 #include <modules/opengl/texture/textureutils.h>
 #include <modules/opengl/canvasgl.h>
@@ -38,16 +38,29 @@
 
 namespace inviwo {
 
-ImageGL::ImageGL() : ImageRepresentation(), frameBufferObject_(), colorLayerCopyCount_(0) {}
+ImageGL::ImageGL()
+    : ImageRepresentation{}
+    , colorLayersGL_{}
+    , depthLayerGL_{nullptr}
+    , pickingLayerGL_{nullptr}
+    , frameBufferObject_{}
+    , pickingAttachmentID_{0}
+    , colorLayerCopyCount_{0}
+    , prevDepthTest_{false}
+    , prevDepthMask_{false} {}
 
 ImageGL::ImageGL(const ImageGL& rhs)
-    : ImageRepresentation(rhs), frameBufferObject_(), colorLayerCopyCount_(0) {}
+    : ImageRepresentation(rhs)
+    , colorLayersGL_{}
+    , depthLayerGL_{nullptr}
+    , pickingLayerGL_{nullptr}
+    , frameBufferObject_{}
+    , pickingAttachmentID_{0}
+    , colorLayerCopyCount_{0}
+    , prevDepthTest_{false}
+    , prevDepthMask_{false} {}
 
-ImageGL::~ImageGL() {
-    LGL_ERROR;
-    frameBufferObject_.deactivate();
-    LGL_ERROR;
-}
+ImageGL::~ImageGL() = default;
 
 ImageGL* ImageGL::clone() const { return new ImageGL(*this); }
 
@@ -82,18 +95,18 @@ void ImageGL::reAttachAllLayers(ImageType type) {
 void ImageGL::activateBuffer(ImageType type) {
     frameBufferObject_.activate();
 
-    std::vector<GLenum> drawBuffers{frameBufferObject_.getDrawBuffers()};
-    if (!drawBuffers.empty()) {
-        GLsizei numBuffersToDrawTo = static_cast<GLsizei>(drawBuffers.size());
+    drawBuffers_ = frameBufferObject_.getDrawBuffers();
+    if (!drawBuffers_.empty()) {
+        GLsizei numBuffersToDrawTo = static_cast<GLsizei>(drawBuffers_.size());
 
         // remove second render target (location = 1) when picking is disabled
         if (!typeContainsPicking(type) && (numBuffersToDrawTo > 1) &&
-            (drawBuffers[1] == GL_COLOR_ATTACHMENT7)) {
-            drawBuffers.erase(drawBuffers.begin() + 1);
+            (drawBuffers_[1] == GL_COLOR_ATTACHMENT7)) {
+            drawBuffers_.erase(drawBuffers_.begin() + 1);
             --numBuffersToDrawTo;
         }
 
-        glDrawBuffers(numBuffersToDrawTo, drawBuffers.data());
+        glDrawBuffers(numBuffersToDrawTo, drawBuffers_.data());
         LGL_ERROR;
     }
 
@@ -222,8 +235,8 @@ bool ImageGL::updateFrom(const ImageGL* source) {
     // Primarily Copy by FBO blitting, all from source FBO to target FBO
     const FrameBufferObject* srcFBO = source->getFBO();
     FrameBufferObject* tgtFBO = target->getFBO();
-    const Texture2D* sTex = source->getColorLayerGL()->getTexture().get();
-    Texture2D* tTex = target->getColorLayerGL()->getTexture().get();
+    const Texture2D& sTex = *source->getColorLayerGL()->getTexture();
+    Texture2D& tTex = *target->getColorLayerGL()->getTexture();
 
     const std::vector<bool>& srcBuffers = srcFBO->getDrawBuffersInUse();
     const std::vector<bool>& targetBuffers = tgtFBO->getDrawBuffersInUse();
@@ -236,10 +249,10 @@ bool ImageGL::updateFrom(const ImageGL* source) {
     if (srcFBO->hasStencilAttachment() && tgtFBO->hasStencilAttachment())
         mask |= GL_STENCIL_BUFFER_BIT;
 
-    glBlitFramebufferEXT(0, 0, static_cast<GLint>(sTex->getWidth()),
-                         static_cast<GLint>(sTex->getHeight()), 0, 0,
-                         static_cast<GLint>(tTex->getWidth()),
-                         static_cast<GLint>(tTex->getHeight()), mask, GL_NEAREST);
+    glBlitFramebufferEXT(0, 0, static_cast<GLint>(sTex.getWidth()),
+                         static_cast<GLint>(sTex.getHeight()), 0, 0,
+                         static_cast<GLint>(tTex.getWidth()), static_cast<GLint>(tTex.getHeight()),
+                         mask, GL_NEAREST);
     bool pickingCopied = false;
 
     for (int i = 1; i < srcFBO->getMaxColorAttachments(); i++) {
@@ -247,8 +260,8 @@ bool ImageGL::updateFrom(const ImageGL* source) {
             glReadBuffer(GL_COLOR_ATTACHMENT0_EXT + i);
             glDrawBuffer(GL_COLOR_ATTACHMENT0_EXT + i);
             glBlitFramebufferEXT(
-                0, 0, static_cast<GLint>(sTex->getWidth()), static_cast<GLint>(sTex->getHeight()),
-                0, 0, static_cast<GLint>(tTex->getWidth()), static_cast<GLint>(tTex->getHeight()),
+                0, 0, static_cast<GLint>(sTex.getWidth()), static_cast<GLint>(sTex.getHeight()), 0,
+                0, static_cast<GLint>(tTex.getWidth()), static_cast<GLint>(tTex.getHeight()),
                 GL_COLOR_BUFFER_BIT, GL_NEAREST);
 
             if (GL_COLOR_ATTACHMENT0_EXT + i == static_cast<int>(pickingAttachmentID_))
@@ -267,20 +280,20 @@ bool ImageGL::updateFrom(const ImageGL* source) {
 
     // Depth texture
     if ((mask & GL_DEPTH_BUFFER_BIT) == 0) {
-        sTex = source->getDepthLayerGL()->getTexture().get();
-        tTex = target->getDepthLayerGL()->getTexture().get();
+        auto* sDepth = source->getDepthLayerGL()->getTexture().get();
+        auto* tDepth = target->getDepthLayerGL()->getTexture().get();
 
-        if (sTex && tTex) tTex->loadFromPBO(sTex);
+        if (sDepth && tDepth) tDepth->loadFromPBO(sDepth);
     }
 
     LGL_ERROR;
 
     // Picking texture
     if (!pickingCopied && pickingAttachmentID_ != 0) {
-        sTex = source->getPickingLayerGL()->getTexture().get();
-        tTex = target->getPickingLayerGL()->getTexture().get();
+        auto* sPicking = source->getPickingLayerGL()->getTexture().get();
+        auto* tPicking = target->getPickingLayerGL()->getTexture().get();
 
-        if (sTex && tTex) tTex->loadFromPBO(sTex);
+        if (sPicking && tPicking) tPicking->loadFromPBO(sPicking);
     }
 
     LGL_ERROR;

@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2014-2019 Inviwo Foundation
+ * Copyright (c) 2014-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -372,7 +372,7 @@ HDF5ToVolume::DimSelection::DimSelection(std::string identifier, std::string dis
 
 void HDF5ToVolume::DimSelection::update(int newMax) {
     range.setRangeMax(newMax);
-    range.get().y = newMax;
+    range.setEnd(newMax);
     stride.set(std::min(stride.get(), newMax));
     stride.setMaxValue(std::max(10, newMax));
 }

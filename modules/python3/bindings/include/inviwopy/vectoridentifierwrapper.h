@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2018-2019 Inviwo Foundation
+ * Copyright (c) 2018-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,8 +27,7 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_VECTORIDENTIFIERWRAPPER_H
-#define IVW_VECTORIDENTIFIERWRAPPER_H
+#pragma once
 
 #include <inviwo/core/common/inviwo.h>
 
@@ -104,5 +103,3 @@ void exposeVectorIdentifierWrapper(pybind11::module& m, const std::string& name)
 }
 
 }  // namespace inviwo
-
-#endif  // IVW_VECTORIDENTIFIERWRAPPER_H

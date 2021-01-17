@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2014-2019 Inviwo Foundation
+ * Copyright (c) 2014-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -26,8 +26,8 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  *********************************************************************************/
-#ifndef IVW_RUNTIMEMODLEREGISTRTION_H
-#define IVW_RUNTIMEMODLEREGISTRTION_H
+
+#pragma once
 
 #include <inviwo/core/common/inviwocoredefine.h>
 
@@ -39,5 +39,3 @@ namespace inviwo {
 struct IVW_CORE_API RuntimeModuleLoading {};
 
 }  // namespace inviwo
-
-#endif  // IVW_RUNTIMEMODLEREGISTRTION_H

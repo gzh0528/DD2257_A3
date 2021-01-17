@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2012-2019 Inviwo Foundation
+ * Copyright (c) 2012-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -58,6 +58,12 @@ void BoolCompositePropertyWidgetQt::initState() {
         addProperty(prop);
     }
     updateFromProperty();
+}
+
+void BoolCompositePropertyWidgetQt::updateFromProperty() {
+    CollapsibleGroupBoxWidgetQt::updateFromProperty();
+    CollapsibleGroupBoxWidgetQt::setCollapsed(boolCompProperty_->isCollapsed());
+    CollapsibleGroupBoxWidgetQt::setChecked(boolCompProperty_->getBoolProperty()->get());
 }
 
 void BoolCompositePropertyWidgetQt::onSetDisplayName(Property*, const std::string& displayName) {

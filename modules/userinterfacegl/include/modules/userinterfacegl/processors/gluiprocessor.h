@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2019 Inviwo Foundation
+ * Copyright (c) 2019-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -87,7 +87,7 @@ class Element;
 class IVW_MODULE_USERINTERFACEGL_API GLUIProcessor : public Processor,
                                                      public PropertyOwnerObserver {
 public:
-    GLUIProcessor(InviwoApplication* app = InviwoApplication::getPtr());
+    GLUIProcessor(InviwoApplication* app);
     virtual ~GLUIProcessor() = default;
 
     virtual void process() override;
@@ -125,12 +125,12 @@ private:
     IntProperty layoutSpacing_;
     IntVec4Property layoutMargins_;
 
+    std::unordered_map<Property*, std::unique_ptr<glui::Element>> propertyWidgetMap_;
     ListProperty dynamicProperties_;
 
     glui::Renderer uiRenderer_;
     glui::BoxLayout layout_;
 
-    std::unordered_map<Property*, std::unique_ptr<glui::Element>> propertyWidgetMap_;
     InviwoApplication* app_;
 };
 

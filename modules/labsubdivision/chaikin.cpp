@@ -150,8 +150,8 @@ void Chaikin::process()
             auto OutIndices = OutIndexBuffer->getEditableRAMRepresentation();
             auto OutIndexBufferPoints = std::make_shared<IndexBuffer>();
             auto OutIndicesPoints = OutIndexBufferPoints->getEditableRAMRepresentation();
-            OutLines->addIndicies(Mesh::MeshInfo(DrawType::Lines, ConnectivityType::Strip), OutIndexBuffer);
-            OutLines->addIndicies(Mesh::MeshInfo(DrawType::Points, ConnectivityType::None), OutIndexBufferPoints);
+            OutLines->addIndices(Mesh::MeshInfo(DrawType::Lines, ConnectivityType::Strip), OutIndexBuffer);
+            OutLines->addIndices(Mesh::MeshInfo(DrawType::Points, ConnectivityType::None), OutIndexBufferPoints);
             const size_t PreviousNumVertices = OutVertices->getSize();
             OutVertices->reserve(NumNewVertices + PreviousNumVertices);
             for(size_t i(0);i<NumNewVertices;i++)

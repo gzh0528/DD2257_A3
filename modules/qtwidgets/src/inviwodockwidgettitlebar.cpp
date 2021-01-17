@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2012-2019 Inviwo Foundation
+ * Copyright (c) 2012-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -152,8 +152,10 @@ void InviwoDockWidgetTitleBar::setIconSize(double size) {
     iconSize_ = size;
     const auto iconsize = utilqt::emToPx(this, QSizeF(iconSize_, iconSize_));
 
-    for (auto tb : layout()->findChildren<QToolButton *>()) {
-        tb->setIconSize(iconsize);
+    if (auto theLayout = layout()) {
+        for (auto tb : theLayout->findChildren<QToolButton *>()) {
+            tb->setIconSize(iconsize);
+        }
     }
 }
 

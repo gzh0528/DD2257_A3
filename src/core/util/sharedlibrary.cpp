@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2016-2019 Inviwo Foundation
+ * Copyright (c) 2016-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,6 +31,8 @@
 #include <inviwo/core/util/filesystem.h>
 #include <inviwo/core/util/stringconversion.h>  // splitString
 #include <inviwo/core/util/stdextensions.h>
+#include <inviwo/core/util/exception.h>
+#include <inviwo/core/util/logcentral.h>
 #include <codecvt>
 #include <locale>
 #include <algorithm>
@@ -130,7 +132,8 @@ SharedLibrary::SharedLibrary(const std::string& filePath) : filePath_(filePath) 
             LocalFree(errorText);
         }
 
-        throw Exception("Failed to load library: " + filePath + "\n Error: " + errorStream.str());
+        throw Exception("Failed to load library: " + filePath + "\n Error: " + errorStream.str(),
+                        IVW_CONTEXT);
     }
 #else
     // RTLD_GLOBAL gives all other loaded libraries access to library
@@ -138,7 +141,7 @@ SharedLibrary::SharedLibrary(const std::string& filePath) : filePath_(filePath) 
     // explicitly load its dependent libraries as well.
     handle_ = dlopen(filePath.c_str(), RTLD_LAZY | RTLD_GLOBAL);
     if (!handle_) {
-        throw Exception("Failed to load library: " + filePath);
+        throw Exception("Failed to load library: " + filePath, IVW_CONTEXT);
     }
 #endif
 }

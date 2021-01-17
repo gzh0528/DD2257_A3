@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2016-2019 Inviwo Foundation
+ * Copyright (c) 2016-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -61,7 +61,7 @@ std::shared_ptr<Mesh> convertHullToMesh(const std::vector<vec2> &hull, bool useI
 
         indexBuffer->append(&seq);
 
-        mesh->addIndicies(Mesh::MeshInfo(DrawType::Lines, ConnectivityType::Loop), indices);
+        mesh->addIndices(Mesh::MeshInfo(DrawType::Lines, ConnectivityType::Loop), indices);
     }
 
     return mesh;

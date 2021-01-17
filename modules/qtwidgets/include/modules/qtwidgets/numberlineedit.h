@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2019 Inviwo Foundation
+ * Copyright (c) 2019-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -45,15 +45,15 @@ class NumberLineEditPrivate;
  * a QSpinBox and allows entering numbers in scientific notation.
  *
  * The widget supports the functionality of a regular QSpinBox, i.e. the value can also be adjusted
- * using arrow keys and mouse wheel. If the widget cannot accomodate the current number
+ * using arrow keys and mouse wheel. If the widget cannot accommodate the current number
  * representation of the value, the representation will be changed to scientific notation once the
- * widget looses focus. While the widget is in focues the number is shown in regular notation,
+ * widget looses focus. While the widget is in focus the number is shown in regular notation,
  * except for values less than 1e-6 which are depicted in scientific representation.
  */
 class IVW_MODULE_QTWIDGETS_API NumberLineEdit : public QDoubleSpinBox {
 public:
     explicit NumberLineEdit(QWidget *parent = nullptr);
-    NumberLineEdit(bool intMode, QWidget *parent = nullptr);
+    explicit NumberLineEdit(bool intMode, QWidget *parent = nullptr);
 
     virtual ~NumberLineEdit() override;
 
@@ -73,9 +73,12 @@ public:
     /**
      * \brief Overrides the timerEvent to prevent
      * spinbox to be updated twice in case of
-     * calculations being slows
+     * calculations being slow
      */
     virtual void timerEvent(QTimerEvent *event) override;
+
+    bool isValid() const;
+    void setInvalid(bool invalid = true);
 
 protected:
     virtual QValidator::State validate(QString &text, int &pos) const override;
@@ -83,15 +86,17 @@ protected:
     virtual void focusOutEvent(QFocusEvent *e) override;
     virtual void resizeEvent(QResizeEvent *e) override;
     virtual void changeEvent(QEvent *e) override;
+    virtual void wheelEvent(QWheelEvent *e) override;
 
 private:
-    const bool integerMode_;
-    const int minimumWidth_ = 40;
+    bool integerMode_;
+    int minimumWidth_ = 40;
 
     QDoubleValidator *validator_;
     mutable QSize cachedMinimumSizeHint_;
     int visibleDecimals_ = 2;
     bool abbreviated_ = true;
+    bool invalid_ = false;
 
     static std::unique_ptr<NumberLineEditPrivate> nlePrivate_;
 };

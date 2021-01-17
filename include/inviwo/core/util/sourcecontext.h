@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2019 Inviwo Foundation
+ * Copyright (c) 2019-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -26,6 +26,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  *********************************************************************************/
+
 #pragma once
 
 #include <inviwo/core/common/inviwocoredefine.h>
@@ -139,6 +140,15 @@ public:
      */
     constexpr int getLine() const noexcept { return line_; };
 
+    friend constexpr bool operator==(const SourceLocation& a, const SourceLocation& b) noexcept {
+        return a.getLine() == b.getLine() && std::strcmp(a.getFile(), b.getFile()) == 0 &&
+               std::strcmp(a.getFunction(), b.getFunction()) == 0;
+    }
+
+    friend constexpr bool operator!=(const SourceLocation& a, const SourceLocation& b) noexcept {
+        return !(a == b);
+    }
+
 private:
     const char* file_;
     const char* function_;
@@ -150,15 +160,6 @@ std::basic_ostream<Elem, Traits>& operator<<(std::basic_ostream<Elem, Traits>& s
                                              const SourceLocation& ec) {
     ss << ec.getFunction() << " (" << ec.getFile() << ":" << ec.getLine() << ")";
     return ss;
-}
-
-IVW_CORE_API constexpr bool operator==(const SourceLocation& a, const SourceLocation& b) noexcept {
-    return a.getLine() == b.getLine() && std::strcmp(a.getFile(), b.getFile()) == 0 &&
-           std::strcmp(a.getFunction(), b.getFunction()) == 0;
-}
-
-IVW_CORE_API constexpr bool operator!=(const SourceLocation& a, const SourceLocation& b) noexcept {
-    return !(a == b);
 }
 
 #define IVW_SOURCE_LOCATION SourceLocation(__FILE__, __FUNCTION__, __LINE__)

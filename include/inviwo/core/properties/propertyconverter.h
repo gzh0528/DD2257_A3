@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2014-2019 Inviwo Foundation
+ * Copyright (c) 2014-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,12 +27,9 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_PROPERTYCONVERTER_H
-#define IVW_PROPERTYCONVERTER_H
+#pragma once
 
 #include <inviwo/core/common/inviwocoredefine.h>
-#include <inviwo/core/common/inviwo.h>
-
 #include <inviwo/core/properties/templateproperty.h>
 #include <inviwo/core/properties/stringproperty.h>
 #include <inviwo/core/properties/directoryproperty.h>
@@ -86,8 +83,12 @@ template <typename SrcProperty, typename DstProperty>
 class OrdinalPropertyConverter : public TemplatePropertyConverter<SrcProperty, DstProperty> {
 protected:
     virtual void convertimpl(const SrcProperty* src, DstProperty* dst) const override {
-        dst->setMinValue(static_cast<typename DstProperty::value_type>(src->getMinValue()));
-        dst->setMaxValue(static_cast<typename DstProperty::value_type>(src->getMaxValue()));
+        if (dst->isLinkingMinBound()) {
+            dst->setMinValue(static_cast<typename DstProperty::value_type>(src->getMinValue()));
+        }
+        if (dst->isLinkingMaxBound()) {
+            dst->setMaxValue(static_cast<typename DstProperty::value_type>(src->getMaxValue()));
+        }
         dst->setIncrement(static_cast<typename DstProperty::value_type>(src->getIncrement()));
         dst->set(static_cast<typename DstProperty::value_type>(src->get()));
     }
@@ -175,7 +176,7 @@ class TransferfunctionToIsoTFConverter
 protected:
     virtual void convertimpl(const TransferFunctionProperty* src,
                              IsoTFProperty* dst) const override {
-        dst->set(*src);
+        dst->set(src);
     }
 };
 
@@ -184,24 +185,22 @@ class IsoTFToTransferfunctionConverter
 protected:
     virtual void convertimpl(const IsoTFProperty* src,
                              TransferFunctionProperty* dst) const override {
-        dst->set(*src);
+        dst->set(src);
     }
 };
 
 class IsovalueToIsoTFConverter : public TemplatePropertyConverter<IsoValueProperty, IsoTFProperty> {
 protected:
     virtual void convertimpl(const IsoValueProperty* src, IsoTFProperty* dst) const override {
-        dst->set(*src);
+        dst->set(src);
     }
 };
 
 class IsoTFToIsovalueConverter : public TemplatePropertyConverter<IsoTFProperty, IsoValueProperty> {
 protected:
     virtual void convertimpl(const IsoTFProperty* src, IsoValueProperty* dst) const override {
-        dst->set(*src);
+        dst->set(src);
     }
 };
 
 }  // namespace inviwo
-
-#endif  // IVW_PROPERTYCONVERTER_H

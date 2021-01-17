@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2014-2019 Inviwo Foundation
+ * Copyright (c) 2014-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -37,6 +37,7 @@
 
 #include <modules/opengl/inviwoopengl.h>
 #include <modules/glfw/canvasglfw.h>
+#include <modules/glfw/filewatcher.h>
 
 #include <inviwo/core/common/defaulttohighperformancegpu.h>
 #include <inviwo/core/common/inviwo.h>
@@ -47,14 +48,18 @@
 #include <inviwo/core/util/raiiutils.h>
 #include <inviwo/core/util/consolelogger.h>
 #include <inviwo/core/moduleregistration.h>
+#include <inviwo/core/util/commandlineparser.h>
+
+#define GLFW_INCLUDE_NONE
+#include <GLFW/glfw3.h>
 
 using namespace inviwo;
 
 int main(int argc, char** argv) {
-    LogCentral::init();
-    inviwo::util::OnScopeExit deleteLogcentral([]() { inviwo::LogCentral::deleteInstance(); });
-    auto logger = std::make_shared<inviwo::ConsoleLogger>();
-    LogCentral::getPtr()->registerLogger(logger);
+    inviwo::LogCentral logger;
+    inviwo::LogCentral::init(&logger);
+    auto consoleLogger = std::make_shared<inviwo::ConsoleLogger>();
+    logger.registerLogger(consoleLogger);
 
     InviwoApplication inviwoApp(argc, argv, "Inviwo-GLFW");
     inviwoApp.printApplicationInfo();
@@ -65,6 +70,8 @@ int main(int argc, char** argv) {
     });
 
     CanvasGLFW::setAlwaysOnTopByDefault(false);
+
+    inviwoApp.setFileSystemObserver(std::make_unique<inviwo::FileWatcher>(&inviwoApp));
 
     // Initialize all modules
     inviwoApp.registerModules(inviwo::getModuleList());
@@ -115,10 +122,6 @@ int main(int argc, char** argv) {
         util::log(exception.getContext(),
                   "Incomplete network loading " + workspace + " due to " + exception.getMessage(),
                   LogLevel::Error);
-        return 1;
-    } catch (const ticpp::Exception& exception) {
-        LogErrorCustom("glfwminimum", "Unable to load network " + workspace +
-                                          " due to deserialization error: " + exception.what());
         return 1;
     }
 

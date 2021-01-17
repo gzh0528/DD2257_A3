@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2012-2019 Inviwo Foundation
+ * Copyright (c) 2012-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -40,7 +40,7 @@ namespace inviwo {
 
 ProcessorNetworkEvaluator::ProcessorNetworkEvaluator(ProcessorNetwork* processorNetwork)
     : processorNetwork_(processorNetwork)
-    , processorsSorted_(util::topologicalSort(processorNetwork_))
+    , processorsSorted_(util::topologicalSortFiltered(processorNetwork_))
     , evaulationQueued_(false)
     , exceptionHandler_(StandardEvaluationErrorHandler()) {
 
@@ -109,12 +109,20 @@ void ProcessorNetworkEvaluator::evaluate() {
                     if (processor->getInvalidationLevel() >= InvalidationLevel::InvalidResources) {
                         processor->initializeResources();
                     }
+
+                } catch (...) {
+                    exceptionHandler_(processor, EvaluationType::InitResource, IVW_CONTEXT);
+                    processor->setValid();
+                    continue;
+                }
+
+                try {
                     // call onChange for all invalid inports
                     for (auto inport : processor->getInports()) {
                         inport->callOnChangeIfChanged();
                     }
                 } catch (...) {
-                    exceptionHandler_(processor, EvaluationType::InitResource, IVW_CONTEXT);
+                    exceptionHandler_(processor, EvaluationType::PortOnChange, IVW_CONTEXT);
                     processor->setValid();
                     continue;
                 }
@@ -150,25 +158,29 @@ void ProcessorNetworkEvaluator::evaluate() {
 }
 
 void ProcessorNetworkEvaluator::onProcessorSinkChanged(Processor*) {
-    processorsSorted_ = util::topologicalSort(processorNetwork_);
+    processorsSorted_ = util::topologicalSortFiltered(processorNetwork_);
+}
+
+void ProcessorNetworkEvaluator::onProcessorActiveConnectionsChanged(Processor*) {
+    processorsSorted_ = util::topologicalSortFiltered(processorNetwork_);
 }
 
 void ProcessorNetworkEvaluator::onProcessorNetworkDidAddProcessor(Processor* p) {
     p->ProcessorObservable::addObserver(this);
-    processorsSorted_ = util::topologicalSort(processorNetwork_);
+    processorsSorted_ = util::topologicalSortFiltered(processorNetwork_);
 }
 
 void ProcessorNetworkEvaluator::onProcessorNetworkDidRemoveProcessor(Processor* p) {
     p->ProcessorObservable::removeObserver(this);
-    processorsSorted_ = util::topologicalSort(processorNetwork_);
+    processorsSorted_ = util::topologicalSortFiltered(processorNetwork_);
 }
 
 void ProcessorNetworkEvaluator::onProcessorNetworkDidAddConnection(const PortConnection&) {
-    processorsSorted_ = util::topologicalSort(processorNetwork_);
+    processorsSorted_ = util::topologicalSortFiltered(processorNetwork_);
 }
 
 void ProcessorNetworkEvaluator::onProcessorNetworkDidRemoveConnection(const PortConnection&) {
-    processorsSorted_ = util::topologicalSort(processorNetwork_);
+    processorsSorted_ = util::topologicalSortFiltered(processorNetwork_);
 }
 
 }  // namespace inviwo

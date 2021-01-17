@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2017-2019 Inviwo Foundation
+ * Copyright (c) 2017-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,8 +27,7 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_INVIWOPY_H
-#define IVW_INVIWOPY_H
+#pragma once
 
 #include <warn/push>
 #include <warn/ignore/shadow>
@@ -88,5 +87,3 @@ struct type_caster<std::vector<Layer *>> : ListCasterBase<Layer> {
 };
 }  // namespace detail
 }  // namespace pybind11
-
-#endif  // IVW_PYPROPERTIES_H

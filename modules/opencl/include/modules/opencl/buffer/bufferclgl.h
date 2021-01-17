@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2013-2019 Inviwo Foundation
+ * Copyright (c) 2013-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,17 +27,16 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_BUFFERCLGL_H
-#define IVW_BUFFERCLGL_H
-
-#include <inviwo/core/common/inviwo.h>
+#pragma once
+#include <modules/opencl/openclmoduledefine.h>
 #include <inviwo/core/datastructures/buffer/bufferrepresentation.h>
-
 #include <modules/opencl/buffer/bufferclbase.h>
 #include <modules/opencl/inviwoopencl.h>
-#include <modules/opencl/openclmoduledefine.h>
 #include <modules/opengl/buffer/bufferobjectobserver.h>
 #include <modules/opengl/buffer/bufferobject.h>
+
+#include <utility>
+#include <map>
 
 namespace inviwo {
 
@@ -120,5 +119,3 @@ template <>
 IVW_MODULE_OPENCL_API cl_int Kernel::setArg(cl_uint index, const inviwo::BufferCLGL& value);
 
 }  // namespace cl
-
-#endif  // IVW_BUFFERCLGL_H

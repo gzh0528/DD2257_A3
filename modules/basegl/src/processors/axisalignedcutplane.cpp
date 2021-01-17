@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2015-2019 Inviwo Foundation
+ * Copyright (c) 2015-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -34,6 +34,7 @@
 #include <modules/opengl/shader/shaderutils.h>
 #include <modules/opengl/volume/volumeutils.h>
 #include <inviwo/core/common/inviwoapplication.h>
+#include <inviwo/core/algorithm/boundingbox.h>
 
 namespace inviwo {
 
@@ -64,7 +65,7 @@ AxisAlignedCutPlane::AxisAlignedCutPlane()
     , renderPointSize_("renderPointSize", "Point Size", 1.0f, 0.001f, 15.0f, 0.001f)
     , renderLineWidth_("renderLineWidth", "Line Width", 1.0f, 0.001f, 15.0f, 0.001f)
     , nearestInterpolation_("nearestInterpolation", "Use nearest neighbor interpolation", false)
-    , camera_("camera", "Camera")
+    , camera_("camera", "Camera", util::boundingBox(volume_))
     , trackball_(&camera_)
     , sliceShader_("geometryrendering.vert", "axisalignedcutplaneslice.frag", false)
     , boundingBoxShader_("geometryrendering.vert", "axisalignedcutplaneboundingbox.frag") {

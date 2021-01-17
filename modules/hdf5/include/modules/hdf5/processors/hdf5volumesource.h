@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2014-2019 Inviwo Foundation
+ * Copyright (c) 2014-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -101,7 +101,6 @@ private:
                      InvalidationLevel = InvalidationLevel::InvalidOutput);
 
         DimSelection(const DimSelection& rhs) = default;
-        DimSelection& operator=(const DimSelection& that) = default;
         virtual ~DimSelection() = default;
 
         IntMinMaxProperty range;
@@ -116,7 +115,6 @@ private:
                       InvalidationLevel = InvalidationLevel::InvalidOutput);
 
         DimSelections(const DimSelections& rhs) = default;
-        DimSelections& operator=(const DimSelections& that) = default;
         virtual ~DimSelections() = default;
 
         std::vector<Handle::Selection> getSelection() const;

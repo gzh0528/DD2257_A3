@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2013-2019 Inviwo Foundation
+ * Copyright (c) 2013-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -73,7 +73,7 @@ namespace inviwo {
  */
 
 template <typename T>
-class IVW_MODULE_BASE_API BasisTransform : public Processor {
+class BasisTransform : public Processor {
 public:
     BasisTransform();
     virtual ~BasisTransform() = default;

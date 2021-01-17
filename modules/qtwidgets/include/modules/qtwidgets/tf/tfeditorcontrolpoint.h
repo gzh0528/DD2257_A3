@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2013-2019 Inviwo Foundation
+ * Copyright (c) 2013-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,8 +27,7 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_TRANSFERFUNCTIONEDITORCONTROLPOINT_H
-#define IVW_TRANSFERFUNCTIONEDITORCONTROLPOINT_H
+#pragma once
 
 #include <modules/qtwidgets/qtwidgetsmoduledefine.h>
 #include <modules/qtwidgets/tf/tfeditorprimitive.h>
@@ -114,5 +113,3 @@ IVW_MODULE_QTWIDGETS_API bool operator>=(const TFEditorControlPoint& lhs,
                                          const TFEditorControlPoint& rhs);
 
 }  // namespace inviwo
-
-#endif  // IVW_TRANSFERFUNCTIONEDITORCONTROLPOINT_H

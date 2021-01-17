@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2012-2019 Inviwo Foundation
+ * Copyright (c) 2012-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,11 +27,9 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_VALUEWRAPPER_H
-#define IVW_VALUEWRAPPER_H
+#pragma once
 
 #include <inviwo/core/common/inviwocoredefine.h>
-#include <inviwo/core/common/inviwo.h>
 #include <inviwo/core/io/serialization/serializer.h>
 #include <inviwo/core/io/serialization/deserializer.h>
 
@@ -41,7 +39,8 @@ enum class PropertySerializationMode { Default = 0, All, None };
 
 template <typename T>
 struct ValueWrapper {
-    ValueWrapper(std::string valname, T val) : value(val), defaultValue(val), name(valname) {}
+    ValueWrapper(std::string valname, T val)
+        : value(val), defaultValue(val), name(std::move(valname)) {}
     ValueWrapper(const ValueWrapper<T>& rhs) = default;
     ValueWrapper<T>& operator=(const ValueWrapper<T>& that) = default;
 
@@ -49,11 +48,13 @@ struct ValueWrapper {
         value = val;
         return *this;
     }
-    operator T&() { return value; }
+
     operator const T&() const { return value; }
 
     bool isDefault() const { return value == defaultValue; }
-    void reset() { value = defaultValue; }
+
+    // return if the value changes while resetting
+    bool reset() { return update(defaultValue); }
     void setAsDefault() { defaultValue = value; }
 
     void serialize(Serializer& s,
@@ -116,87 +117,24 @@ struct ValueWrapper {
             return false;
         }
     }
+    friend bool operator==(const ValueWrapper<T>& lhs, const ValueWrapper<T>& rhs) {
+        return lhs.value == rhs.value;
+    }
+    friend bool operator!=(const ValueWrapper<T>& lhs, const ValueWrapper<T>& rhs) {
+        return !operator==(lhs, rhs);
+    }
+    friend bool operator==(const ValueWrapper<T>& lhs, const T& rhs) { return lhs.value == rhs; }
+    friend bool operator!=(const ValueWrapper<T>& lhs, const T& rhs) {
+        return !operator==(lhs, rhs);
+    }
+    friend bool operator==(const T& lhs, const ValueWrapper<T>& rhs) { return rhs == lhs; }
+    friend bool operator!=(const T& lhs, const ValueWrapper<T>& rhs) {
+        return !operator==(rhs, lhs);
+    }
 
     T value;
     T defaultValue;
     std::string name;
 };
 
-template <typename T>
-bool operator==(const ValueWrapper<T>& lhs, const ValueWrapper<T>& rhs) {
-    return lhs.value == rhs.value;
-}
-template <typename T>
-bool operator<(const ValueWrapper<T>& lhs, const ValueWrapper<T>& rhs) {
-    return lhs.value < rhs.value;
-}
-template <typename T>
-bool operator!=(const ValueWrapper<T>& lhs, const ValueWrapper<T>& rhs) {
-    return !operator==(lhs, rhs);
-}
-template <typename T>
-bool operator>(const ValueWrapper<T>& lhs, const ValueWrapper<T>& rhs) {
-    return operator<(rhs, lhs);
-}
-template <typename T>
-bool operator<=(const ValueWrapper<T>& lhs, const ValueWrapper<T>& rhs) {
-    return !operator>(lhs, rhs);
-}
-template <typename T>
-bool operator>=(const ValueWrapper<T>& lhs, const ValueWrapper<T>& rhs) {
-    return !operator<(lhs, rhs);
-}
-
-template <typename T>
-bool operator==(const ValueWrapper<T>& lhs, const T& rhs) {
-    return lhs.value == rhs;
-}
-template <typename T>
-bool operator<(const ValueWrapper<T>& lhs, const T& rhs) {
-    return lhs.value < rhs;
-}
-template <typename T>
-bool operator!=(const ValueWrapper<T>& lhs, const T& rhs) {
-    return !operator==(lhs, rhs);
-}
-template <typename T>
-bool operator>(const ValueWrapper<T>& lhs, const T& rhs) {
-    return operator<(rhs, lhs);
-}
-template <typename T>
-bool operator<=(const ValueWrapper<T>& lhs, const T& rhs) {
-    return !operator>(lhs, rhs);
-}
-template <typename T>
-bool operator>=(const ValueWrapper<T>& lhs, const T& rhs) {
-    return !operator<(lhs, rhs);
-}
-
-template <typename T>
-bool operator==(const T& lhs, const ValueWrapper<T>& rhs) {
-    return rhs == lhs;
-}
-template <typename T>
-bool operator<(const T& lhs, const ValueWrapper<T>& rhs) {
-    return rhs >= lhs;
-}
-template <typename T>
-bool operator!=(const T& lhs, const ValueWrapper<T>& rhs) {
-    return !operator==(rhs, lhs);
-}
-template <typename T>
-bool operator>(const T& lhs, const ValueWrapper<T>& rhs) {
-    return operator<(rhs, lhs);
-}
-template <typename T>
-bool operator<=(const T& lhs, const ValueWrapper<T>& rhs) {
-    return !operator>(lhs, rhs);
-}
-template <typename T>
-bool operator>=(const T& lhs, const ValueWrapper<T>& rhs) {
-    return !operator<(lhs, rhs);
-}
-
 }  // namespace inviwo
-
-#endif  // IVW_VALUEWRAPPER_H

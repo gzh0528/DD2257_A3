@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2014-2019 Inviwo Foundation
+ * Copyright (c) 2014-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -32,6 +32,7 @@
 
 #include <modules/python3/python3moduledefine.h>
 #include <inviwo/core/common/inviwomodule.h>
+#include <inviwo/core/util/commandlineparser.h>
 #include <modules/python3/pythonlogger.h>
 #include <modules/python3/pythonprocessorfolderobserver.h>
 #include <modules/python3/pyutils.h>

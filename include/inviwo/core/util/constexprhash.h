@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2016-2019 Inviwo Foundation
+ * Copyright (c) 2016-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -53,11 +53,9 @@
  * SOFTWARE.
  *********************************************************************************/
 
-#ifndef IVW_CONSTEXPRHASH_H
-#define IVW_CONSTEXPRHASH_H
+#pragma once
 
 #include <inviwo/core/common/inviwocoredefine.h>
-#include <inviwo/core/common/inviwo.h>
 
 namespace inviwo {
 
@@ -148,8 +146,10 @@ constexpr uint64_t constexpr_hash(const char (&str)[len]) {
     return detail::crc64(str, len);
 }
 
+constexpr uint64_t constexpr_hash(const std::string_view str) {
+    return detail::crc64(str.data(), str.length());
+}
+
 }  // namespace util
 
 }  // namespace inviwo
-
-#endif  // IVW_CONSTEXPRHASH_H

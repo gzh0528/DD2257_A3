@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2013-2019 Inviwo Foundation
+ * Copyright (c) 2013-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -55,7 +55,7 @@ size_t BufferGL::getSize() const { return size_; }
 void BufferGL::setSize(size_t size) {
     if (size != size_) {
         size_ = size;
-        buffer_->setSize(size * getSizeOfElement());
+        buffer_->setSizeInBytes(size * getSizeOfElement());
     }
 }
 

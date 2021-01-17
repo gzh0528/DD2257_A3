@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2012-2019 Inviwo Foundation
+ * Copyright (c) 2012-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,11 +27,9 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_PROCESSORNETWORKEVALUATOR_H
-#define IVW_PROCESSORNETWORKEVALUATOR_H
+#pragma once
 
 #include <inviwo/core/common/inviwocoredefine.h>
-#include <inviwo/core/common/inviwo.h>
 #include <inviwo/core/network/processornetworkobserver.h>
 #include <inviwo/core/processors/processorobserver.h>
 #include <inviwo/core/network/processornetworkevaluationobserver.h>
@@ -63,6 +61,7 @@ private:
 
     // ProcessorObserver overrides
     virtual void onProcessorSinkChanged(Processor*) override;
+    virtual void onProcessorActiveConnectionsChanged(Processor*) override;
 
     void requestEvaluate();
     void evaluate();
@@ -75,5 +74,3 @@ private:
 };
 
 }  // namespace inviwo
-
-#endif  // IVW_PROCESSORNETWORKEVALUATOR_H

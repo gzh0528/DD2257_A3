@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2018-2019 Inviwo Foundation
+ * Copyright (c) 2018-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,10 +30,13 @@
 #include <modules/qtwidgets/properties/doublevaluedragspinbox.h>
 #include <modules/qtwidgets/properties/valuedragger.h>
 #include <modules/qtwidgets/numberlineedit.h>
+#include <modules/qtwidgets/inviwoqtutils.h>
 
 #include <warn/push>
 #include <warn/ignore/all>
 #include <QHBoxLayout>
+#include <QSignalBlocker>
+#include <QLocale>
 #include <warn/pop>
 
 namespace inviwo {
@@ -41,38 +44,53 @@ namespace inviwo {
 DoubleValueDragSpinBox::DoubleValueDragSpinBox(QWidget *parent)
     : QWidget(parent)
     , spinBox_(new NumberLineEdit())
-    , valueDragger_(new ValueDragger<double>(spinBox_)) {
+    , valueDragger_(new ValueDragger<double>(spinBox_))
+    , invalid_(false) {
     setObjectName("valueDragSpinBox");
     spinBox_->setButtonSymbols(QAbstractSpinBox::NoButtons);
 
     auto layout = new QHBoxLayout();
-    layout->setSpacing(2);
+    layout->setSpacing(utilqt::emToPx(this, 0.2));
     layout->setMargin(0);
-    layout->addWidget(valueDragger_);
     layout->addWidget(spinBox_);
+    layout->addWidget(valueDragger_);
 
     setLayout(layout);
 
     valueDragger_->setFocusPolicy(Qt::NoFocus);
-    spinBox_->setFocusPolicy(Qt::WheelFocus);
     setFocusProxy(spinBox_);
     setFocusPolicy(spinBox_->focusPolicy());
 
     connect(spinBox_, static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged),
-            this,
-            static_cast<void (DoubleValueDragSpinBox::*)(double)>(
-                &DoubleValueDragSpinBox::valueChanged));
+            this, [this](double d) {
+                setInvalid(false);
+                emit valueChanged(d);
+            });
+
+#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
+    connect(spinBox_,
+            static_cast<void (QDoubleSpinBox::*)(const QString &)>(&QDoubleSpinBox::textChanged),
+            this, [this](const QString &str) {
+                setInvalid(false);
+                emit valueChanged(str);
+            });
+#else
     connect(spinBox_,
             static_cast<void (QDoubleSpinBox::*)(const QString &)>(&QDoubleSpinBox::valueChanged),
-            this,
-            static_cast<void (DoubleValueDragSpinBox::*)(const QString &)>(
-                &DoubleValueDragSpinBox::valueChanged));
+            this, [this](const QString &str) {
+                setInvalid(false);
+                emit valueChanged(str);
+            });
+#endif
+
     connect(spinBox_, &QSpinBox::editingFinished, this, &DoubleValueDragSpinBox::editingFinished);
 }
 
 void DoubleValueDragSpinBox::setReadOnly(bool r) { spinBox_->setReadOnly(r); }
 
 bool DoubleValueDragSpinBox::isReadOnly() const { return spinBox_->isReadOnly(); }
+
+bool DoubleValueDragSpinBox::isValid() const { return !invalid_; }
 
 void DoubleValueDragSpinBox::setSpecialValueText(const QString &txt) {
     spinBox_->setSpecialValueText(txt);
@@ -125,5 +143,32 @@ void DoubleValueDragSpinBox::selectAll() { spinBox_->selectAll(); }
 void DoubleValueDragSpinBox::stepDown() { spinBox_->stepDown(); }
 
 void DoubleValueDragSpinBox::stepUp() { spinBox_->stepUp(); }
+
+int DoubleValueDragSpinBox::spinnerDecimals(double value) const {
+    std::ostringstream buff;
+    utilqt::localizeStream(buff);
+    buff << value;
+    const std::string str(buff.str());
+    auto periodPosition = str.find(locale().decimalPoint().toLatin1());
+    if (periodPosition == std::string::npos) {
+        return 0;
+    } else {
+        return static_cast<int>(str.length() - periodPosition) - 1;
+    }
+}
+
+void DoubleValueDragSpinBox::setInvalid(bool invalid) {
+    if (invalid_ == invalid) return;
+
+    invalid_ = invalid;
+    updateState();
+}
+
+void DoubleValueDragSpinBox::updateState() {
+    QSignalBlocker block(this);
+
+    spinBox_->setInvalid(invalid_);
+    valueDragger_->setEnabled(!invalid_);
+}
 
 }  // namespace inviwo

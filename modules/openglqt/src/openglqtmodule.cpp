@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2013-2019 Inviwo Foundation
+ * Copyright (c) 2013-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -55,24 +55,25 @@ namespace inviwo {
 OpenGLQtModule::OpenGLQtModule(InviwoApplication* app)
     : InviwoModule(app, "OpenGLQt"), ProcessorNetworkEvaluationObserver() {
     if (!qApp) {
-        throw ModuleInitException("QApplication must be constructed before OpenGLQtModule");
+        throw ModuleInitException("QApplication must be constructed before OpenGLQtModule",
+                                  IVW_CONTEXT);
     }
     if (!app->getModuleManager().getModulesByAlias("OpenGLSupplier").empty()) {
         throw ModuleInitException(
             "OpenGLQt could not be initialized because an other OpenGLSupplier is already used for "
-            "OpenGL context.");
+            "OpenGL context.",
+            IVW_CONTEXT);
     }
 
     // Create GL Context
-    CanvasQt::defineDefaultContextFormat();
-    sharedCanvas_ = util::make_unique<CanvasQt>(size2_t(16, 16), "Default");
+    sharedCanvas_.initializeGL();
 
     if (!glFenceSync) {  // Make sure we have setup the opengl function pointers.
-        throw OpenGLInitException("Unable to initiate opengl", IvwContext);
+        throw OpenGLInitException("Unable to initiate OpenGL", IVW_CONTEXT);
     }
 
-    static_cast<CanvasQt*>(sharedCanvas_.get())->defaultGLState();
-    RenderContext::getPtr()->setDefaultRenderContext(sharedCanvas_.get());
+    CanvasGL::defaultGLState();
+    holder_ = RenderContext::getPtr()->setDefaultRenderContext(&sharedCanvas_);
 
     registerProcessorWidget<CanvasProcessorWidgetQt, CanvasProcessorGL>();
     registerCapabilities(util::make_unique<OpenGLQtCapabilities>());
@@ -88,7 +89,7 @@ OpenGLQtModule::OpenGLQtModule(InviwoApplication* app)
 
 OpenGLQtModule::~OpenGLQtModule() {
     SharedOpenGLResources::getPtr()->reset();
-    if (sharedCanvas_.get() == RenderContext::getPtr()->getDefaultRenderContext()) {
+    if (holder_ == RenderContext::getPtr()->getDefaultRenderContext()) {
         RenderContext::getPtr()->setDefaultRenderContext(nullptr);
     }
 }
@@ -96,7 +97,6 @@ OpenGLQtModule::~OpenGLQtModule() {
 void OpenGLQtModule::onProcessorNetworkEvaluationBegin() {
     // This is called before the network is evaluated, here we make sure that the default context is
     // active
-
     RenderContext::getPtr()->activateDefaultRenderContext();
 }
 void OpenGLQtModule::onProcessorNetworkEvaluationEnd() {

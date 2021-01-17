@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2015-2019 Inviwo Foundation
+ * Copyright (c) 2015-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,8 +27,7 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_IMAGECONTOUR_H
-#define IVW_IMAGECONTOUR_H
+#pragma once
 
 #include <modules/base/basemoduledefine.h>
 #include <inviwo/core/common/inviwo.h>
@@ -139,5 +138,3 @@ std::shared_ptr<Mesh> ImageContourDispatcher::operator()(const LayerRepresentati
 }  // namespace detail
 
 }  // namespace inviwo
-
-#endif  // IVW_IMAGECONTOUR_H

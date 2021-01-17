@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2012-2019 Inviwo Foundation
+ * Copyright (c) 2012-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -29,6 +29,8 @@
 
 #include <modules/basegl/processors/entryexitpointsprocessor.h>
 #include <inviwo/core/io/serialization/versionconverter.h>
+#include <inviwo/core/algorithm/boundingbox.h>
+#include <modules/opengl/image/imagegl.h>
 
 namespace inviwo {
 
@@ -46,8 +48,7 @@ EntryExitPoints::EntryExitPoints()
     , inport_("geometry")
     , entryPort_("entry", DataVec4UInt16::get())
     , exitPort_("exit", DataVec4UInt16::get())
-    , camera_("camera", "Camera", vec3(0.0f, 0.0f, -2.0f), vec3(0.0f, 0.0f, 0.0f),
-              vec3(0.0f, 1.0f, 0.0f), &inport_)
+    , camera_("camera", "Camera", util::boundingBox(inport_))
     , capNearClipping_("capNearClipping", "Cap near plane clipping", true)
     , trackball_(&camera_) {
     addPort(inport_);
@@ -56,18 +57,23 @@ EntryExitPoints::EntryExitPoints()
     addProperty(capNearClipping_);
     addProperty(camera_);
     addProperty(trackball_);
-    entryPort_.addResizeEventListener(&camera_);
 
     for (auto& shader : entryExitHelper_.getShaders()) {
         shader.get().onReload([this]() { invalidate(InvalidationLevel::InvalidResources); });
     }
 }
 
-EntryExitPoints::~EntryExitPoints() {}
+EntryExitPoints::~EntryExitPoints() = default;
 
 void EntryExitPoints::process() {
-    entryExitHelper_(*entryPort_.getEditableData().get(), *exitPort_.getEditableData().get(),
-                     camera_.get(), *inport_.getData().get(), capNearClipping_.get());
+    if (!entryImg_ || !entryImg_->isValid()) {
+        entryImg_ = entryPort_.getEditableData()->getEditableRepresentation<ImageGL>();
+    }
+    if (!exitImg_ || !exitImg_->isValid()) {
+        exitImg_ = exitPort_.getEditableData()->getEditableRepresentation<ImageGL>();
+    }
+
+    entryExitHelper_(*entryImg_, *exitImg_, camera_.get(), *inport_.getData(), capNearClipping_);
 }
 
 void EntryExitPoints::deserialize(Deserializer& d) {

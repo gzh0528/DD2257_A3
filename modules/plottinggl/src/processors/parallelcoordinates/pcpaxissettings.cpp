@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2019 Inviwo Foundation
+ * Copyright (c) 2019-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -112,6 +112,7 @@ PCPAxisSettings* PCPAxisSettings::clone() const { return new PCPAxisSettings(*th
 void PCPAxisSettings::updateFromColumn(std::shared_ptr<const Column> col) {
     col_ = col;
     catCol_ = dynamic_cast<const CategoricalColumn*>(col.get());
+
     col->getBuffer()->getRepresentation<BufferRAM>()->dispatch<void, dispatching::filter::Scalars>(
         [&](auto ram) -> void {
             using T = typename util::PrecisionValueType<decltype(ram)>;
@@ -246,7 +247,7 @@ void PCPAxisSettings::setParallelCoordinates(ParallelCoordinates* pcp) {
     minor_.setSettings(this);
 
     auto updateLabels = [this]() {
-        const auto tickmarks = plot::getMajorTickPositions(major_, range);
+        const auto tickmarks = plot::getMajorTickPositions(major_, range.getRange());
         labels_.clear();
         const auto& format = pcp_->labelFormat_.get();
         std::transform(tickmarks.begin(), tickmarks.end(), std::back_inserter(labels_),
@@ -291,7 +292,7 @@ dvec2 PCPAxisSettings::getRange() const {
 
 bool PCPAxisSettings::getUseDataRange() const { return false; }
 
-bool PCPAxisSettings::getVisible() const { return BoolCompositeProperty::getVisible(); }
+bool PCPAxisSettings::getAxisVisible() const { return BoolCompositeProperty::isChecked(); }
 
 bool PCPAxisSettings::getFlipped() const { return invertRange.get(); }
 

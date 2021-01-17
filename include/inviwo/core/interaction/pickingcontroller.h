@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2016-2019 Inviwo Foundation
+ * Copyright (c) 2016-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,13 +27,14 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_PICKINGCONTROLLER_H
-#define IVW_PICKINGCONTROLLER_H
+#pragma once
 
 #include <inviwo/core/common/inviwocoredefine.h>
-#include <inviwo/core/common/inviwo.h>
 #include <inviwo/core/interaction/pickingmanager.h>
 #include <inviwo/core/interaction/pickingcontrollermousestate.h>
+
+#include <memory>
+#include <unordered_map>
 
 namespace inviwo {
 
@@ -61,7 +62,6 @@ public:
     bool pickingEnabled() const;
 
 private:
-    void propagateEvent(WheelEvent*, EventPropagator*);
     void propagateEvent(TouchEvent*, EventPropagator*);
     void propagateEvent(GestureEvent*, EventPropagator*);
 
@@ -80,5 +80,3 @@ private:
 };
 
 }  // namespace inviwo
-
-#endif  // IVW_PICKINGCONTROLLER_H

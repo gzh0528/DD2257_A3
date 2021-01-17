@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2016-2019 Inviwo Foundation
+ * Copyright (c) 2016-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -32,7 +32,8 @@
 
 #include <modules/userinterfacegl/userinterfaceglmodule.h>
 #include <inviwo/core/common/inviwo.h>
-#include <inviwo/core/datastructures/camera.h>
+#include <inviwo/core/datastructures/camera/camera.h>
+#include <inviwo/core/datastructures/camera/perspectivecamera.h>
 #include <inviwo/core/processors/processor.h>
 #include <inviwo/core/properties/boolproperty.h>
 #include <inviwo/core/properties/ordinalproperty.h>
@@ -195,7 +196,7 @@ private:
     // UI state and textures
     bool isMouseBeingPressedAndHold_;
     bool mouseWasMoved_;
-    int activeWidgetID_;
+    int currentPickingID_;
 
     // initial state of camera when an interaction is triggered to keep the rotation axis consistent
     struct InitialState {

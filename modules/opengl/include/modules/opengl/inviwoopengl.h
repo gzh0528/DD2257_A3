@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2012-2019 Inviwo Foundation
+ * Copyright (c) 2012-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -32,21 +32,11 @@
 
 #include <modules/opengl/openglmoduledefine.h>
 
-#ifdef WIN32
-#define NOMINMAX
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
-#endif
-
 #ifdef __APPLE__
 #define GLEW_NO_GLU
 #endif
 
 #include <GL/glew.h>
-
-#ifdef WIN32
-#include <GL/wglew.h>
-#endif
 
 #include <string>
 

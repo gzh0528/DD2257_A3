@@ -6,6 +6,7 @@ ivw_module(PlottingGL)
 # Add header files
 set(HEADER_FILES
     include/modules/plottinggl/datavisualizer/pcpdataframevisualizer.h
+    include/modules/plottinggl/datavisualizer/scatterplotdataframevisualizer.h
     include/modules/plottinggl/plotters/persistencediagramplotgl.h
     include/modules/plottinggl/plotters/scatterplotgl.h
     include/modules/plottinggl/plottingglmodule.h
@@ -19,6 +20,7 @@ set(HEADER_FILES
     include/modules/plottinggl/processors/scatterplotmatrixprocessor.h
     include/modules/plottinggl/processors/scatterplotprocessor.h
     include/modules/plottinggl/processors/volumeaxis.h
+    include/modules/plottinggl/rendering/boxselectionrenderer.h
     include/modules/plottinggl/utils/axisrenderer.h
 )
 ivw_group("Header Files" ${HEADER_FILES})
@@ -27,6 +29,7 @@ ivw_group("Header Files" ${HEADER_FILES})
 # Add source files
 set(SOURCE_FILES
     src/datavisualizer/pcpdataframevisualizer.cpp
+    src/datavisualizer/scatterplotdataframevisualizer.cpp
     src/plotters/persistencediagramplotgl.cpp
     src/plotters/scatterplotgl.cpp
     src/plottingglmodule.cpp
@@ -39,6 +42,7 @@ set(SOURCE_FILES
     src/processors/scatterplotmatrixprocessor.cpp
     src/processors/scatterplotprocessor.cpp
     src/processors/volumeaxis.cpp
+    src/rendering/boxselectionrenderer.cpp
     src/utils/axisrenderer.cpp
 )
 ivw_group("Source Files" ${SOURCE_FILES})

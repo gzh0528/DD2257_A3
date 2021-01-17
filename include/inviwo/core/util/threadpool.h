@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2015-2019 Inviwo Foundation
+ * Copyright (c) 2015-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -54,8 +54,7 @@
 
 // following https://github.com/progschj/ThreadPool
 
-#ifndef IVW_THREADPOOL_H
-#define IVW_THREADPOOL_H
+#pragma once
 
 #include <inviwo/core/common/inviwocoredefine.h>
 
@@ -81,10 +80,22 @@ public:
                std::function<void()> onThreadStop = []() {});
     ~ThreadPool();
 
+    /**
+     * Enqueue function f with arguments args. The function f may throw exceptions.
+     * @return a future to the result of f
+     */
     template <class F, class... Args>
-    auto enqueue(F&& f, Args&&... args) -> std::future<typename std::result_of<F(Args...)>::type>;
+    auto enqueue(F&& f, Args&&... args) -> std::future<std::invoke_result_t<F, Args...>>;
+
+    /**
+     * Enqueue a plain functor. The functor may not throw exceptions.
+     */
+    void enqueueRaw(std::function<void()> f);
+
     size_t trySetSize(size_t size);
     size_t getSize() const;
+
+    size_t getQueueSize();
 
 private:
     enum class State {
@@ -123,9 +134,8 @@ private:
 
 // add new work item to the pool
 template <class F, class... Args>
-auto ThreadPool::enqueue(F&& f, Args&&... args)
-    -> std::future<typename std::result_of<F(Args...)>::type> {
-    using return_type = typename std::result_of<F(Args...)>::type;
+auto ThreadPool::enqueue(F&& f, Args&&... args) -> std::future<std::invoke_result_t<F, Args...>> {
+    using return_type = std::invoke_result_t<F, Args...>;
 
     auto task = std::make_shared<std::packaged_task<return_type()>>(
         std::bind(std::forward<F>(f), std::forward<Args>(args)...));
@@ -143,5 +153,3 @@ auto ThreadPool::enqueue(F&& f, Args&&... args)
 }
 
 }  // namespace inviwo
-
-#endif  // IVW_THREADPOOL_H

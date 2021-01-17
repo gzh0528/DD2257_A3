@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2016-2019 Inviwo Foundation
+ * Copyright (c) 2016-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -265,7 +265,7 @@ void CropWidget::initializeResources() {
 void CropWidget::initMesh() {
     auto module = InviwoApplication::getPtr()->getModuleByIdentifier("UserInterfaceGL");
     if (!module) {
-        throw Exception("Could not locate module 'UserInterfaceGL'");
+        throw Exception("Could not locate module 'UserInterfaceGL'", IVW_CONTEXT);
     }
 
     std::string basePath(module->getPath(ModulePath::Data));
@@ -312,8 +312,8 @@ void CropWidget::createLineStripMesh() {
     linestrip->addBuffer(BufferType::PositionAttrib, vertices);
     linestrip->addBuffer(BufferType::ColorAttrib, colors);
     linestrip->addBuffer(BufferType::TexcoordAttrib, texCoords);
-    linestrip->addIndicies(Mesh::MeshInfo(DrawType::Lines, ConnectivityType::StripAdjacency),
-                           indices);
+    linestrip->addIndices(Mesh::MeshInfo(DrawType::Lines, ConnectivityType::StripAdjacency),
+                          indices);
 
     linestrip_ = linestrip;
 }
@@ -457,48 +457,29 @@ void CropWidget::updateBoundingCube() {
     }
 }
 
-void CropWidget::objectPicked(PickingEvent *p) {
-    const auto axisID = p->getPickedId() / static_cast<size_t>(numInteractionWidgets);
+void CropWidget::objectPicked(PickingEvent *e) {
+    const auto axisID = e->getPickedId() / static_cast<size_t>(numInteractionWidgets);
     if (axisID >= cropAxes_.size()) {
         LogWarn("invalid picking ID");
         return;
     }
-
-    if (p->getEvent()->hash() == MouseEvent::chash()) {
-        auto me = p->getEventAs<MouseEvent>();
-        if (me->buttonState() & MouseButton::Left) {
-            if (me->state() == MouseState::Press) {
-                isMouseBeingPressedAndHold_ = true;
-                lastState_ = cropAxes_[axisID].range.get();
-            } else if (me->state() == MouseState::Release) {
-                isMouseBeingPressedAndHold_ = false;
-                lastState_ = ivec2(-1);
-            } else if (me->state() == MouseState::Move) {
-
-                InteractionElement element =
-                    static_cast<InteractionElement>(p->getPickedId() % numInteractionWidgets);
-                rangePositionHandlePicked(cropAxes_[axisID], p, element);
-            }
-            me->markAsUsed();
+    if (e->getPressState() != PickingPressState::None) {
+        if (e->getPressState() == PickingPressState::Press &&
+            e->getPressItem() & PickingPressItem::Primary) {
+            // initial activation with button press
+            isMouseBeingPressedAndHold_ = true;
+            lastState_ = cropAxes_[axisID].range.get();
+        } else if (e->getPressState() == PickingPressState::Move &&
+                   e->getPressItems() & PickingPressItem::Primary) {
+            InteractionElement element =
+                static_cast<InteractionElement>(e->getPickedId() % numInteractionWidgets);
+            rangePositionHandlePicked(cropAxes_[axisID], e, element);
+        } else if (e->getPressState() == PickingPressState::Release &&
+                   e->getPressItem() & PickingPressItem::Primary) {
+            isMouseBeingPressedAndHold_ = false;
+            lastState_ = ivec2(-1);
         }
-    } else if (p->getEvent()->hash() == TouchEvent::chash()) {
-        auto touchEvent = p->getEventAs<TouchEvent>();
-
-        if (touchEvent->touchPoints().size() == 1) {
-            // allow interaction only for a single touch point
-            const auto &touchPoint = touchEvent->touchPoints().front();
-
-            if (touchPoint.state() == TouchState::Started) {
-                lastState_ = cropAxes_[axisID].range.get();
-            } else if (touchPoint.state() == TouchState::Finished) {
-                lastState_ = ivec2(-1);
-            } else if (touchPoint.state() == TouchState::Updated) {
-                InteractionElement element =
-                    static_cast<InteractionElement>(p->getPickedId() % numInteractionWidgets);
-                rangePositionHandlePicked(cropAxes_[axisID], p, element);
-            }
-            p->markAsUsed();
-        }
+        e->markAsUsed();
     }
 }
 

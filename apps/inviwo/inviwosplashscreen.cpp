@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2013-2019 Inviwo Foundation
+ * Copyright (c) 2013-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -28,6 +28,9 @@
  *********************************************************************************/
 
 #include "inviwosplashscreen.h"
+#include <inviwo/core/inviwocommondefines.h>
+#include <inviwo/core/util/commandlineparser.h>
+
 #include <warn/push>
 #include <warn/ignore/all>
 #include <QApplication>
@@ -36,8 +39,6 @@
 #include <QTextStream>
 #include <QDesktopWidget>
 #include <warn/pop>
-
-#include <inviwo/core/util/commandlineparser.h>
 
 namespace inviwo {
 
@@ -53,7 +54,7 @@ void InviwoSplashScreen::show() {
 void InviwoSplashScreen::drawContents(QPainter* painter) {
     QString versionLabel;
     QTextStream labelStream(&versionLabel);
-    labelStream << "Version " << QString::fromStdString(IVW_VERSION);
+    labelStream << "Version " << QString::fromStdString(toString(build::version));
     painter->setPen(Qt::black);
     painter->drawText(12, 326, versionLabel);
     auto font = painter->font();

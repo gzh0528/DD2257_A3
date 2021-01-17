@@ -19,6 +19,7 @@
 #include <inviwo/core/properties/ordinalproperty.h>
 #include <inviwo/core/properties/buttonproperty.h>
 #include <inviwo/core/properties/optionproperty.h>
+#include <inviwo/core/datastructures/camera/perspectivecamera.h>
 //#include <inviwo/core/properties/boolcompositeproperty.h>
 //#include <inviwo/core/properties/boolproperty.h>
 //#include <inviwo/core/properties/compositeproperty.h>

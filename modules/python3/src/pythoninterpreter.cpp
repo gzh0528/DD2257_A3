@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2014-2019 Inviwo Foundation
+ * Copyright (c) 2014-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -57,7 +57,12 @@ PythonInterpreter::PythonInterpreter() : embedded_{false}, isInit_(false) {
         static wchar_t programName[] = L"PyInviwo";
         Py_SetProgramName(programName);
 
-        py::initialize_interpreter(false);
+        try {
+            py::initialize_interpreter(false);
+        } catch (const std::exception& e) {
+            throw ModuleInitException(e.what(), IVW_CONTEXT);
+        }
+
         isInit_ = true;
         embedded_ = true;
 
@@ -113,9 +118,7 @@ PythonInterpreter::~PythonInterpreter() {
     }
 }
 
-void PythonInterpreter::addModulePath(const std::string& path) {
-    pyutil::addModulePath(path);
-}
+void PythonInterpreter::addModulePath(const std::string& path) { pyutil::addModulePath(path); }
 
 void PythonInterpreter::importModule(const std::string& moduleName) {
     namespace py = pybind11;

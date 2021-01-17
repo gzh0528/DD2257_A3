@@ -15,9 +15,8 @@ set(MOC_FILES
 #--------------------------------------------------------------------
 # Add header files
 set(HEADER_FILES
-    include/modules/openglqt/canvasqglwidget.h
+    include/modules/openglqt/canvasqopenglwidget.h
     include/modules/openglqt/canvasqt.h
-    #include/modules/openglqt/canvasqwindow.h
     include/modules/openglqt/hiddencanvasqt.h
     include/modules/openglqt/openglqtcapabilities.h
     include/modules/openglqt/openglqtmodule.h
@@ -31,8 +30,8 @@ ivw_group("Header Files" ${HEADER_FILES})
 # Add source files
 set(SOURCE_FILES
     src/canvasprocessorwidgetqt.cpp
-    src/canvasqglwidget.cpp
-    #src/canvasqwindow.cpp
+    src/canvasqopenglwidget.cpp
+    src/hiddencanvasqt.cpp
     src/openglqtcapabilities.cpp
     src/openglqtmenu.cpp
     src/openglqtmodule.cpp
@@ -46,6 +45,8 @@ source_group("MOC Files" FILES ${MOCED_FILES})
 # Create module
 ivw_create_module(NO_PCH ${SOURCE_FILES} ${MOCED_FILES} ${HEADER_FILES})
 target_link_libraries(inviwo-module-openglqt PRIVATE Qt5::OpenGL Qt5::Svg)
+
+ivw_deploy_qt(inviwo-module-openglqt)
 
 ivw_compile_optimize_on_target(inviwo-module-openglqt)
 

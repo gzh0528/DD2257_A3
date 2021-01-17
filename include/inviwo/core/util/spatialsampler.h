@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2015-2019 Inviwo Foundation
+ * Copyright (c) 2015-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,10 +27,7 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_SPATIALSAMPLER_H
-#define IVW_SPATIALSAMPLER_H
-
-#include <inviwo/core/common/inviwo.h>
+#pragma once
 
 #include <inviwo/core/datastructures/spatialdata.h>
 #include <inviwo/core/datastructures/datatraits.h>
@@ -196,5 +193,3 @@ Matrix<SpatialDims, float> SpatialSampler<SpatialDims, DataDims, T>::getBasis() 
 }
 
 }  // namespace inviwo
-
-#endif  // IVW_SPATIALSAMPLER_H

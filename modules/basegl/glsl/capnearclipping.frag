@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2013-2019 Inviwo Foundation
+ * Copyright (c) 2013-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -32,10 +32,8 @@
 
 uniform sampler2D entryColor;
 uniform sampler2D entryDepth;
-uniform ImageParameters entryParameters;
 uniform sampler2D exitColor;
 uniform sampler2D exitDepth;
-uniform ImageParameters exitParameters;
 
 uniform mat4 NDCToTextureMat; // Normalized device coordinates to volume texture coordinates
 uniform float nearDist;

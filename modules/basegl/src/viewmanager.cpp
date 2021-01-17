@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2012-2019 Inviwo Foundation
+ * Copyright (c) 2012-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -155,7 +155,7 @@ bool ViewManager::propagateTouchEvent(TouchEvent* te, Propagator propagator) {
     auto& touchPoints = te->touchPoints();
 
     std::unordered_map<size_t, std::vector<TouchPoint>> viewIdToTouchPoints;
-    std::vector<int> propagatedPointIds;
+    std::vector<int> usedPointIds;
 
     auto idToView = eventState_.getView(*this, te);
     for (auto& point : touchPoints) {
@@ -181,19 +181,25 @@ bool ViewManager::propagateTouchEvent(TouchEvent* te, Propagator propagator) {
             p.setPressedPosNormalized(scale * (p.pressedPosNormalized() - offset));
         }
 
-        TouchEvent newEvent(points, te->getDevice());
+        TouchEvent newEvent(points, te->getDevice(), te->modifiers());
 
         propagator(&newEvent, viewId);
 
         for (auto p : newEvent.getVisitedProcessors()) te->markAsVisited(p);
-        for (const auto& p : points) propagatedPointIds.push_back(p.id());
+        if (newEvent.hasBeenUsed()) {
+            for (const auto& p : points) {
+                usedPointIds.push_back(p.id());
+            }
+        }
     }
 
     // remove the "used" points from the event
-    util::erase_remove_if(
-        touchPoints, [&](const auto& p) { return util::contains(propagatedPointIds, p.id()); });
+    util::erase_remove_if(touchPoints,
+                          [&](const auto& p) { return util::contains(usedPointIds, p.id()); });
 
-    if (touchPoints.empty()) te->markAsUsed();
+    if (touchPoints.empty()) {
+        te->markAsUsed();
+    }
 
     return touchPoints.empty();
 }

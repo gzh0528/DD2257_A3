@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2013-2019 Inviwo Foundation
+ * Copyright (c) 2013-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,11 +27,10 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_MODULECALLBACK_H
-#define IVW_MODULECALLBACK_H
+#pragma once
 
 #include <inviwo/core/common/inviwocoredefine.h>
-#include <inviwo/core/common/inviwo.h>
+#include <inviwo/core/util/exception.h>
 
 namespace inviwo {
 
@@ -92,5 +91,3 @@ private:
 };
 
 }  // namespace inviwo
-
-#endif  // IVW_MODULECALLBACK_H

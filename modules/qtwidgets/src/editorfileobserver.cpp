@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2019 Inviwo Foundation
+ * Copyright (c) 2019-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,6 +30,7 @@
 #include <modules/qtwidgets/editorfileobserver.h>
 
 #include <inviwo/core/util/filesystem.h>
+#include <inviwo/core/common/inviwoapplicationutil.h>
 #include <modules/qtwidgets/inviwoqtutils.h>
 
 #include <warn/push>
@@ -48,7 +49,7 @@ namespace utilqt {
 
 EditorFileObserver::EditorFileObserver(QWidget* parent, const QString& title,
                                        const std::string filename)
-    : QObject(parent), parent_(parent), title_(title) {
+    : QObject(parent), FileObserver(util::getInviwoApplication()), parent_(parent), title_(title) {
     if (parent_) {
         parent_->installEventFilter(this);
     }
@@ -118,10 +119,8 @@ void EditorFileObserver::queryReloadFile() {
         msgBox.setWindowModality(Qt::WindowModal);
 
         if (msgBox.exec() == QMessageBox::Yes) {
-            // readFile();
             reloadFileCallback_();
         } else {
-            // unsavedChanges_ = true;
             modifiedCallback_(true);
         }
         fileChangedInBackground_ = false;
@@ -131,7 +130,6 @@ void EditorFileObserver::queryReloadFile() {
 
 bool EditorFileObserver::widgetIsFocused() const {
     auto children = parent_->findChildren<QWidget*>();
-
     return std::any_of(children.begin(), children.end(), [](auto w) { return w->hasFocus(); });
 }
 

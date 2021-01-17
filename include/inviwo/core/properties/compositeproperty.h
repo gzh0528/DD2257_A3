@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2012-2019 Inviwo Foundation
+ * Copyright (c) 2012-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,15 +27,15 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_COMPOSITEPROPERTY_H
-#define IVW_COMPOSITEPROPERTY_H
+#pragma once
 
 #include <inviwo/core/common/inviwocoredefine.h>
-#include <inviwo/core/common/inviwo.h>
 #include <inviwo/core/properties/property.h>
 #include <inviwo/core/properties/propertyowner.h>
 #include <inviwo/core/util/observer.h>
 #include <inviwo/core/properties/compositepropertyobserver.h>
+
+#include <vector>
 
 namespace inviwo {
 
@@ -51,7 +51,7 @@ public:
     virtual std::string getClassIdentifier() const override;
     static const std::string classIdentifier;
 
-    CompositeProperty(std::string identifier, std::string displayName,
+    CompositeProperty(const std::string& identifier, const std::string& displayName,
                       InvalidationLevel invalidationLevel = InvalidationLevel::InvalidResources,
                       PropertySemantics semantics = PropertySemantics::Default);
 
@@ -62,7 +62,7 @@ public:
     virtual std::string getClassIdentifierForWidget() const override;
 
     virtual bool isCollapsed() const;
-    virtual void setCollapsed(bool value);
+    virtual CompositeProperty& setCollapsed(bool value);
 
     // Override original functions in Property
     virtual void setOwner(PropertyOwner* owner) override;
@@ -84,14 +84,19 @@ public:
     virtual const Processor* getProcessor() const override;
     virtual std::vector<std::string> getPath() const override;
 
+    /**
+     * @brief Accept a NetworkVisitor, the visitor will visit this and then each Property of the
+     * CompositeProperty in an undefined order. The Visitor will then visit each Properties's
+     * properties and so on.
+     */
+    virtual void accept(NetworkVisitor& visitor) override;
+
     virtual void serialize(Serializer& s) const override;
     virtual void deserialize(Deserializer& d) override;
 
 private:
-    bool collapsed_;
+    ValueWrapper<bool> collapsed_;
     InvalidationLevel subPropertyInvalidationLevel_;
 };
 
 }  // namespace inviwo
-
-#endif  // IVW_COMPOSITEPROPERTY_H

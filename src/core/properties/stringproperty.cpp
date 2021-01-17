@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2013-2019 Inviwo Foundation
+ * Copyright (c) 2013-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -51,7 +51,7 @@ Document StringProperty::getDescription() const {
     using P = Document::PathComponent;
     Document doc = TemplateProperty<std::string>::getDescription();
     auto b = doc.get({P("html"), P("body")});
-    b.append("p", value_.value);
+    b.append("pre", value_.value);
     return doc;
 }
 

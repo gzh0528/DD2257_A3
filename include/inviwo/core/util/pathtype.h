@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2015-2019 Inviwo Foundation
+ * Copyright (c) 2015-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,10 +27,7 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_PATHTYPE_H
-#define IVW_PATHTYPE_H
-
-#include <inviwo/core/common/inviwocoredefine.h>
+#pragma once
 
 namespace inviwo {
 
@@ -52,5 +49,3 @@ enum class PathType {
 };
 
 }  // namespace inviwo
-
-#endif  // IVW_PATHTYPE_H

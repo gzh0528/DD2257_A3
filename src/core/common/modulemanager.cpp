@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2017-2019 Inviwo Foundation
+ * Copyright (c) 2017-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -37,6 +37,7 @@
 #include <inviwo/core/util/utilities.h>
 #include <inviwo/core/util/capabilities.h>
 #include <inviwo/core/network/processornetwork.h>
+#include <inviwo/core/inviwocommondefines.h>
 
 #include <string>
 #include <functional>
@@ -366,9 +367,9 @@ bool ModuleManager::checkDependencies(const InviwoModuleFactoryObject& obj) cons
     std::stringstream err;
 
     // Make sure that the module supports the current inviwo core version
-    if (!Version(IVW_VERSION).semanticVersionEqual(obj.inviwoCoreVersion)) {
+    if (!build::version.semanticVersionEqual(obj.inviwoCoreVersion)) {
         err << "\nModule was built for Inviwo version " << obj.inviwoCoreVersion
-            << ", current version is " << IVW_VERSION;
+            << ", current version is " << build::version;
     }
 
     // Check if dependency modules have correct versions.

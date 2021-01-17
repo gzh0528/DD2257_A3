@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2014-2019 Inviwo Foundation
+ * Copyright (c) 2014-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,16 +27,15 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_FILE_SYSTEM_H
-#define IVW_FILE_SYSTEM_H
+#pragma once
 
 #include <inviwo/core/common/inviwocoredefine.h>
-#include <inviwo/core/common/inviwo.h>
 #include <inviwo/core/util/pathtype.h>
 
 #include <vector>
 #include <fstream>
 #include <cstdio>
+#include <ctime>
 
 namespace inviwo {
 
@@ -279,10 +278,11 @@ IVW_CORE_API std::string getParentFolderWithChildren(const std::string& path,
                                                      const std::vector<std::string>& childFolders);
 
 /**
- * Find Inviwo base path which contains subfolders "data/workspaces" and "modules"
+ * Try to find the Inviwo base path containing subfolders "data/workspaces" and "modules".
+ * If not found, try searching for path containing "modules". If neither are found, return the
+ * executable path.
  *
  * @return Inviwo base path
- * @throws exception in case base path could not be located
  */
 IVW_CORE_API std::string findBasePath();
 
@@ -361,5 +361,3 @@ IVW_CORE_API std::string cleanupPath(const std::string& path);
 }  // namespace filesystem
 
 }  // namespace inviwo
-
-#endif  // IVW_FILE_SYSTEM_H

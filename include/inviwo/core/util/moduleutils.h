@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2017-2019 Inviwo Foundation
+ * Copyright (c) 2017-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,12 +27,9 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_MODULEUTILS_H
-#define IVW_MODULEUTILS_H
+#pragma once
 
 #include <inviwo/core/common/inviwocoredefine.h>
-#include <inviwo/core/common/inviwo.h>
-
 #include <inviwo/core/common/inviwomodule.h>
 #include <inviwo/core/common/inviwoapplication.h>
 #include <inviwo/core/util/exception.h>
@@ -65,10 +62,11 @@ std::string getModulePath(ModulePath pathType) {
     if (auto m = InviwoApplication::getPtr()->getModuleByType<T>()) {
         path = m->getPath(pathType);
         if (path.empty() || path == m->getPath()) {
-            throw Exception("Could not locate module path for specified path type");
+            throw Exception("Could not locate module path for specified path type",
+                            IVW_CONTEXT_CUSTOM("module::getModulePath"));
         }
     } else {
-        throw Exception("Could not locate module");
+        throw Exception("Could not locate module", IVW_CONTEXT_CUSTOM("module::getModulePath"));
     }
     return path;
 }
@@ -76,5 +74,3 @@ std::string getModulePath(ModulePath pathType) {
 }  // namespace module
 
 }  // namespace inviwo
-
-#endif  // IVW_MODULEUTILS_H

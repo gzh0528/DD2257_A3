@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2017-2019 Inviwo Foundation
+ * Copyright (c) 2017-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,11 +27,11 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_WORKSPACEUTILS_H
-#define IVW_WORKSPACEUTILS_H
+#pragma once
 
 #include <inviwo/core/common/inviwocoredefine.h>
-#include <inviwo/core/common/inviwo.h>
+
+#include <string>
 
 namespace inviwo {
 
@@ -48,5 +48,3 @@ void IVW_CORE_API updateWorkspaces(InviwoApplication* app, const std::string& pa
 }  // namespace util
 
 }  // namespace inviwo
-
-#endif  // IVW_WORKSPACEUTILS_H

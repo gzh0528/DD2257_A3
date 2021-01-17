@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2018-2019 Inviwo Foundation
+ * Copyright (c) 2018-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,16 +27,12 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_ISOTFPROPERTY_H
-#define IVW_ISOTFPROPERTY_H
+#pragma once
 
 #include <inviwo/core/common/inviwocoredefine.h>
-#include <inviwo/core/common/inviwo.h>
-
 #include <inviwo/core/properties/compositeproperty.h>
 #include <inviwo/core/properties/isovalueproperty.h>
 #include <inviwo/core/properties/transferfunctionproperty.h>
-
 #include <inviwo/core/ports/volumeport.h>
 
 namespace inviwo {
@@ -79,12 +75,12 @@ public:
      * \brief sets only the isovalue property to \p p. The transfer function property remains
      * unchanged.
      */
-    void set(const IsoValueProperty& p);
+    void set(const IsoValueProperty* p);
     /**
      * \brief sets only the transfer function property to \p p. The isovalue property remains
      * unchanged.
      */
-    void set(const TransferFunctionProperty& p);
+    void set(const TransferFunctionProperty* p);
 
     void setMask(double maskMin, double maskMax);
     const dvec2 getMask() const;
@@ -111,5 +107,3 @@ protected:
 };
 
 }  // namespace inviwo
-
-#endif  // IVW_ISOTFPROPERTY_H

@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2016-2019 Inviwo Foundation
+ * Copyright (c) 2016-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,8 +27,7 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_TOUCHSTATE_H
-#define IVW_TOUCHSTATE_H
+#pragma once
 
 #include <inviwo/core/common/inviwocoredefine.h>
 #include <inviwo/core/util/ostreamjoiner.h>
@@ -42,10 +41,10 @@ namespace inviwo {
 
 enum class TouchState {
     None = 0,
-    Started = 1 << 0,     // Pressed
-    Updated = 1 << 1,     // Moved
-    Stationary = 1 << 2,  // No movement
-    Finished = 1 << 3,    // Released
+    Started = 1 << 0,     //!< Touches the surface of the TouchDevice
+    Updated = 1 << 1,     //!< Moved
+    Stationary = 1 << 2,  //!< No movement on TouchScreen, Pressed on TouchPad
+    Finished = 1 << 3,    //!< Released
 };
 
 ALLOW_FLAGS_FOR_ENUM(TouchState)
@@ -79,5 +78,3 @@ std::basic_ostream<Elem, Traits>& operator<<(std::basic_ostream<Elem, Traits>& s
 }
 
 }  // namespace inviwo
-
-#endif  // IVW_TOUCHSTATE_H

@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2013-2019 Inviwo Foundation
+ * Copyright (c) 2013-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,8 +27,7 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_GEOMETRYPORT_H
-#define IVW_GEOMETRYPORT_H
+#pragma once
 
 #include <inviwo/core/common/inviwocoredefine.h>
 #include <inviwo/core/ports/datainport.h>
@@ -58,5 +57,3 @@ using MeshFlatMultiInport = DataInport<Mesh, 0, true>;
 using MeshOutport = DataOutport<Mesh>;
 
 }  // namespace inviwo
-
-#endif  // IVW_GEOMETRYPORT_H

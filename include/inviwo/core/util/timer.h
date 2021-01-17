@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2013-2019 Inviwo Foundation
+ * Copyright (c) 2013-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -29,8 +29,7 @@
 
 // based on ideas from http://thradams.com/timers.htm
 
-#ifndef IVW_TIMER_H
-#define IVW_TIMER_H
+#pragma once
 
 #include <inviwo/core/common/inviwocoredefine.h>
 
@@ -44,6 +43,7 @@
 #include <memory>
 #include <thread>
 #include <future>
+#include <optional>
 #include <warn/pop>
 
 namespace inviwo {
@@ -64,13 +64,16 @@ public:
     TimerThread();
     ~TimerThread();
 
+    std::optional<clock_t::time_point> lastDelay();
+
 private:
     friend Timer;
     friend Delay;
     struct ControlBlock {
-        ControlBlock(std::function<void()> callback, Milliseconds interval);
+        ControlBlock(std::function<void()> callback, Milliseconds interval, bool repeating);
         std::function<void()> callback_;
         Milliseconds interval_;
+        bool repeating_;
         std::future<void> finished_;
     };
 
@@ -115,13 +118,18 @@ public:
           TimerThread &thread = util::getDefaultTimerThread());
     ~Timer();
 
-    void start();
+    void start(Milliseconds interval, std::function<void()> callback);
+    void start(std::function<void()> callback);
     void start(Milliseconds interval);
+    void start();
     void stop();
 
     void setInterval(Milliseconds interval);
-    void setCallback(std::function<void()> callback);
     Milliseconds getInterval() const;
+
+    void setCallback(std::function<void()> callback);
+    std::function<void()> getCallback() const;
+
     bool isRunning() const;
 
 private:
@@ -137,20 +145,27 @@ private:
 class IVW_CORE_API Delay {
 public:
     using Milliseconds = std::chrono::milliseconds;
-    Delay(Milliseconds delay, std::function<void()> callback,
+    Delay(Milliseconds defaultDelay, std::function<void()> defaltCallback,
           TimerThread &thread = util::getDefaultTimerThread());
     ~Delay();
 
+    void start(Milliseconds delay, std::function<void()> callback);
+    void start(Milliseconds delay);
+    void start(std::function<void()> callback);
     void start();
     void cancel();
 
+    void setDefaultDelay(Milliseconds delay);
+    Milliseconds getDefaultDelay() const;
+
+    void setDefaultCallback(std::function<void()> callback);
+    std::function<void()> getDefaultCallback() const;
+
 private:
-    std::function<void()> callback_;
+    std::function<void()> defaultCallback_;
     std::shared_ptr<TimerThread::ControlBlock> controlblock_;
-    Milliseconds interval_{0};
+    Milliseconds defaultDelay_;
     TimerThread &thread_;
 };
 
 }  // namespace inviwo
-
-#endif  // IVW_TIMER_H

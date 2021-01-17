@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2016-2019 Inviwo Foundation
+ * Copyright (c) 2016-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -96,11 +96,13 @@ struct DataTraits<BrushingAndLinkingManager> {
     static std::string dataName() { return "BrushingAndLinkingManager"; }
     static uvec3 colorCode() { return uvec3(160, 182, 240); }
     static Document info(const BrushingAndLinkingManager &data) {
+        using P = Document::PathComponent;
+        using H = utildoc::TableBuilder::Header;
         Document doc;
-        std::ostringstream oss;
-        oss << "Number of selected indices: " << data.getNumberOfSelected() << std::endl;
-        oss << "Number of filtered indices: " << data.getNumberOfFiltered();
-        doc.append("p", oss.str());
+        doc.append("b", "Brushing And Linking Manager", {{"style", "color:white;"}});
+        utildoc::TableBuilder tb(doc.handle(), P::end());
+        tb(H("Selected Indices"), data.getNumberOfSelected());
+        tb(H("Filtered Indices"), data.getNumberOfFiltered());
         return doc;
     }
 };

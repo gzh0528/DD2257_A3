@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2015-2019 Inviwo Foundation
+ * Copyright (c) 2015-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -59,7 +59,7 @@ NoiseProcessor::NoiseProcessor()
     , levels_("levels", "Levels", 2, 8, 1, 16)
     , persistence_("persistence", "Persistence", 0.5f, 0.001f, 1.0f, 0.001f)
     , poissonDotsAlongX_("poissonDotsAlongX", "Dots Along X", 100, 1, 1024)
-    , poissonMaxPoints_("poissonMaxPoints", "Max Points", 1, 10000000, 10000000)
+    , poissonMaxPoints_("poissonMaxPoints", "Max Points", 10000000, 1, 10000000)
 
     , haltonNumPoints_("numPoints", "Number of points", 100, 1, 1000)
     , haltonXBase_("haltonXBase", "Base for x values", 2, 2, 32)

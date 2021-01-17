@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2014-2019 Inviwo Foundation
+ * Copyright (c) 2014-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -100,4 +100,4 @@ vec4 getSignNormalizedVoxel(sampler3D volume, VolumeParameters volumeParams, ive
 #endif
 }
 
-#endif  // IVW_SAMPLER2D_GLSL
+#endif  // IVW_SAMPLER3D_GLSL

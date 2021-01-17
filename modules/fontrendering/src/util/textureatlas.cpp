@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2017-2019 Inviwo Foundation
+ * Copyright (c) 2017-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -38,6 +38,7 @@
 #include <algorithm>
 #include <numeric>
 #include <cmath>
+#include <type_traits>
 
 namespace inviwo {
 
@@ -80,7 +81,7 @@ void TextureAtlas::fillAtlas(TextRenderer& textRenderer, std::vector<TexAtlasEnt
         });
 
     if (minArea > static_cast<double>(maxTexSize_ * maxTexSize_)) {
-        throw Exception("Max size for texture atlas exceeded");
+        throw Exception("Max size for texture atlas exceeded", IVW_CONTEXT);
     }
 
     std::vector<size_t> indices(bboxes.size());
@@ -153,7 +154,7 @@ ivec2 TextureAtlas::calcTexLayout(const std::vector<size_t> indices,
             lineHeights.push_back(extent.y);
             conservativeHeight += extent.y;
             if (conservativeHeight > maxTexSize_) {
-                throw Exception("Max size for texture atlas exceeded");
+                throw Exception("Max size for texture atlas exceeded", IVW_CONTEXT);
             }
         }
     }
@@ -172,7 +173,7 @@ ivec2 TextureAtlas::calcTexLayout(const std::vector<size_t> indices,
     }(32);
 
     if (height > maxTexSize_) {
-        throw Exception("Max size for texture atlas exceeded");
+        throw Exception("Max size for texture atlas exceeded", IVW_CONTEXT);
     }
     return {width, height};
 }
@@ -205,6 +206,12 @@ void TextureAtlas::initAtlas(TextRenderer& textRenderer, const std::vector<TexAt
 
     renderInfo_.boundingBoxes = std::move(bboxes);
 }
+
+static_assert(std::is_default_constructible_v<TextureAtlas>);
+static_assert(std::is_copy_constructible_v<TextureAtlas>);
+static_assert(std::is_copy_assignable_v<TextureAtlas>);
+static_assert(std::is_nothrow_move_constructible_v<TextureAtlas>);
+static_assert(std::is_nothrow_move_assignable_v<TextureAtlas>);
 
 }  // namespace util
 

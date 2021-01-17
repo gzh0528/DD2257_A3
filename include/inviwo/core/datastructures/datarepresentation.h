@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2012-2019 Inviwo Foundation
+ * Copyright (c) 2012-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,8 +27,7 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_DATAREPRESENTATION_H
-#define IVW_DATAREPRESENTATION_H
+#pragma once
 
 #include <inviwo/core/util/formats.h>
 #include <inviwo/core/util/exception.h>
@@ -61,8 +60,7 @@ public:
 
     virtual std::type_index getTypeIndex() const = 0;
 
-    void setOwner(Owner* owner);
-    Owner* getOwner();
+    void setOwner(const Owner* owner);
     const Owner* getOwner() const;
 
     bool isValid() const;
@@ -77,7 +75,7 @@ protected:
 
     bool isValid_ = true;
     const DataFormatBase* dataFormatBase_ = DataUInt8::get();
-    Owner* owner_ = nullptr;
+    const Owner* owner_ = nullptr;
 };
 
 template <typename Owner>
@@ -105,13 +103,8 @@ void DataRepresentation<Owner>::setDataFormat(const DataFormatBase* format) {
 }
 
 template <typename Owner>
-void DataRepresentation<Owner>::setOwner(Owner* owner) {
+void DataRepresentation<Owner>::setOwner(const Owner* owner) {
     owner_ = owner;
-}
-
-template <typename Owner>
-Owner* DataRepresentation<Owner>::getOwner() {
-    return owner_;
 }
 
 template <typename Owner>
@@ -130,5 +123,3 @@ void DataRepresentation<Owner>::setValid(bool valid) {
 }
 
 }  // namespace inviwo
-
-#endif  // IVW_DATAREPRESENTATION_H

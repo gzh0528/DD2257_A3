@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2013-2019 Inviwo Foundation
+ * Copyright (c) 2013-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -48,6 +48,7 @@
 #include <inviwo/core/util/logerrorcounter.h>
 #include <inviwo/core/util/settings/systemsettings.h>
 #include <inviwo/core/moduleregistration.h>
+#include <inviwo/core/util/commandlineparser.h>
 
 #include <inviwo/testutil/configurablegtesteventlistener.h>
 
@@ -55,6 +56,9 @@
 #include <warn/ignore/all>
 #include <gtest/gtest.h>
 #include <warn/pop>
+
+#define GLFW_INCLUDE_NONE
+#include <GLFW/glfw3.h>
 
 using namespace inviwo;
 

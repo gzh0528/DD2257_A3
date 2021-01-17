@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2019 Inviwo Foundation
+ * Copyright (c) 2019-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -35,7 +35,7 @@ namespace plot {
 AxisData::AxisData(const AxisSettings& s)
     : range{s.getRange()}
     , useDataRange{s.getUseDataRange()}
-    , visible{s.getVisible()}
+    , visible{s.getAxisVisible()}
     , color{s.getColor()}
     , width{s.getWidth()}
     , orientation{s.getOrientation()}
@@ -47,7 +47,7 @@ AxisData::AxisData(const AxisSettings& s)
     , majorTicks{s.getMajorTicks()}
     , minorticks{s.getMinorTicks()} {}
 
-bool AxisData::getVisible() const { return visible; }
+bool AxisData::getAxisVisible() const { return visible; }
 
 bool AxisData::getFlipped() const { return flipped; }
 

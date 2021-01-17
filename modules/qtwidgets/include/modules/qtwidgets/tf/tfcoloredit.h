@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2018-2019 Inviwo Foundation
+ * Copyright (c) 2018-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,8 +27,7 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_TFCOLOREDIT_H
-#define IVW_TFCOLOREDIT_H
+#pragma once
 
 #include <modules/qtwidgets/qtwidgetsmoduledefine.h>
 #include <inviwo/core/common/inviwo.h>
@@ -58,7 +57,7 @@ public:
     virtual QSize sizeHint() const override;
 
     /**
-     * set the color value of the line edit, if the value is ambiguous nothing will be shown.
+     * set the color value of the line edit, if the value is ambiguous a "-" will be shown.
      * Otherwise the rgb components of the color are shown as hexadecimal color code, e.g.
      * "#f9a033".
      *
@@ -75,5 +74,3 @@ signals:
 };
 
 }  // namespace inviwo
-
-#endif  // IVW_TFCOLOREDIT_H

@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2012-2019 Inviwo Foundation
+ * Copyright (c) 2012-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,12 +27,12 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_TEMPLATEPROPERTY_H
-#define IVW_TEMPLATEPROPERTY_H
+#pragma once
 
 #include <inviwo/core/common/inviwocoredefine.h>
-#include <inviwo/core/common/inviwo.h>
 #include <inviwo/core/properties/property.h>
+
+#include <iosfwd>
 
 namespace inviwo {
 
@@ -53,17 +53,13 @@ public:
     TemplateProperty<T>& operator=(const T& value);
 
     virtual TemplateProperty<T>* clone() const override = 0;
-    virtual operator T&();
-    virtual operator const T&() const;
-
     virtual ~TemplateProperty() = default;
 
-    virtual T& get();
-    virtual const T& get() const;
+    operator const T&() const;
+    const T& get() const;
     const T& operator*() const;
-    T& operator*();
     const T* operator->() const;
-    T* operator->();
+
     virtual void set(const T& value);
     void set(const TemplateProperty<T>* srcProperty);
     virtual void set(const Property* srcProperty) override;
@@ -93,16 +89,8 @@ TemplateProperty<T>::TemplateProperty(const std::string& identifier, const std::
 
 template <typename T>
 TemplateProperty<T>& TemplateProperty<T>::operator=(const T& value) {
-    if (value_ != value) {
-        value_ = value;
-        propertyModified();
-    }
+    set(value);
     return *this;
-}
-
-template <typename T>
-TemplateProperty<T>::operator T&() {
-    return value_;
 }
 
 template <typename T>
@@ -111,22 +99,16 @@ TemplateProperty<T>::operator const T&() const {
 }
 
 template <typename T>
-TemplateProperty<T>& inviwo::TemplateProperty<T>::resetToDefaultState() {
-    value_.reset();
-    Property::resetToDefaultState();
+TemplateProperty<T>& TemplateProperty<T>::resetToDefaultState() {
+    if (value_.reset()) propertyModified();
     return *this;
 }
 
 template <typename T>
-TemplateProperty<T>& inviwo::TemplateProperty<T>::setCurrentStateAsDefault() {
+TemplateProperty<T>& TemplateProperty<T>::setCurrentStateAsDefault() {
     Property::setCurrentStateAsDefault();
     value_.setAsDefault();
     return *this;
-}
-
-template <typename T>
-T& TemplateProperty<T>::get() {
-    return value_;
 }
 
 template <typename T>
@@ -140,25 +122,13 @@ const T& TemplateProperty<T>::operator*() const {
 }
 
 template <typename T>
-T& TemplateProperty<T>::operator*() {
-    return value_;
-}
-
-template <typename T>
 const T* TemplateProperty<T>::operator->() const {
     return &value_.value;
 }
 
 template <typename T>
-T* TemplateProperty<T>::operator->() {
-    return &value_.value;
-}
-
-template <typename T>
 void TemplateProperty<T>::set(const T& value) {
-    if (value == value_) return;
-    value_ = value;
-    propertyModified();
+    if (value_.update(value)) propertyModified();
 }
 
 template <typename T>
@@ -169,10 +139,8 @@ void TemplateProperty<T>::set(const Property* srcProperty) {
 }
 
 template <typename T>
-void inviwo::TemplateProperty<T>::set(const TemplateProperty<T>* srcProperty) {
-    if (this->value_.value == srcProperty->value_.value) return;
-    this->value_.value = srcProperty->value_.value;
-    propertyModified();
+void TemplateProperty<T>::set(const TemplateProperty<T>* srcProperty) {
+    if (value_.update(srcProperty->value_)) propertyModified();
 }
 
 template <typename T>
@@ -190,5 +158,3 @@ void TemplateProperty<T>::deserialize(Deserializer& d) {
 }
 
 }  // namespace inviwo
-
-#endif  // IVW_TEMPLATEPROPERTY_H

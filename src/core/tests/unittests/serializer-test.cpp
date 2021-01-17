@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2014-2019 Inviwo Foundation
+ * Copyright (c) 2014-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -32,8 +32,7 @@
 #include <gtest/gtest.h>
 #include <warn/pop>
 
-#include <inviwo/core/common/inviwo.h>
-#include <inviwo/core/io/serialization/serializable.h>
+#include <inviwo/core/io/serialization/serialization.h>
 #include <inviwo/core/util/filesystem.h>
 
 namespace inviwo {

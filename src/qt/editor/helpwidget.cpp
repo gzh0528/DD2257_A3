@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2012-2019 Inviwo Foundation
+ * Copyright (c) 2012-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -73,7 +73,8 @@ private:
 
 class QCHFileObserver : public FileObserver {
 public:
-    QCHFileObserver(QHelpEngineCore* engine) : engine_(engine) {}
+    QCHFileObserver(QHelpEngineCore* engine)
+        : FileObserver(util::getInviwoApplication()), engine_(engine) {}
     virtual ~QCHFileObserver() = default;
 
     void addFile(const std::string& fileName) {
@@ -167,7 +168,7 @@ HelpWidget::HelpWidget(InviwoMainWindow* mainwindow)
     if (!helpEngine_->setupData()) {
         const std::string error{helpEngine_->error().toUtf8().constData()};
         delete helpEngine_;
-        throw Exception("Failed to setup the help engine:" + error);
+        throw Exception("Failed to setup the help engine:" + error, IVW_CONTEXT);
     }
 
     fileObserver_ = std::make_unique<QCHFileObserver>(helpEngine_);

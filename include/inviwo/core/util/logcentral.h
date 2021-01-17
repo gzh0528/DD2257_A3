@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2012-2019 Inviwo Foundation
+ * Copyright (c) 2012-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,8 +27,7 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_LOGGER_H
-#define IVW_LOGGER_H
+#pragma once
 
 #include <inviwo/core/common/inviwocoredefine.h>
 #include <inviwo/core/util/singleton.h>
@@ -250,5 +249,3 @@ IVW_CORE_API void log(Logger* logger, ExceptionContext context, std::string mess
 }  // namespace util
 
 }  // namespace inviwo
-
-#endif  // IVW_LOGGER_H

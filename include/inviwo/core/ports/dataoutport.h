@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2013-2019 Inviwo Foundation
+ * Copyright (c) 2013-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,16 +27,19 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_DATAOUTPORT_H
-#define IVW_DATAOUTPORT_H
+#pragma once
 
-#include <inviwo/core/common/inviwo.h>
 #include <inviwo/core/common/inviwocoredefine.h>
 #include <inviwo/core/datastructures/datatraits.h>
 #include <inviwo/core/ports/outport.h>
 #include <inviwo/core/ports/outportiterable.h>
 #include <inviwo/core/ports/porttraits.h>
 #include <inviwo/core/util/stringconversion.h>
+#include <inviwo/core/util/document.h>
+
+#include <glm/fwd.hpp>
+
+#include <memory>
 
 namespace inviwo {
 
@@ -45,23 +48,46 @@ namespace inviwo {
  * DataOutport hold data of type T
  */
 template <typename T>
-class DataOutport : public Outport, public OutportIterableImpl<T> {
+class DataOutport : public Outport, public OutportIterableImpl<DataOutport<T>, T> {
 public:
     using type = T;
     DataOutport(std::string identifier);
     virtual ~DataOutport() = default;
 
     virtual std::string getClassIdentifier() const override;
-    virtual uvec3 getColorCode() const override;
+    virtual glm::uvec3 getColorCode() const override;
     virtual Document getInfo() const override;
 
     virtual std::shared_ptr<const T> getData() const;
-    // Return data and release ownership. Data in the port will be nullptr after call.
+
+    /**
+     * Return data and release ownership. Data in the port will be nullptr after call.
+     */
     virtual std::shared_ptr<const T> detachData();
+
+    /**
+     * \copydoc Outport::clear
+     */
+    virtual void clear() override;
 
     virtual void setData(std::shared_ptr<const T> data);
     virtual void setData(const T* data);  // will assume ownership of data.
-    bool hasData() const;
+
+    /**
+     * Pass data along to the port using the Move constructor.
+     * Example:
+     * ```c++
+     * void SomePorcessor::process() {
+     *     std::vector<vec3> points;
+     *      /// code to fill the points-vector with data
+     *      myPort_.setData(std::move(points));
+     * }
+     * ```
+     */
+    template <typename U = T, typename = std::enable_if_t<std::is_move_constructible_v<U>>>
+    void setData(T&& data);
+
+    virtual bool hasData() const override;
 
 protected:
     std::shared_ptr<const T> data_;
@@ -76,7 +102,7 @@ struct PortTraits<DataOutport<T>> {
 
 template <typename T>
 DataOutport<T>::DataOutport(std::string identifier)
-    : Outport(identifier), OutportIterableImpl<T>(this), data_() {
+    : Outport(identifier), OutportIterableImpl<DataOutport<T>, T>{}, data_() {
 
     isReady_.setUpdate([this]() {
         return invalidationLevel_ == InvalidationLevel::Valid && data_.get() != nullptr;
@@ -89,7 +115,7 @@ std::string DataOutport<T>::getClassIdentifier() const {
 }
 
 template <typename T>
-uvec3 DataOutport<T>::getColorCode() const {
+glm::uvec3 DataOutport<T>::getColorCode() const {
     return DataTraits<T>::colorCode();
 }
 
@@ -119,8 +145,20 @@ std::shared_ptr<const T> DataOutport<T>::detachData() {
 }
 
 template <typename T>
+template <typename, typename>
+void DataOutport<T>::setData(T&& data) {
+    setData(std::make_shared<T>(data));
+}
+
+template <typename T>
 bool DataOutport<T>::hasData() const {
     return data_.get() != nullptr;
+}
+
+template <typename T>
+void DataOutport<T>::clear() {
+    data_.reset();
+    isReady_.update();
 }
 
 template <typename T>
@@ -128,10 +166,10 @@ Document DataOutport<T>::getInfo() const {
     Document doc;
     using P = Document::PathComponent;
     using H = utildoc::TableBuilder::Header;
-    auto t = doc.append("html").append("body").append("table");
-    auto pi = t.append("tr").append("td");
-    pi.append("b", htmlEncode(DataTraits<T>::dataName()) + " Outport", {{"style", "color:white;"}});
-    utildoc::TableBuilder tb(pi, P::end());
+    auto b = doc.append("html").append("body");
+    auto p = b.append("p");
+    p.append("b", htmlEncode(DataTraits<T>::dataName()) + " Outport", {{"style", "color:white;"}});
+    utildoc::TableBuilder tb(p, P::end());
     tb(H("Identifier"), getIdentifier());
     tb(H("Class"), getClassIdentifier());
     tb(H("Ready"), isReady());
@@ -139,14 +177,11 @@ Document DataOutport<T>::getInfo() const {
     tb(H("Connections"), connectedInports_.size());
 
     if (hasData()) {
-        auto datadoc = DataTraits<T>::info(*getData());
-        doc.append("p", datadoc);
+        b.append("p").append(DataTraits<T>::info(*getData()));
     } else {
-        doc.append("p", "Port has no data");
+        b.append("p", "Port has no data");
     }
     return doc;
 }
 
 }  // namespace inviwo
-
-#endif  // IVW_DATAOUTPORT_H

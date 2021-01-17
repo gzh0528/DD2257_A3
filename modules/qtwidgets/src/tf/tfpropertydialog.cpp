@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2013-2019 Inviwo Foundation
+ * Copyright (c) 2013-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -75,7 +75,7 @@ TFPropertyDialog::TFPropertyDialog(TransferFunctionProperty* property,
                                    const std::vector<TFPrimitiveSet*>& primitiveSets)
     : PropertyEditorWidgetQt(property, "Transfer Function Editor", "TFEditorWidget")
     , sliderRange_(static_cast<int>(property->get().getTextureSize()))
-    , propertyPtr_(std::make_unique<util::TFPropertyModel<TransferFunctionProperty*>>(property))
+    , propertyPtr_(std::make_unique<util::TFPropertyModel<TransferFunctionProperty>>(property))
     , tfSets_(primitiveSets) {
     if (tfSets_.empty()) {
         // no sets given, make sure that the primitive set of the property is used
@@ -88,7 +88,7 @@ TFPropertyDialog::TFPropertyDialog(IsoValueProperty* property,
                                    const std::vector<TFPrimitiveSet*>& primitiveSets)
     : PropertyEditorWidgetQt(property, "Transfer Function Editor", "TFEditorWidget")
     , sliderRange_(1024)
-    , propertyPtr_(std::make_unique<util::TFPropertyModel<IsoValueProperty*>>(property))
+    , propertyPtr_(std::make_unique<util::TFPropertyModel<IsoValueProperty>>(property))
     , tfSets_(primitiveSets) {
     if (tfSets_.empty()) {
         // no sets given, make sure that the primitive set of the property is used
@@ -101,7 +101,7 @@ TFPropertyDialog::TFPropertyDialog(IsoTFProperty* property,
                                    const std::vector<TFPrimitiveSet*>& primitiveSets)
     : PropertyEditorWidgetQt(property, "Transfer Function Editor", "TFEditorWidget")
     , sliderRange_(static_cast<int>(property->tf_.get().getTextureSize()))
-    , propertyPtr_(std::make_unique<util::TFPropertyModel<IsoTFProperty*>>(property))
+    , propertyPtr_(std::make_unique<util::TFPropertyModel<IsoTFProperty>>(property))
     , tfSets_(primitiveSets) {
     if (tfSets_.empty()) {
         // no sets given, make sure that the primitive sets of the property are used
@@ -159,14 +159,14 @@ void TFPropertyDialog::initializeDialog() {
     tfEditorView_->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 
     zoomVSlider_ = new RangeSliderQt(Qt::Vertical, this, true);
-    zoomVSlider_->setRange(0, sliderRange_);
+    zoomVSlider_->setRange(0, verticalSliderRange_);
     zoomVSlider_->setMinSeparation(5);
     // flip slider values to compensate for vertical slider layout
     onZoomVChange(propertyPtr_->getZoomV());
     connect(zoomVSlider_, &RangeSliderQt::valuesChanged, this,
             &TFPropertyDialog::changeVerticalZoom);
 
-    zoomVSlider_->setTooltipFormat([range = sliderRange_](int /*handle*/, int val) {
+    zoomVSlider_->setTooltipFormat([range = verticalSliderRange_](int /*handle*/, int val) {
         return toString(1.0f - static_cast<float>(val) / range);
     });
 
@@ -229,23 +229,7 @@ void TFPropertyDialog::initializeDialog() {
 
         // ensure that the range of primitive scalar is matching value range of volume data
         if (auto port = propertyPtr_->getVolumeInport()) {
-            const auto portChange = [this, port]() {
-                auto range =
-                    port->hasData() ? port->getData()->dataMap_.valueRange : dvec2(0.0, 1.0);
-                // TODO: how to handle different TF types?
-                // perform mapping only, if all TF are of relative type
-                bool allRelative =
-                    std::all_of(tfSets_.begin(), tfSets_.end(), [](TFPrimitiveSet* elem) {
-                        return elem->getType() == TFPrimitiveSetType::Relative;
-                    });
-                primitivePos_->setValueMapping(allRelative, range);
-
-                zoomHSlider_->setTooltipFormat([sliderRange = sliderRange_, range](int, int val) {
-                    return toString(
-                        glm::mix(range.x, range.y, static_cast<double>(val) / sliderRange));
-                });
-            };
-            portChange();
+            const auto portChange = [this]() { onTFTypeChangedInternal(); };
 
             port->onChange(portChange);
             port->onConnect(portChange);
@@ -263,6 +247,7 @@ void TFPropertyDialog::initializeDialog() {
                 &TFSelectionWatcher::setAlpha);
 
         primitiveColor_ = new TFColorEdit();
+        primitiveColor_->setColor(QColor(Qt::black), true);
         connect(tfSelectionWatcher_.get(), &TFSelectionWatcher::updateWidgetColor, primitiveColor_,
                 &TFColorEdit::setColor);
         connect(primitiveColor_, &TFColorEdit::colorChanged, tfSelectionWatcher_.get(),
@@ -346,6 +331,8 @@ void TFPropertyDialog::initializeDialog() {
                 });
         connect(colorDialog_.get(), &QColorDialog::currentColorChanged, tfSelectionWatcher_.get(),
                 &TFSelectionWatcher::setColor);
+
+        colorDialog_->installEventFilter(new utilqt::WidgetCloseEventFilter(this));
     }
 
     // ensure that the TF dialog has its minimal size when showing up for the first time
@@ -370,7 +357,7 @@ void TFPropertyDialog::initializeDialog() {
         chkShowHistogram_->setVisible(false);
     }
     loadState();
-}  // namespace inviwo
+}
 
 QSize TFPropertyDialog::minimumSizeHint() const { return TFPropertyDialog::sizeHint(); }
 
@@ -396,8 +383,8 @@ void TFPropertyDialog::changeVerticalZoom(int zoomMin, int zoomMax) {
     // normalize zoom values, as sliders in TFPropertyDialog
     // have the range [0...100]
     // and flip/rescale values to compensate slider layout
-    const auto zoomMaxF = static_cast<float>(sliderRange_ - zoomMin) / sliderRange_;
-    const auto zoomMinF = static_cast<float>(sliderRange_ - zoomMax) / sliderRange_;
+    const auto zoomMaxF = static_cast<float>(verticalSliderRange_ - zoomMin) / verticalSliderRange_;
+    const auto zoomMinF = static_cast<float>(verticalSliderRange_ - zoomMax) / verticalSliderRange_;
 
     propertyPtr_->setZoomV(zoomMinF, zoomMaxF);
     tfEditor_->setRelativeSceneOffset(getRelativeSceneOffset());
@@ -454,10 +441,24 @@ void TFPropertyDialog::onTFTypeChangedInternal() {
             valueRange = port->getData()->dataMap_.valueRange;
         }
     }
+    // TODO: how to handle different TF types?
+    // perform mapping only, if all TF are of relative type
     const bool allRelative = std::all_of(tfSets_.begin(), tfSets_.end(), [](TFPrimitiveSet* elem) {
         return elem->getType() == TFPrimitiveSetType::Relative;
     });
-    primitivePos_->setValueMapping(allRelative, valueRange);
+
+    // make increment depending on the size of the underlying TF texture
+    const double incr =
+        propertyPtr_->hasTF()
+            ? 1.0 / static_cast<double>(propertyPtr_->getTFProperty()->get().getTextureSize())
+            : 0.01;
+
+    primitivePos_->setValueMapping(allRelative, valueRange, incr * (valueRange.y - valueRange.x));
+
+    zoomHSlider_->setTooltipFormat([sliderRange = sliderRange_, valueRange](int, int val) {
+        return toString(
+            glm::mix(valueRange.x, valueRange.y, static_cast<double>(val) / sliderRange));
+    });
 }
 
 void TFPropertyDialog::onMaskChange(const dvec2&) { updateTFPreview(); }
@@ -468,8 +469,8 @@ void TFPropertyDialog::onZoomHChange(const dvec2& zoomH) {
 }
 
 void TFPropertyDialog::onZoomVChange(const dvec2& zoomV) {
-    zoomVSlider_->setValue(sliderRange_ - static_cast<int>(zoomV.y * sliderRange_),
-                           sliderRange_ - static_cast<int>(zoomV.x * sliderRange_));
+    zoomVSlider_->setValue(verticalSliderRange_ - static_cast<int>(zoomV.y * verticalSliderRange_),
+                           verticalSliderRange_ - static_cast<int>(zoomV.x * verticalSliderRange_));
 }
 
 void TFPropertyDialog::setReadOnly(bool readonly) {

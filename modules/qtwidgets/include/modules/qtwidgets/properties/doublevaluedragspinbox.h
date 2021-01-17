@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2018-2019 Inviwo Foundation
+ * Copyright (c) 2018-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,8 +27,7 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_DOUBLEVALUEDRAGSPINBOX_H
-#define IVW_DOUBLEVALUEDRAGSPINBOX_H
+#pragma once
 
 #include <modules/qtwidgets/qtwidgetsmoduledefine.h>
 #include <inviwo/core/common/inviwo.h>
@@ -51,13 +50,15 @@ class IVW_MODULE_QTWIDGETS_API DoubleValueDragSpinBox : public QWidget {
     Q_OBJECT
 #include <warn/pop>
 public:
-    explicit DoubleValueDragSpinBox(QWidget *parent = nullptr);
+    explicit DoubleValueDragSpinBox(QWidget* parent = nullptr);
     virtual ~DoubleValueDragSpinBox() override = default;
 
     void setReadOnly(bool r);
     bool isReadOnly() const;
 
-    void setSpecialValueText(const QString &txt);
+    bool isValid() const;
+
+    void setSpecialValueText(const QString& txt);
     QString specialValueText() const;
 
     void setWrapping(bool w);
@@ -73,17 +74,25 @@ public:
     void setDecimals(int prec);
     void setMaximum(double max);
     void setMinimum(double min);
-    void setPrefix(const QString &prefix);
+    void setPrefix(const QString& prefix);
     void setRange(double minimum, double maximum);
     void setSingleStep(double val);
-    void setSuffix(const QString &suffix);
+    void setSuffix(const QString& suffix);
     double singleStep() const;
     QString suffix() const;
     double value() const;
 
+    /**
+     * \brief determine the number of required decimals for the given \p value
+     * This function can be used, e.g., to fit the precision of the spinbox to the increment.
+     *
+     * @param value   number used to determine the number of digits after the decimal point
+     */
+    int spinnerDecimals(double value) const;
+
 signals:
     void valueChanged(double d);
-    void valueChanged(const QString &text);
+    void valueChanged(const QString& text);
     void editingFinished();
 
 public slots:
@@ -91,12 +100,15 @@ public slots:
     void selectAll();
     void stepDown();
     void stepUp();
+    void setInvalid(bool invalid = true);
 
 private:
-    NumberLineEdit *spinBox_;
-    ValueDragger<double> *valueDragger_;
+    void updateState();
+
+    NumberLineEdit* spinBox_;
+    ValueDragger<double>* valueDragger_;
+
+    bool invalid_;
 };
 
 }  // namespace inviwo
-
-#endif  // IVW_DOUBLEVALUEDRAGSPINBOX_H

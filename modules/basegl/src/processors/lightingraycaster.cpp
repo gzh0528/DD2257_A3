@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2014-2019 Inviwo Foundation
+ * Copyright (c) 2014-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -38,6 +38,7 @@
 #include <modules/opengl/texture/textureutils.h>
 #include <modules/opengl/shader/shaderutils.h>
 #include <modules/opengl/volume/volumeutils.h>
+#include <inviwo/core/algorithm/boundingbox.h>
 
 namespace inviwo {
 
@@ -64,7 +65,7 @@ LightingRaycaster::LightingRaycaster()
     , transferFunction_("transferFunction", "Transfer function", &volumePort_)
     , channel_("channel", "Render Channel")
     , raycasting_("raycaster", "Raycasting")
-    , camera_("camera", "Camera")
+    , camera_("camera", "Camera", util::boundingBox(volumePort_))
     , lighting_("lighting", "Lighting", &camera_) {
 
     shader_.onReload([this]() { invalidate(InvalidationLevel::InvalidResources); });
@@ -83,16 +84,16 @@ LightingRaycaster::LightingRaycaster()
 
     volumePort_.onChange([this]() {
         if (volumePort_.hasData()) {
-            std::size_t channels = volumePort_.getData()->getDataFormat()->getComponents();
+            size_t channels = volumePort_.getData()->getDataFormat()->getComponents();
 
             if (channels == channel_.size()) return;
 
-            channel_.clearOptions();
-            for (int i = 0; i < static_cast<int>(channels); i++) {
-                std::stringstream ss;
-                ss << "Channel " << i;
-                channel_.addOption(ss.str(), ss.str(), i);
+            std::vector<OptionPropertyIntOption> channelOptions;
+            for (size_t i = 0; i < channels; i++) {
+                channelOptions.emplace_back("Channel " + toString(i + 1),
+                                            "Channel " + toString(i + 1), static_cast<int>(i));
             }
+            channel_.replaceOptions(channelOptions);
             channel_.setCurrentStateAsDefault();
         }
     });
@@ -109,15 +110,9 @@ LightingRaycaster::LightingRaycaster()
 }
 
 void LightingRaycaster::initializeResources() {
-    utilgl::addShaderDefines(shader_, raycasting_);
-    utilgl::addShaderDefines(shader_, camera_);
-    utilgl::addShaderDefines(shader_, lighting_);
+    utilgl::addDefines(shader_, raycasting_, camera_, lighting_);
     utilgl::addShaderDefinesBGPort(shader_, backgroundPort_);
-
-    if (enableLightColor_.get())
-        shader_.getFragmentShaderObject()->addShaderDefine("LIGHT_COLOR_ENABLED");
-    else
-        shader_.getFragmentShaderObject()->removeShaderDefine("LIGHT_COLOR_ENABLED");
+    shader_.getFragmentShaderObject()->setShaderDefine("LIGHT_COLOR_ENABLED", enableLightColor_);
 
     shader_.build();
 }

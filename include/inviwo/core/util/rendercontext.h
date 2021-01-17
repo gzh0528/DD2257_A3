@@ -3,7 +3,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2012-2019 Inviwo Foundation
+ * Copyright (c) 2012-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -28,15 +28,24 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_RENDERCONTEXT_H
-#define IVW_RENDERCONTEXT_H
+#pragma once
 
 #include <inviwo/core/common/inviwocoredefine.h>
-#include <inviwo/core/common/inviwo.h>
 #include <inviwo/core/util/singleton.h>
 #include <inviwo/core/util/canvas.h>
 
 namespace inviwo {
+
+/**
+ * An abstraction for what we need from a "context".
+ */
+class IVW_CORE_API ContextHolder {
+public:
+    virtual ~ContextHolder() = default;
+    virtual void activate() = 0;
+    virtual std::unique_ptr<Canvas> createHiddenCanvas() = 0;
+    virtual Canvas::ContextID activeContext() const = 0;
+};
 
 /**
  * \class RenderContext
@@ -47,8 +56,10 @@ public:
     RenderContext() = default;
     virtual ~RenderContext() = default;
 
-    Canvas* getDefaultRenderContext();
-    void setDefaultRenderContext(Canvas* canvas);
+    ContextHolder* getDefaultRenderContext();
+    bool hasDefaultRenderContext() const;
+    ContextHolder* setDefaultRenderContext(Canvas* canvas);
+    ContextHolder* setDefaultRenderContext(std::unique_ptr<ContextHolder> context);
     void activateDefaultRenderContext() const;
 
     void activateLocalRenderContext() const;
@@ -71,13 +82,13 @@ public:
 private:
     struct ContextInfo {
         std::string name;
-        Canvas* canvas;
+        Canvas* canvas = nullptr;
         std::thread::id threadId;
     };
 
     std::unordered_map<Canvas::ContextID, ContextInfo> contextRegistry_;
 
-    Canvas* defaultContext_ = nullptr;
+    std::unique_ptr<ContextHolder> defaultContext_ = nullptr;
     std::thread::id mainThread_;
     mutable std::mutex mutex_;
     mutable std::unordered_map<std::thread::id, std::unique_ptr<Canvas>> contextMap_;
@@ -94,5 +105,3 @@ void RenderContext::forEachContext(C callback) {
 }
 
 }  // namespace inviwo
-
-#endif  // IVW_RENDERCONTEXT_H

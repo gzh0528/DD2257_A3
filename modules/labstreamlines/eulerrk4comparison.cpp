@@ -9,6 +9,7 @@
  */
 
 #include <inviwo/core/datastructures/geometry/basicmesh.h>
+#include <inviwo/core/algorithm/boundingbox.h>
 #include <inviwo/core/interaction/events/mouseevent.h>
 #include <labstreamlines/eulerrk4comparison.h>
 #include <labstreamlines/integrator.h>
@@ -51,6 +52,7 @@ EulerRK4Comparison::EulerRK4Comparison()
 
     // TODO: Register additional properties
     // addProperty(propertyName);
+
 }
 
 void EulerRK4Comparison::eventMoveStart(Event* event) {

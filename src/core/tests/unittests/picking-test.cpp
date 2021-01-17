@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2014-2019 Inviwo Foundation
+ * Copyright (c) 2014-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -36,6 +36,8 @@
 #include <inviwo/core/interaction/pickingmapper.h>
 #include <inviwo/core/interaction/pickingaction.h>
 #include <inviwo/core/util/stdextensions.h>
+
+#include <glm/gtx/hash.hpp>
 
 #include <unordered_set>
 

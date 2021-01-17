@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2012-2019 Inviwo Foundation
+ * Copyright (c) 2012-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,6 +30,7 @@
 #include <inviwo/core/util/threadpool.h>
 #include <inviwo/core/util/raiiutils.h>
 #include <inviwo/core/util/stdextensions.h>
+#include <inviwo/core/util/threadutil.h>
 
 namespace inviwo {
 
@@ -69,6 +70,11 @@ size_t ThreadPool::trySetSize(size_t size) {
 
 size_t ThreadPool::getSize() const { return workers.size(); }
 
+size_t ThreadPool::getQueueSize() {
+    std::unique_lock<std::mutex> lock(queue_mutex);
+    return tasks.size();
+}
+
 ThreadPool::~ThreadPool() {
     for (auto& worker : workers) worker->state = State::Abort;
     condition.notify_all();
@@ -95,9 +101,25 @@ ThreadPool::Worker::Worker(ThreadPool& pool)
                 pool.tasks.pop();
             }
             state = State::Working;
-            task();
+            try {
+                task();
+            } catch (...) {  // Make sure we don't leak any exceptions.
+            }
         }
         state = State::Done;
-    }} {}
+    }} {
+
+    util::setThreadDescription(thread, "Inviwo Worker Thread");
+}
+
+void ThreadPool::enqueueRaw(std::function<void()> task) {
+    if (workers.empty()) {
+        task();  // No worker threads, just run the task.
+    } else {
+        std::unique_lock<std::mutex> lock(queue_mutex);
+        tasks.emplace(std::move(task));
+    }
+    condition.notify_one();
+}
 
 }  // namespace inviwo

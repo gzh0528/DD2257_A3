@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2014-2019 Inviwo Foundation
+ * Copyright (c) 2014-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,6 +30,7 @@
 #include <inviwo/core/interaction/events/touchevent.h>
 
 #include <inviwo/core/interaction/events/eventutil.h>
+#include <inviwo/core/util/glm.h>
 
 namespace inviwo {
 
@@ -107,8 +108,9 @@ TouchDevice::TouchDevice(DeviceType type, std::string name) : type_(type), name_
 
 TouchEvent::TouchEvent() = default;
 
-TouchEvent::TouchEvent(const std::vector<TouchPoint>& touchPoints, const TouchDevice* source)
-    : InteractionEvent(), touchPoints_(touchPoints), device_(source) {}
+TouchEvent::TouchEvent(const std::vector<TouchPoint>& touchPoints, const TouchDevice* source,
+                       KeyModifiers modifiers)
+    : InteractionEvent(modifiers), touchPoints_(touchPoints), device_(source) {}
 
 TouchEvent* TouchEvent::clone() const { return new TouchEvent(*this); }
 

@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2012-2019 Inviwo Foundation
+ * Copyright (c) 2012-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,8 +27,7 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_INVIWOQTUTILS_H
-#define IVW_INVIWOQTUTILS_H
+#pragma once
 
 #include <modules/qtwidgets/qtwidgetsmoduledefine.h>
 #include <inviwo/core/common/inviwo.h>
@@ -48,6 +47,7 @@
 #include <QMainWindow>
 #include <QImage>
 #include <QPixmap>
+#include <QLocale>
 #include <warn/pop>
 
 class QFontMetrics;
@@ -214,7 +214,7 @@ IVW_MODULE_QTWIDGETS_API void addImageActions(QMenu& menu, const Image& image,
  * @return title where "[*]" is replaced with '*' if the widget is modified, or '' otherwise
  * \see QWidget::setWindowTitle
  */
-IVW_MODULE_QTWIDGETS_API QString windowTitleHelper(const QString& title, const QWidget* widget);
+QString windowTitleHelper(const QString& title, const QWidget* widget);
 
 // In a non high dpi system an 'M' measures 11 px. Hence all our old pixels sizes, can be converted
 // to Em sizes by dividing by 11
@@ -224,6 +224,34 @@ IVW_MODULE_QTWIDGETS_API int refSpacePx(const QWidget* w);
 IVW_MODULE_QTWIDGETS_API QSize emToPx(const QWidget* w, QSizeF);
 IVW_MODULE_QTWIDGETS_API int emToPx(const QWidget* w, double em);
 IVW_MODULE_QTWIDGETS_API int emToPx(const QFontMetrics& m, double em);
+
+/**
+ * Workaround for closing Widget using the "X" button in the titlebar
+ * This filter intercepts the CloseEvent and ignores it, and then hides the widget
+ */
+struct IVW_MODULE_QTWIDGETS_API WidgetCloseEventFilter : QObject {
+    WidgetCloseEventFilter(QObject* parent);
+    virtual bool eventFilter(QObject* obj, QEvent* ev) override;
+};
+
+template <typename T>
+int decimals([[maybe_unused]] double inc) {
+    if constexpr (std::is_floating_point_v<T>) {
+        const static QLocale locale;
+        std::ostringstream buff;
+        utilqt::localizeStream(buff);
+        buff << inc;
+        const std::string str(buff.str());
+        auto periodPosition = str.find(locale.decimalPoint().toLatin1());
+        if (periodPosition == std::string::npos) {
+            return 0;
+        } else {
+            return static_cast<int>(str.length() - periodPosition) - 1;
+        }
+    } else {
+        return 0;
+    }
+}
 
 }  // namespace utilqt
 
@@ -246,5 +274,3 @@ T localizedStringTo(const std::string& str) {
 }
 
 }  // namespace inviwo
-
-#endif  // IVW_INVIWOQTUTILS_H

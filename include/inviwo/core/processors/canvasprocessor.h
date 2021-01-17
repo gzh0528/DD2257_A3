@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2012-2019 Inviwo Foundation
+ * Copyright (c) 2012-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,11 +27,9 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_CANVASPROCESSOR_H
-#define IVW_CANVASPROCESSOR_H
+#pragma once
 
 #include <inviwo/core/common/inviwocoredefine.h>
-#include <inviwo/core/common/inviwo.h>
 #include <inviwo/core/processors/processor.h>
 #include <inviwo/core/ports/imageport.h>
 #include <inviwo/core/properties/boolproperty.h>
@@ -42,6 +40,8 @@
 #include <inviwo/core/properties/compositeproperty.h>
 #include <inviwo/core/properties/eventproperty.h>
 #include <inviwo/core/metadata/processorwidgetmetadata.h>
+#include <inviwo/core/util/fileextension.h>
+#include <inviwo/core/network/networkvisitor.h>
 
 namespace inviwo {
 
@@ -53,17 +53,17 @@ class DataWriterType;
 
 class IVW_CORE_API CanvasProcessor : public Processor, public ProcessorWidgetMetaDataObserver {
 public:
-    CanvasProcessor();
+    CanvasProcessor(InviwoApplication* app);
     virtual ~CanvasProcessor();
 
     virtual void process() override;
     virtual void doIfNotReady() override;
 
-    void setCanvasSize(ivec2);
-    ivec2 getCanvasSize() const;
+    void setCanvasSize(size2_t);
+    size2_t getCanvasSize() const;
 
     bool getUseCustomDimensions() const;
-    ivec2 getCustomDimensions() const;
+    size2_t getCustomDimensions() const;
 
     void saveImageLayer();
     void saveImageLayer(std::string filePath, const FileExtension& extension = FileExtension());
@@ -82,6 +82,13 @@ public:
      */
     void setEvaluateWhenHidden(bool option);
 
+    /**
+     * @brief Accept a NetworkVisitor, the visitor will visit this and then each Property of the
+     * Processor in an undefined order. The Visitor will then visit each Properties's properties and
+     * so on.
+     */
+    virtual void accept(NetworkVisitor& visitor) override;
+
 protected:
     virtual void onProcessorWidgetPositionChange(ProcessorWidgetMetaData*) override;
     virtual void onProcessorWidgetDimensionChange(ProcessorWidgetMetaData*) override;
@@ -93,15 +100,15 @@ public:
     ImageInport inport_;
 
     CompositeProperty inputSize_;
-    IntVec2Property dimensions_;
+    IntSize2Property dimensions_;
     BoolProperty enableCustomInputDimensions_;
-    IntVec2Property customInputDimensions_;
+    IntSize2Property customInputDimensions_;
     BoolProperty keepAspectRatio_;
     FloatProperty aspectRatioScaling_;
     IntVec2Property position_;
     TemplateOptionProperty<LayerType> visibleLayer_;
     IntProperty colorLayer_;
-    OptionPropertyString imageTypeExt_;
+    TemplateOptionProperty<FileExtension> imageTypeExt_;
     DirectoryProperty saveLayerDirectory_;
     ButtonProperty saveLayerButton_;
     ButtonProperty saveLayerToFileButton_;
@@ -110,15 +117,14 @@ public:
     EventProperty saveLayerEvent_;
 
     BoolProperty allowContextMenu_;
+    BoolProperty evaluateWhenHidden_;
 
 private:
     void sizeChanged();
-    ivec2 calcSize();
+    size2_t calcSize();
 
-    ivec2 previousImageSize_;
+    size2_t previousImageSize_;
     ProcessorWidgetMetaData* widgetMetaData_;
 };
 
 }  // namespace inviwo
-
-#endif  // IVW_CANVASPROCESSOR_H

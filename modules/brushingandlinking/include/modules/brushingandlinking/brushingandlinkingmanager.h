@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2016-2019 Inviwo Foundation
+ * Copyright (c) 2016-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,17 +27,18 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_BRUSHINGANDLINKINGMANAGER_H
-#define IVW_BRUSHINGANDLINKINGMANAGER_H
+#pragma once
 
-#include <inviwo/core/common/inviwo.h>
 #include <modules/brushingandlinking/brushingandlinkingmoduledefine.h>
 #include <modules/brushingandlinking/datastructures/indexlist.h>
 #include <inviwo/core/properties/invalidationlevel.h>
 
+#include <unordered_set>
+
 namespace inviwo {
+
 class BrushingAndLinkingInport;
-class BrushingAndLinkingProcessor;
+class Processor;
 /**
  * \class BrushingAndLinkingManager
  * \brief Manages row filtering, row selection and column selection from multiple sources.
@@ -65,11 +66,14 @@ public:
     bool isColumnSelected(size_t column) const;
 
     void setSelected(const BrushingAndLinkingInport* src, const std::unordered_set<size_t>& idx);
+    void clearSelected();
 
     void setFiltered(const BrushingAndLinkingInport* src, const std::unordered_set<size_t>& idx);
+    void clearFiltered();
 
     void setSelectedColumn(const BrushingAndLinkingInport* src,
                            const std::unordered_set<size_t>& columnIndices);
+    void clearColumns();
 
     const std::unordered_set<size_t>& getSelectedIndices() const;
     const std::unordered_set<size_t>& getFilteredIndices() const;
@@ -92,5 +96,3 @@ inline bool BrushingAndLinkingManager::isSelected(size_t idx) const {
 }
 
 }  // namespace inviwo
-
-#endif  // IVW_BRUSHINGANDLINKINGMANAGER_H

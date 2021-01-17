@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2019 Inviwo Foundation
+ * Copyright (c) 2019-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -37,7 +37,7 @@ bool AxisSettings::isVertical() const { return getOrientation() == Orientation::
 
 bool operator==(const AxisSettings& a, const AxisSettings& b) {
     return a.getCaption() == b.getCaption() && a.getLabels() == b.getLabels() &&
-           a.getVisible() == b.getVisible() && a.getFlipped() == b.getFlipped() &&
+           a.getAxisVisible() == b.getAxisVisible() && a.getFlipped() == b.getFlipped() &&
            a.getColor() == b.getColor() && a.getWidth() == b.getWidth() &&
            a.getUseDataRange() == b.getUseDataRange() && a.getRange() == b.getRange() &&
            a.getOrientation() == b.getOrientation() && a.getPlacement() == b.getPlacement() &&

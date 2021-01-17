@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2015-2019 Inviwo Foundation
+ * Copyright (c) 2015-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -100,7 +100,7 @@ BasisProperty::BasisProperty(const BasisProperty& rhs)
     , model_(rhs.model_)
     , overrideModel_(rhs.overrideModel_) {
 
-    util::for_each_in_tuple([&](auto& e) { addProperty(e); }, props());   
+    util::for_each_in_tuple([&](auto& e) { addProperty(e); }, props());
 
     mode_.onChange([&]() { onModeChange(); });
     reference_.onChange([&]() { load(); });

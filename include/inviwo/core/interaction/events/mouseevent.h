@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2012-2019 Inviwo Foundation
+ * Copyright (c) 2012-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,11 +27,9 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_MOUSEEVENT_H
-#define IVW_MOUSEEVENT_H
+#pragma once
 
 #include <inviwo/core/common/inviwocoredefine.h>
-#include <inviwo/core/common/inviwo.h>
 #include <inviwo/core/interaction/events/mouseinteractionevent.h>
 #include <inviwo/core/interaction/events/mousebuttons.h>
 #include <inviwo/core/util/constexprhash.h>
@@ -74,5 +72,3 @@ private:
 };
 
 }  // namespace inviwo
-
-#endif  // IVW_MOUSEEVENT_H

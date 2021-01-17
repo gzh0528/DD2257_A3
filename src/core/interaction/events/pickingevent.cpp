@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2016-2019 Inviwo Foundation
+ * Copyright (c) 2016-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -35,6 +35,7 @@
 #include <inviwo/core/interaction/events/touchevent.h>
 #include <inviwo/core/datastructures/camera.h>
 #include <inviwo/core/interaction/events/eventutil.h>
+#include <inviwo/core/util/glm.h>
 
 namespace inviwo {
 
@@ -116,7 +117,7 @@ PickingEvent* PickingEvent::clone() const { return new PickingEvent(*this); }
 
 uint64_t PickingEvent::hash() const { return chash(); }
 
-Event* PickingEvent::getEvent() const { return event_; }
+InteractionEvent* PickingEvent::getEvent() const { return event_; }
 
 size_t PickingEvent::getGlobalPickingId() const { return pickedGlobalId_; }
 size_t PickingEvent::getCurrentGlobalPickingId() const { return currentGlobalId_; }
@@ -256,6 +257,11 @@ PickingPressState PickingEvent::getPressState() const { return pressState_; }
 PickingPressItem PickingEvent::getPressItem() const { return pressItem_; }
 PickingHoverState PickingEvent::getHoverState() const { return hoverState_; }
 PickingPressItems PickingEvent::getPressItems() const { return pressedState_; }
+
+KeyModifiers PickingEvent::modifiers() const {
+    if (event_) return event_->modifiers();
+    return KeyModifiers{};
+}
 
 void PickingEvent::invoke(Processor* p) {
     if (p == pickingAction_->getProcessor() && pickingAction_->isEnabled()) {

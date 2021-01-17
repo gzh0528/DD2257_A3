@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2015-2019 Inviwo Foundation
+ * Copyright (c) 2015-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,9 +27,9 @@
  *
  *********************************************************************************/
 
+#include <inviwo/core/network/networkutils.h>
 #include <inviwo/core/metadata/processormetadata.h>
 #include <inviwo/core/processors/processorutils.h>
-#include <inviwo/core/network/networkutils.h>
 #include <inviwo/core/common/inviwoapplication.h>
 #include <inviwo/core/util/settings/linksettings.h>
 #include <inviwo/core/util/stdextensions.h>
@@ -94,6 +94,25 @@ std::vector<Processor*> topologicalSort(ProcessorNetwork* network) {
     for (auto processor : sinkProcessors) {
         traverseNetwork<TraversalDirection::Up, VisitPattern::Post>(
             state, processor, [&sorted](Processor* p) { sorted.push_back(p); });
+    }
+    return sorted;
+}
+
+std::vector<Processor*> topologicalSortFiltered(ProcessorNetwork* network) {
+    // perform topological sorting and store processor order in sorted
+
+    std::vector<Processor*> sinkProcessors;
+    util::copy_if(network->getProcessors(), std::back_inserter(sinkProcessors),
+                  [](Processor* p) { return p->isSink(); });
+
+    std::unordered_set<Processor*> state;
+    std::vector<Processor*> sorted;
+    for (auto processor : sinkProcessors) {
+        traverseNetwork<TraversalDirection::Up, VisitPattern::Post>(
+            state, processor, [&sorted](Processor* p) { sorted.push_back(p); },
+            [](Processor* p, Inport* from, Outport* to) {
+                return p->isConnectionActive(from, to);
+            });
     }
     return sorted;
 }

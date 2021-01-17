@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2012-2019 Inviwo Foundation
+ * Copyright (c) 2012-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -40,6 +40,7 @@
 #include <inviwo/core/util/vectoroperations.h>
 #include <inviwo/core/util/stringconversion.h>
 #include <inviwo/core/util/stdextensions.h>
+#include <inviwo/core/util/rendercontext.h>
 #include <inviwo/core/network/workspacemanager.h>
 #include <inviwo/qt/editor/consolewidget.h>
 #include <inviwo/qt/editor/helpwidget.h>
@@ -72,6 +73,7 @@
 #include <inviwo/qt/editor/fileassociations.h>
 #include <inviwo/qt/editor/dataopener.h>
 #include <inviwo/core/rendering/datavisualizermanager.h>
+#include <inviwo/core/util/timer.h>
 
 #include <warn/push>
 #include <warn/ignore/all>
@@ -326,10 +328,11 @@ InviwoMainWindow::InviwoMainWindow(InviwoApplicationQt* app)
 InviwoMainWindow::~InviwoMainWindow() = default;
 
 void InviwoMainWindow::showWindow() {
-    if (maximized_)
+    if (maximized_) {
         showMaximized();
-    else
+    } else {
         show();
+    }
 }
 
 void InviwoMainWindow::saveCanvases(std::string path, std::string fileName) {
@@ -337,6 +340,13 @@ void InviwoMainWindow::saveCanvases(std::string path, std::string fileName) {
 
     repaint();
     app_->processEvents();
+    app_->waitForPool();
+
+    while (app_->getProcessorNetwork()->runningBackgroundJobs() > 0) {
+        app_->processEvents();
+        app_->processFront();
+    }
+
     util::saveAllCanvases(app_->getProcessorNetwork(), path, fileName);
 }
 
@@ -345,6 +355,7 @@ void InviwoMainWindow::getScreenGrab(std::string path, std::string fileName) {
 
     repaint();
     app_->processEvents();
+    app_->waitForPool();
     QPixmap screenGrab = QGuiApplication::primaryScreen()->grabWindow(this->winId());
     screenGrab.save(QString::fromStdString(path + "/" + fileName), "png");
 }
@@ -910,6 +921,10 @@ QStringList InviwoMainWindow::getRecentWorkspaceList() const {
     return list;
 }
 
+bool InviwoMainWindow::hasRestoreWorkspace() const { return undoManager_.hasRestore(); }
+
+void InviwoMainWindow::restoreWorkspace() { undoManager_.restore(); }
+
 void InviwoMainWindow::saveRecentWorkspaceList(const QStringList& list) {
     QSettings settings;
     settings.beginGroup(objectName());
@@ -1153,7 +1168,7 @@ void InviwoMainWindow::showWelcomeScreen() {
     }
 
     centralWidget_->setCurrentWidget(welcomeWidget_.get());
-    welcomeWidget_->setFocus();
+    welcomeWidget_->setFilterFocus();
 }
 
 void InviwoMainWindow::hideWelcomeScreen() {
@@ -1348,27 +1363,34 @@ void InviwoMainWindow::dragMoveEvent(QDragMoveEvent* event) {
 void InviwoMainWindow::dropEvent(QDropEvent* event) {
     const QMimeData* mimeData = event->mimeData();
     if (mimeData->hasUrls()) {
-        QList<QUrl> urlList = mimeData->urls();
+        // use dispatch front here to avoid blocking the drag&drop source, e.g. Windows Explorer,
+        // while the drop operation is performed
+        auto action = [this, keyModifiers = event->keyboardModifiers(),
+                       urlList = mimeData->urls()]() {
+            RenderContext::getPtr()->activateDefaultRenderContext();
 
-        bool first = true;
+            bool first = true;
+            for (auto& file : urlList) {
+                auto filename = file.toLocalFile();
 
-        for (auto& file : urlList) {
-            auto filename = file.toLocalFile();
-
-            if (toLower(filesystem::getFileExtension(utilqt::fromQString(filename))) == "inv") {
-                if (!first || event->keyboardModifiers() & Qt::ControlModifier) {
-                    appendWorkspace(utilqt::fromQString(filename));
+                if (toLower(filesystem::getFileExtension(utilqt::fromQString(filename))) == "inv") {
+                    if (!first || keyModifiers & Qt::ControlModifier) {
+                        appendWorkspace(utilqt::fromQString(filename));
+                    } else {
+                        openWorkspaceAskToSave(filename);
+                    }
                 } else {
-                    openWorkspaceAskToSave(filename);
+                    util::insertNetworkForData(
+                        utilqt::fromQString(filename), app_->getProcessorNetwork(),
+                        static_cast<bool>(keyModifiers & Qt::ControlModifier),
+                        static_cast<bool>(keyModifiers & Qt::AltModifier), this);
                 }
-            } else {
-                util::insertNetworkForData(
-                    utilqt::fromQString(filename), app_->getProcessorNetwork(),
-                    static_cast<bool>(event->keyboardModifiers() & Qt::ControlModifier),
-                    static_cast<bool>(event->keyboardModifiers() & Qt::AltModifier));
+                first = false;
             }
-            first = false;
-        }
+            undoManager_.pushStateIfDirty();
+        };
+        app_->dispatchFrontAndForget(action);
+
         event->accept();
     } else {
         event->ignore();

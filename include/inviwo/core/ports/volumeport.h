@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2012-2019 Inviwo Foundation
+ * Copyright (c) 2012-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,8 +27,7 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_VOLUMEPORT_H
-#define IVW_VOLUMEPORT_H
+#pragma once
 
 #include <inviwo/core/common/inviwocoredefine.h>
 #include <inviwo/core/ports/datainport.h>
@@ -58,5 +57,3 @@ using VolumeSequenceInport = DataInport<VolumeSequence>;
 using VolumeSequenceOutport = DataOutport<VolumeSequence>;
 
 }  // namespace inviwo
-
-#endif  // IVW_VOLUMEPORT_H

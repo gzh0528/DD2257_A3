@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2015-2019 Inviwo Foundation
+ * Copyright (c) 2015-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -38,14 +38,10 @@
 #include <inviwo/core/datastructures/buffer/bufferramprecision.h>
 #include <inviwo/core/util/interpolation.h>
 
+#include <map>
+
 namespace inviwo {
-/**
- * \class IntegralLine
- *
- * \brief VERY_BRIEFLY_DESCRIBE_THE_CLASS
- *
- * DESCRIBE_THE_CLASS
- */
+
 class IVW_MODULE_VECTORFIELDVISUALIZATION_API IntegralLine {
 public:
     enum class TerminationReason { StartPoint, Steps, OutOfBounds, ZeroVelocity, Unknown };
@@ -120,7 +116,7 @@ private:
 template <typename T>
 std::shared_ptr<Buffer<T>> IntegralLine::createMetaData(const std::string &name) {
     if (hasMetaData(name)) {
-        throw Exception("Meta data with name " + name + " already exists");
+        throw Exception("Meta data with name " + name + " already exists", IVW_CONTEXT);
     }
     auto md = std::make_shared<Buffer<T>>();
     metaData_[name] = md;

@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2014-2019 Inviwo Foundation
+ * Copyright (c) 2014-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -43,6 +43,7 @@
 #include <inviwo/core/properties/multifileproperty.h>
 #include <inviwo/core/properties/optionproperty.h>
 #include <inviwo/core/properties/ordinalproperty.h>
+#include <inviwo/core/properties/ordinalrefproperty.h>
 #include <inviwo/core/properties/stringproperty.h>
 #include <inviwo/core/properties/transferfunctionproperty.h>
 #include <inviwo/core/util/fileextension.h>
@@ -50,6 +51,7 @@
 #include <modules/qtwidgets/properties/anglepropertywidgetqt.h>
 #include <modules/qtwidgets/properties/boolpropertywidgetqt.h>
 #include <modules/qtwidgets/properties/boolcompositepropertywidgetqt.h>
+#include <modules/qtwidgets/properties/buttongrouppropertywidgetqt.h>
 #include <modules/qtwidgets/properties/buttonpropertywidgetqt.h>
 #include <modules/qtwidgets/properties/collapsiblegroupboxwidgetqt.h>
 #include <modules/qtwidgets/properties/colorpropertywidgetqt.h>
@@ -84,7 +86,7 @@
 
 #ifndef INVIWO_ALL_DYN_LINK
 struct InitQtResources {
-    // Needed for loading of resources when building statically 
+    // Needed for loading of resources when building statically
     // see https://wiki.qt.io/QtResources#Q_INIT_RESOURCE
     InitQtResources() { Q_INIT_RESOURCE(inviwo); }
     ~InitQtResources() { Q_CLEANUP_RESOURCE(inviwo); }
@@ -92,6 +94,8 @@ struct InitQtResources {
 #endif
 
 namespace inviwo {
+
+namespace {
 
 struct ColorWidgetReghelper {
     template <typename T>
@@ -103,13 +107,17 @@ struct ColorWidgetReghelper {
     }
 };
 
+template <OrdinalPropertyWidgetQtSematics Sem>
 struct OrdinalWidgetReghelper {
     template <typename T>
     auto operator()(QtWidgetsModule& qm, const std::string& semantics) {
         using PropertyType = OrdinalProperty<T>;
-        using PropertyWidget = OrdinalPropertyWidgetQt<T>;
-
+        using PropertyWidget = OrdinalPropertyWidgetQt<T, Sem>;
         qm.registerPropertyWidget<PropertyWidget, PropertyType>(semantics);
+
+        using RefPropertyType = OrdinalRefProperty<T>;
+        using RefPropertyWidget = OrdinalRefPropertyWidgetQt<T, Sem>;
+        qm.registerPropertyWidget<RefPropertyWidget, RefPropertyType>(semantics);
     }
 };
 
@@ -140,10 +148,13 @@ struct OptionWidgetReghelper {
     }
 };
 
+}  // namespace
+
 QtWidgetsModule::QtWidgetsModule(InviwoApplication* app)
     : InviwoModule(app, "QtWidgets"), tfMenuHelper_(std::make_unique<TFMenuHelper>()) {
     if (!qApp) {
-        throw ModuleInitException("QApplication must be constructed before QtWidgetsModule");
+        throw ModuleInitException("QApplication must be constructed before QtWidgetsModule",
+                                  IVW_CONTEXT);
     }
     registerSettings(std::make_unique<QtWidgetsSettings>());
 
@@ -173,9 +184,12 @@ QtWidgetsModule::QtWidgetsModule(InviwoApplication* app)
         std::tuple<float, vec2, vec3, vec4, mat2, mat3, mat4, double, dvec2, dvec3, dvec4, dmat2,
                    dmat3, dmat4, int, ivec2, ivec3, ivec4, glm::i64, unsigned int, uvec2, uvec3,
                    uvec4, size_t, size2_t, size3_t, size4_t, glm::fquat, glm::dquat>;
-    util::for_each_type<OrdinalTypes>{}(OrdinalWidgetReghelper{}, *this, "Default");
-    util::for_each_type<OrdinalTypes>{}(OrdinalWidgetReghelper{}, *this, "Text");
-    util::for_each_type<OrdinalTypes>{}(OrdinalWidgetReghelper{}, *this, "SpinBox");
+    util::for_each_type<OrdinalTypes>{}(
+        OrdinalWidgetReghelper<OrdinalPropertyWidgetQtSematics::Default>{}, *this, "Default");
+    util::for_each_type<OrdinalTypes>{}(
+        OrdinalWidgetReghelper<OrdinalPropertyWidgetQtSematics::Text>{}, *this, "Text");
+    util::for_each_type<OrdinalTypes>{}(
+        OrdinalWidgetReghelper<OrdinalPropertyWidgetQtSematics::SpinBox>{}, *this, "SpinBox");
 
     // Register MinMaxProperty widgets
     using ScalarTypes = std::tuple<float, double, int, glm::i64, size_t>;
@@ -183,7 +197,8 @@ QtWidgetsModule::QtWidgetsModule(InviwoApplication* app)
     util::for_each_type<ScalarTypes>{}(MinMaxTextWidgetReghelper{}, *this, "Text");
 
     // Register option property widgets
-    using OptionTypes = std::tuple<unsigned int, int, size_t, float, double, std::string, FileExtension>;
+    using OptionTypes = std::tuple<char, unsigned char, unsigned int, int, size_t, float, double,
+                                   std::string, FileExtension>;
     util::for_each_type<OptionTypes>{}(OptionWidgetReghelper{}, *this, "Default");
 
     // Register string property widgets
@@ -207,15 +222,37 @@ QtWidgetsModule::QtWidgetsModule(InviwoApplication* app)
     // Register misc property widgets
     registerPropertyWidget<EventPropertyWidgetQt, EventProperty>("Default");
     registerPropertyWidget<FontSizePropertyWidgetQt, IntProperty>("Fontsize");
+    registerPropertyWidget<ButtonGroupPropertyWidgetQt, ButtonGroupProperty>("Default");
     registerPropertyWidget<ButtonPropertyWidgetQt, ButtonProperty>("Default");
 
     registerPropertyWidget<FloatAnglePropertyWidgetQt, FloatProperty>("Angle");
     registerPropertyWidget<DoubleAnglePropertyWidgetQt, DoubleProperty>("Angle");
 
-    registerPropertyWidget<FloatVec3PropertyWidgetQt, FloatVec3Property>("Spherical");
-    registerPropertyWidget<DoubleVec3PropertyWidgetQt, DoubleVec3Property>("Spherical");
-    registerPropertyWidget<FloatVec3PropertyWidgetQt, FloatVec3Property>("SphericalSpinBox");
-    registerPropertyWidget<DoubleVec3PropertyWidgetQt, DoubleVec3Property>("SphericalSpinBox");
+    registerPropertyWidget<
+        OrdinalPropertyWidgetQt<vec3, OrdinalPropertyWidgetQtSematics::Spherical>,
+        FloatVec3Property>("Spherical");
+    registerPropertyWidget<
+        OrdinalPropertyWidgetQt<dvec3, OrdinalPropertyWidgetQtSematics::Spherical>,
+        DoubleVec3Property>("Spherical");
+    registerPropertyWidget<
+        OrdinalPropertyWidgetQt<vec3, OrdinalPropertyWidgetQtSematics::SphericalSpinBox>,
+        FloatVec3Property>("SphericalSpinBox");
+    registerPropertyWidget<
+        OrdinalPropertyWidgetQt<dvec3, OrdinalPropertyWidgetQtSematics::SphericalSpinBox>,
+        DoubleVec3Property>("SphericalSpinBox");
+
+    registerPropertyWidget<
+        OrdinalRefPropertyWidgetQt<vec3, OrdinalPropertyWidgetQtSematics::Spherical>,
+        FloatVec3RefProperty>("Spherical");
+    registerPropertyWidget<
+        OrdinalRefPropertyWidgetQt<dvec3, OrdinalPropertyWidgetQtSematics::Spherical>,
+        DoubleVec3RefProperty>("Spherical");
+    registerPropertyWidget<
+        OrdinalRefPropertyWidgetQt<vec3, OrdinalPropertyWidgetQtSematics::SphericalSpinBox>,
+        FloatVec3RefProperty>("SphericalSpinBox");
+    registerPropertyWidget<
+        OrdinalRefPropertyWidgetQt<dvec3, OrdinalPropertyWidgetQtSematics::SphericalSpinBox>,
+        DoubleVec3RefProperty>("SphericalSpinBox");
 
     registerPropertyWidget<LightPropertyWidgetQt, FloatVec3Property>("LightPosition");
 

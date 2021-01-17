@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2014-2019 Inviwo Foundation
+ * Copyright (c) 2014-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -38,27 +38,38 @@
 namespace inviwo {
 
 Layer::Layer(size2_t defaultDimensions, const DataFormatBase* defaultFormat, LayerType type,
-             const SwizzleMask& defaultSwizzleMask)
-    : Data<Layer, LayerRepresentation>()
-    , StructuredGridEntity<2>()
-    , layerType_(type)
-    , defaultDimensions_(defaultDimensions)
-    , defaultDataFormat_(defaultFormat)
-    , defaultSwizzleMask_(defaultSwizzleMask) {}
+             const SwizzleMask& defaultSwizzleMask, InterpolationType interpolation,
+             const Wrapping2D& wrapping)
+    : Data<Layer, LayerRepresentation>{}
+    , StructuredGridEntity<2>{}
+    , defaultLayerType_{type}
+    , defaultDimensions_{defaultDimensions}
+    , defaultDataFormat_{defaultFormat}
+    , defaultSwizzleMask_{defaultSwizzleMask}
+    , defaultInterpolation_{interpolation}
+    , defaultWrapping_{wrapping} {}
 
 Layer::Layer(std::shared_ptr<LayerRepresentation> in)
-    : Data<Layer, LayerRepresentation>()
-    , StructuredGridEntity<2>()
-    , layerType_(in->getLayerType())
-    , defaultDimensions_(in->getDimensions())
-    , defaultDataFormat_(in->getDataFormat())
-    , defaultSwizzleMask_(in->getSwizzleMask()) {
+    : Data<Layer, LayerRepresentation>{}
+    , StructuredGridEntity<2>{}
+    , defaultLayerType_{in->getLayerType()}
+    , defaultDimensions_{in->getDimensions()}
+    , defaultDataFormat_{in->getDataFormat()}
+    , defaultSwizzleMask_{in->getSwizzleMask()}
+    , defaultInterpolation_{in->getInterpolation()}
+    , defaultWrapping_{in->getWrapping()} {
+
     addRepresentation(in);
 }
 
 Layer* Layer::clone() const { return new Layer(*this); }
 
-LayerType Layer::getLayerType() const { return layerType_; }
+LayerType Layer::getLayerType() const {
+    if (lastValidRepresentation_) {
+        return lastValidRepresentation_->getLayerType();
+    }
+    return defaultLayerType_;
+}
 
 void Layer::setDimensions(const size2_t& dim) {
     defaultDimensions_ = dim;
@@ -90,6 +101,7 @@ void Layer::setSwizzleMask(const SwizzleMask& mask) {
     defaultSwizzleMask_ = mask;
     if (lastValidRepresentation_) {
         lastValidRepresentation_->setSwizzleMask(mask);
+        invalidateAllOther(lastValidRepresentation_.get());
     }
 }
 
@@ -98,6 +110,36 @@ SwizzleMask Layer::getSwizzleMask() const {
         return lastValidRepresentation_->getSwizzleMask();
     }
     return defaultSwizzleMask_;
+}
+
+void Layer::setInterpolation(InterpolationType interpolation) {
+    defaultInterpolation_ = interpolation;
+    if (lastValidRepresentation_) {
+        lastValidRepresentation_->setInterpolation(interpolation);
+        invalidateAllOther(lastValidRepresentation_.get());
+    }
+}
+
+InterpolationType Layer::getInterpolation() const {
+    if (lastValidRepresentation_) {
+        return lastValidRepresentation_->getInterpolation();
+    }
+    return defaultInterpolation_;
+}
+
+void Layer::setWrapping(const Wrapping2D& wrapping) {
+    defaultWrapping_ = wrapping;
+    if (lastValidRepresentation_) {
+        lastValidRepresentation_->setWrapping(wrapping);
+        invalidateAllOther(lastValidRepresentation_.get());
+    }
+}
+
+Wrapping2D Layer::getWrapping() const {
+    if (lastValidRepresentation_) {
+        return lastValidRepresentation_->getWrapping();
+    }
+    return defaultWrapping_;
 }
 
 void Layer::copyRepresentationsTo(Layer* targetLayer) {
@@ -143,12 +185,6 @@ std::unique_ptr<std::vector<unsigned char>> Layer::getAsCodedBuffer(
     }
 
     return std::unique_ptr<std::vector<unsigned char>>();
-}
-
-void Layer::updateMetaFromRepresentation(const LayerRepresentation* layerRep) {
-    if (layerRep) {
-        layerType_ = layerRep->getLayerType();
-    }
 }
 
 template class IVW_CORE_TMPL_INST DataReaderType<Layer>;

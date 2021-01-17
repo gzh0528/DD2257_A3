@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2013-2019 Inviwo Foundation
+ * Copyright (c) 2013-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,11 +27,12 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_BUFFERRAMPRECISION_H
-#define IVW_BUFFERRAMPRECISION_H
+#pragma once
 
 #include <inviwo/core/datastructures/buffer/bufferram.h>
 #include <inviwo/core/util/stdextensions.h>
+#include <inviwo/core/util/glm.h>
+
 #include <initializer_list>
 
 namespace inviwo {
@@ -293,5 +294,3 @@ void BufferRAMPrecision<T, Target>::clear() {
 }
 
 }  // namespace inviwo
-
-#endif  // IVW_BUFFERRAMPRECISION_H

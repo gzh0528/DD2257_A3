@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2012-2019 Inviwo Foundation
+ * Copyright (c) 2012-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,11 +27,9 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_POSITION_METADATA_H
-#define IVW_POSITION_METADATA_H
+#pragma once
 
 #include <inviwo/core/common/inviwocoredefine.h>
-#include <inviwo/core/common/inviwo.h>
 #include <inviwo/core/metadata/metadata.h>
 
 namespace inviwo {
@@ -62,5 +60,3 @@ public:
 };
 
 }  // namespace inviwo
-
-#endif  // IVW_PROCESSOR_H

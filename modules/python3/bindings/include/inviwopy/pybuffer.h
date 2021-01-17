@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2017-2019 Inviwo Foundation
+ * Copyright (c) 2017-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,8 +27,7 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_PYBUFFER_H
-#define IVW_PYBUFFER_H
+#pragma once
 
 #include <warn/push>
 #include <warn/ignore/shadow>
@@ -41,5 +40,3 @@ namespace inviwo {
 void exposeBuffer(pybind11::module &m);
 
 }  // namespace inviwo
-
-#endif  // IVW_PYBUFFER_H

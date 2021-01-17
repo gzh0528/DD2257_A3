@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2012-2019 Inviwo Foundation
+ * Copyright (c) 2012-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -94,6 +94,10 @@ public:
     static QPointF portOffset(PortType type, size_t index);
     QPointF portPosition(PortType type, size_t index);
 
+    void adoptWidget(std::unique_ptr<QWidget> widget) {
+        ownedWidgets_.push_back(std::move(widget));
+    }
+
 protected:
     void paint(QPainter* p, const QStyleOptionGraphicsItem* options, QWidget* widget) override;
     virtual QVariant itemChange(GraphicsItemChange change, const QVariant& value) override;
@@ -140,6 +144,8 @@ private:
 
     std::map<Inport*, ProcessorInportGraphicsItem*> inportItems_;
     std::map<Outport*, ProcessorOutportGraphicsItem*> outportItems_;
+
+    std::vector<std::unique_ptr<QWidget>> ownedWidgets_;
 
     bool highlight_;
 

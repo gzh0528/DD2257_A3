@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2015-2019 Inviwo Foundation
+ * Copyright (c) 2015-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -29,6 +29,9 @@
 
 #include <inviwo/core/common/inviwomodulefactoryobject.h>
 #include <inviwo/core/util/zip.h>
+#include <inviwo/core/util/exception.h>
+
+#include <unordered_set>
 
 namespace inviwo {
 
@@ -43,11 +46,11 @@ InviwoModuleFactoryObject::InviwoModuleFactoryObject(
     , inviwoCoreVersion(inviwoCoreVersion_)
     , dependencies([&]() {
         if (dependencies_.size() != dependenciesVersion_.size()) {
-            throw Exception("Each module dependency must have a version");
+            throw Exception("Each module dependency must have a version", IVW_CONTEXT);
         }
         std::vector<std::pair<std::string, Version>> deps;
         for (auto&& item : util::zip(dependencies_, dependenciesVersion_)) {
-            deps.emplace_back(get<0>(item), Version(get<0>(item)));
+            deps.emplace_back(get<0>(item), get<1>(item));
         }
         return deps;
     }())

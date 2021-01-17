@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2017-2019 Inviwo Foundation
+ * Copyright (c) 2017-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,8 +27,7 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_PYPROCOESSORS_H
-#define IVW_PYPROCOESSORS_H
+#pragma once
 
 #include <warn/push>
 #include <warn/ignore/shadow>
@@ -52,5 +51,3 @@ using ProcessorPtr = std::unique_ptr<P, detail::ProcessorDelete<P>>;
 void exposeProcessors(pybind11::module &m);
 
 }  // namespace inviwo
-
-#endif  // IVW_PYPROPERTIES_H

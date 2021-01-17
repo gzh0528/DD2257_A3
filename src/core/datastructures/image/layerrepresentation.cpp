@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2014-2019 Inviwo Foundation
+ * Copyright (c) 2014-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -36,9 +36,5 @@ LayerRepresentation::LayerRepresentation(LayerType type, const DataFormatBase* f
     : DataRepresentation(format), layerType_(type) {}
 
 LayerType LayerRepresentation::getLayerType() const { return layerType_; }
-
-void LayerRepresentation::updateBaseMetaFromRepresentation() {
-    getOwner()->updateMetaFromRepresentation(this);
-}
 
 }  // namespace inviwo

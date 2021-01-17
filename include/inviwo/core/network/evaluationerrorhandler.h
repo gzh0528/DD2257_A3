@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2017-2019 Inviwo Foundation
+ * Copyright (c) 2017-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,8 +27,7 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_EVALUATIONERRORHANDLER_H
-#define IVW_EVALUATIONERRORHANDLER_H
+#pragma once
 
 #include <inviwo/core/common/inviwocoredefine.h>
 #include <inviwo/core/util/exception.h>
@@ -39,7 +38,7 @@ namespace inviwo {
 
 class Processor;
 
-enum class EvaluationType { InitResource, Process, NotReady };
+enum class EvaluationType { InitResource, PortOnChange, Process, NotReady };
 
 using EvaluationErrorHandler = std::function<void(Processor*, EvaluationType, ExceptionContext)>;
 
@@ -48,5 +47,3 @@ struct IVW_CORE_API StandardEvaluationErrorHandler {
 };
 
 }  // namespace inviwo
-
-#endif  // IVW_EVALUATIONERRORHANDLER_H

@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2012-2019 Inviwo Foundation
+ * Copyright (c) 2012-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,8 +27,7 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_PROCESSORWIDGETQT_H
-#define IVW_PROCESSORWIDGETQT_H
+#pragma once
 
 #include <modules/qtwidgets/qtwidgetsmoduledefine.h>
 #include <inviwo/core/processors/processorwidget.h>
@@ -50,7 +49,7 @@ public:
     ProcessorWidgetQt(Processor* p);
     virtual ~ProcessorWidgetQt() = default;
 
-    virtual void setVisible(bool visible) override;   // Override QWidget && ProcessorWidget
+    using QWidget::setVisible;
     virtual void show() override;                     // Override ProcessorWidget
     virtual void hide() override;                     // Override ProcessorWidget
     virtual void setPosition(ivec2 pos) override;     // Override ProcessorWidget
@@ -75,5 +74,3 @@ protected:
 };
 
 }  // namespace inviwo
-
-#endif  // IVW_PROCESSORWIDGETQT_H

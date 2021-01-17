@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2018-2019 Inviwo Foundation
+ * Copyright (c) 2018-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -231,9 +231,9 @@ private:
 
     bool ddeExecute(MSG* message, long* result) {
         // unpack the DDE message
-        UINT_PTR unused;
+        [[maybe_unused]] UINT_PTR unused;
         HGLOBAL hData = nullptr;
-        IVW_UNUSED_PARAM(unused);
+
         // IA64: Assume DDE LPARAMs are still 32-bit
         Q_ASSERT(::UnpackDDElParam(WM_DDE_EXECUTE, message->lParam, &unused, (UINT_PTR*)&hData));
 

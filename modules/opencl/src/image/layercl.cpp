@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2013-2019 Inviwo Foundation
+ * Copyright (c) 2013-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -35,12 +35,15 @@
 namespace inviwo {
 
 LayerCL::LayerCL(size2_t dimensions, LayerType type, const DataFormatBase* format,
-                 const SwizzleMask& swizzleMask, const void* data)
+                 const SwizzleMask& swizzleMask, InterpolationType interpolation,
+                 const Wrapping2D& wrapping, const void* data)
     : LayerCLBase()
     , LayerRepresentation(type, format)
     , dimensions_(dimensions)
     , layerFormat_(dataFormatToCLImageFormat(format->getId()))
-    , swizzleMask_(swizzleMask) {
+    , swizzleMask_(swizzleMask)
+    , interpolation_{interpolation}
+    , wrapping_{wrapping} {
     initialize(data);
 }
 
@@ -49,7 +52,9 @@ LayerCL::LayerCL(const LayerCL& rhs)
     , LayerRepresentation(rhs)
     , dimensions_(rhs.dimensions_)
     , layerFormat_(rhs.layerFormat_)
-    , swizzleMask_(rhs.swizzleMask_) {
+    , swizzleMask_(rhs.swizzleMask_)
+    , interpolation_{rhs.interpolation_}
+    , wrapping_{rhs.wrapping_} {
     initialize(nullptr);
     OpenCL::getPtr()->getQueue().enqueueCopyImage(rhs.get(), *clImage_, glm::size3_t(0),
                                                   glm::size3_t(0), glm::size3_t(dimensions_, 1));
@@ -128,21 +133,38 @@ void LayerCL::setDimensions(size2_t dimensions) {
         return;
     }
 
-    cl::Image2D* resizedLayer2D = new cl::Image2D(OpenCL::getPtr()->getContext(), CL_MEM_READ_WRITE,
-                                                  getFormat(), dimensions.x, dimensions.y);
-    LayerCLResizer::resize(*clImage_, *resizedLayer2D, dimensions);
-    clImage_ = std::unique_ptr<cl::Image2D>(resizedLayer2D);
-    updateBaseMetaFromRepresentation();
+    try {
+        auto resizedLayer2D =
+            std::make_unique<cl::Image2D>(OpenCL::getPtr()->getContext(), CL_MEM_READ_WRITE,
+                                          getFormat(), dimensions.x, dimensions.y);
+        LayerCLResizer::resize(*clImage_, *resizedLayer2D, dimensions);
+        clImage_ = std::move(resizedLayer2D);
+    } catch (const cl::Error& err) {
+        if (err.err() == CL_INVALID_IMAGE_DESCRIPTOR) {
+            // OpenCL images with (0,0) sizes throws exception
+            // Most likely during image port disconnection, so we probably want to ignore it.
+            LogError(getCLErrorString(err));
+        } else {
+            throw err;
+        }
+    }
+
+    dimensions_ = dimensions;
 }
 
 const size2_t& LayerCL::getDimensions() const { return dimensions_; }
 
-void LayerCL::setSwizzleMask(const SwizzleMask& mask) {
-    swizzleMask_ = mask;
-    updateBaseMetaFromRepresentation();
-}
+void LayerCL::setSwizzleMask(const SwizzleMask& mask) { swizzleMask_ = mask; }
 
 SwizzleMask LayerCL::getSwizzleMask() const { return swizzleMask_; }
+
+void LayerCL::setInterpolation(InterpolationType interpolation) { interpolation_ = interpolation; }
+
+InterpolationType LayerCL::getInterpolation() const { return interpolation_; }
+
+void LayerCL::setWrapping(const Wrapping2D& wrapping) { wrapping_ = wrapping; }
+
+Wrapping2D LayerCL::getWrapping() const { return wrapping_; }
 
 }  // namespace inviwo
 

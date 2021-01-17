@@ -21,7 +21,6 @@
 #include <inviwo/core/properties/eventproperty.h>
 #include <inviwo/core/properties/optionproperty.h>
 #include <inviwo/core/properties/ordinalproperty.h>
-#include <inviwo/core/properties/cameraproperty.h>
 #include <labstreamlines/labstreamlinesmoduledefine.h>
 #include <labutils/scalarvectorfield.h>
 
@@ -68,14 +67,14 @@ public:
 protected:
     /// Our main computation function
     virtual void process() override;
-
+    
     /// Function to handle mouse interaction for a single streamline
     void eventMoveStart(Event* event);
 
     // (TODO: You could define some helper functions here,
     // e.g. a function creating a single streamline from one seed point)
 
-    // Ports
+// Ports
 public:
     // Input Vector Field
     VolumeInport inData;
@@ -88,7 +87,6 @@ public:
 
     // Properties
 public:
-
     FloatVec2Property propStartPoint;
     TemplateOptionProperty<int> propSeedMode;
 
@@ -101,9 +99,9 @@ public:
     // FloatProperty propertyName2;
     // IntVec2Property propertyName3;
     // TemplateOptionProperty<int> propertyName4;
-    // BoolProperty propertyName4;
+    // BoolProperty propertyName5;
 
-    // Attributes
+// Attributes
 private:
     dvec2 BBoxMin_{0, 0};
     dvec2 BBoxMax_{0, 0};

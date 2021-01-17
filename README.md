@@ -1,6 +1,6 @@
 ## Inviwo - Interactive Visualization Workshop
 
-[![Build Status](http://jenkins.inviwo.org:8080/buildStatus/icon?job=inviwo-pub/master)](http://jenkins.inviwo.org:8080/job/inviwo-pub/job/master/) [![BSD licensed](https://img.shields.io/badge/license-BSD-blue.svg?maxAge=2592000)](https://github.com/inviwo/inviwo/blob/master/LICENSE)
+[![Build Status](http://jenkins.inviwo.org:8080/buildStatus/icon?job=inviwo/master)](http://jenkins.inviwo.org:8080/job/inviwo/job/master/) [![BSD licensed](https://img.shields.io/badge/license-BSD-blue.svg?maxAge=2592000)](https://github.com/inviwo/inviwo/blob/master/LICENSE)
 [![Release version](https://img.shields.io/github/release/inviwo/inviwo.svg?maxAge=86400)](https://github.com/inviwo/inviwo/releases/latest)
 
 <div class="inviwo-screenshot">
@@ -37,11 +37,11 @@ Below follow some general information about the framework:
  - C++17 Required
 
 #### Documentation
-  - [Manual](https://github.com/inviwo/inviwo/wiki/Manual)
-  - [API](https://inviwo.github.io/inviwo/doc/)
+  - [Manual](https://inviwo.org/manual_index.html)
+  - [API](https://inviwo.org/inviwo/doc)
   - [Changelog](/CHANGELOG.md)
 
-For help and general discussion join us on our [Slack](https://join.slack.com/t/inviwo/shared_invite/enQtNTc2Nzc2NDQwNzIxLWM0N2VlYmNiZGU2MThiY2I5MGMwZTc3NzI2MjRkODg2M2NmMzRlYjRhNjU3YzUwNGQ1OWE0ZGE1NTAwZGU2YzI) server
+For help and general discussion join us on our [Slack](https://join.slack.com/t/inviwo/shared_invite/enQtNTc2Nzc2NDQwNzIxLTRiMWM1ZWJiYjljZjkwNWE3OTk3MzYxODZlMDUyMzRmZjUzMzBiZjVhNTM3NWUyNzU1MjI4OWJjMzdkODViMzM) server
 
 #### Sponsors
 This work was supported by Linköping University,  KTH Royal Institute of Technology, Ulm University, and through grants from the Swedish e-Science Research Centre (SeRC).

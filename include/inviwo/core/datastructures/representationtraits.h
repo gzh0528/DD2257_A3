@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2015-2019 Inviwo Foundation
+ * Copyright (c) 2015-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,8 +27,7 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_REPRESENTATIONTRAITS_H
-#define IVW_REPRESENTATIONTRAITS_H
+#pragma once
 
 namespace inviwo {
 
@@ -51,5 +50,3 @@ template <typename DataType, typename Kind>
 using representation_traits_t = typename representation_traits<DataType, Kind>::type;
 
 }  // namespace inviwo
-
-#endif  // IVW_REPRESENTATIONTRAITS_H

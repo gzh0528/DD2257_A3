@@ -77,7 +77,6 @@ protected:
                          IndexBufferRAM* indexBuffer, std::vector<BasicMesh::Vertex>& vertices);
 
 	float randomValue(const float min, const float max) const;
-
     // Ports
 public:
     // Input data

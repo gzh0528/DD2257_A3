@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2018-2019 Inviwo Foundation
+ * Copyright (c) 2018-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,8 +27,7 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_FOREACHARG_H
-#define IVW_FOREACHARG_H
+#pragma once
 
 #include <tuple>
 #include <initializer_list>
@@ -133,12 +132,12 @@ struct for_each_type<std::tuple<T, Types...>> {
  *     struct Functor {
  *         template <typename T, typename U>
  *         auto operator()(std::vector<Converter*>& converters) {
- *             properties.push_pack(new TypeConverter<T, U>());
+ *             converters.push_pack(new TypeConverter<T, U>());
  *         }
  *     };
- *     std::vector<Converter*>& converters;
+ *     std::vector<Converter*> converters;
  *     using Vec4s = std::tuple<vec4, dvec4, ivec4, size4_t>;
- *     util::for_each_typ_paire<Vec4s, Vec4s>{}(Functor{}, converters);
+ *     util::for_each_type_pair<Vec4s, Vec4s>{}(Functor{}, converters);
  * \endcode
  */
 template <class ATypes, class BTypes>
@@ -180,5 +179,3 @@ public:
 }  // namespace util
 
 }  // namespace inviwo
-
-#endif  // IVW_FOREACHARG_H

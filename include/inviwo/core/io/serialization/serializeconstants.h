@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2012-2019 Inviwo Foundation
+ * Copyright (c) 2012-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,8 +27,7 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_SERIALIZE_CONSTANTS_H
-#define IVW_SERIALIZE_CONSTANTS_H
+#pragma once
 
 #include <inviwo/core/common/inviwocoredefine.h>
 #include <string>
@@ -50,7 +49,7 @@ public:
     static const std::string IDAttribute;
 
     static const std::string VectorAttributes[4];
+    static const std::string MatrixAttributes[4];
 };
 
 }  // namespace inviwo
-#endif

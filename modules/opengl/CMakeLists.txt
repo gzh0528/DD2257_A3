@@ -1,15 +1,6 @@
-
-# Set CMake to prefere Vendor gl libraries rather than legacy, fixes warning on some unix systems
-set(OpenGL_GL_PREFERENCE GLVND) 
-
-add_subdirectory(ext/glew)
-
-#--------------------------------------------------------------------
 # Inviwo OpenGL Module
 ivw_module(OpenGL)
 
-#--------------------------------------------------------------------
-# Add header files
 set(HEADER_FILES
     include/modules/opengl/buffer/buffergl.h
     include/modules/opengl/buffer/bufferglconverter.h
@@ -38,10 +29,12 @@ set(HEADER_FILES
     include/modules/opengl/openglutils.h
     include/modules/opengl/rendering/meshdrawergl.h
     include/modules/opengl/rendering/texturequadrenderer.h
+    include/modules/opengl/shader/linenumberresolver.h
     include/modules/opengl/shader/shader.h
     include/modules/opengl/shader/shadermanager.h
     include/modules/opengl/shader/shaderobject.h
     include/modules/opengl/shader/shaderresource.h
+    include/modules/opengl/shader/shadersegment.h
     include/modules/opengl/shader/shadertype.h
     include/modules/opengl/shader/shaderutils.h
     include/modules/opengl/shader/standardshaders.h
@@ -60,8 +53,6 @@ set(HEADER_FILES
 )
 ivw_group("Header Files" ${HEADER_FILES})
 
-#--------------------------------------------------------------------
-# Add source files
 set(SOURCE_FILES
     src/buffer/buffergl.cpp
     src/buffer/bufferglconverter.cpp
@@ -87,10 +78,12 @@ set(SOURCE_FILES
     src/openglutils.cpp
     src/rendering/meshdrawergl.cpp
     src/rendering/texturequadrenderer.cpp
+    src/shader/linenumberresolver.cpp
     src/shader/shader.cpp
     src/shader/shadermanager.cpp
     src/shader/shaderobject.cpp
     src/shader/shaderresource.cpp
+    src/shader/shadersegment.cpp
     src/shader/shadertype.cpp
     src/shader/shaderutils.cpp
     src/shader/standardshaders.cpp
@@ -107,8 +100,6 @@ set(SOURCE_FILES
 )
 ivw_group("Source Files" ${SOURCE_FILES})
 
-#--------------------------------------------------------------------
-# Add shaders
 set(SHADER_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/glsl/composite.frag
     ${CMAKE_CURRENT_SOURCE_DIR}/glsl/geometryrendering.frag
@@ -144,21 +135,35 @@ set(SHADER_FILES
 )
 ivw_group("Shader Files" ${SHADER_FILES})
 
-#--------------------------------------------------------------------
+# Unit tests
+set(TEST_FILES
+    tests/unittests/opengl-unittest-main.cpp
+    tests/unittests/shaderobject-test.cpp
+)
+ivw_add_unittest(${TEST_FILES})
+
 # Create module
 ivw_create_module(${SOURCE_FILES} ${HEADER_FILES} ${SHADER_FILES})
-target_link_libraries(inviwo-module-opengl PUBLIC inviwo::GLEW)
+
+option(IVW_USE_EXTERNAL_GLEW "GLEW is provided externaly" OFF)
+# Set CMake to prefere Vendor gl libraries rather than legacy, fixes warning on some unix systems
+if(NOT IVW_USE_EXTERNAL_GLEW)
+    set(OpenGL_GL_PREFERENCE GLVND) 
+    add_subdirectory(ext/glew)
+    target_link_libraries(inviwo-module-opengl PUBLIC inviwo::GLEW)
+    ivw_register_license_file(ID glew NAME "GLEW" TARGET inviwo::GLEW MODULE OpenGL
+        URL http://glew.sourceforge.net
+        FILES ${CMAKE_CURRENT_SOURCE_DIR}/ext/glew/license.txt
+    )
+else()
+    find_package(GLEW REQUIRED)
+    ivw_vcpkg_install(glew MODULE OpenGL)
+    target_link_libraries(inviwo-module-opengl PUBLIC GLEW::GLEW)
+endif()
 
 find_package(OpenGL QUIET REQUIRED)
 target_link_libraries(inviwo-module-opengl PUBLIC ${OPENGL_LIBRARIES})
 target_include_directories(inviwo-module-opengl PUBLIC ${OPENGL_INCLUDE_DIR})
 
-#--------------------------------------------------------------------
 # Package or build shaders into resources
 ivw_handle_shader_resources(${CMAKE_CURRENT_SOURCE_DIR}/glsl ${SHADER_FILES})
-
-ivw_register_license_file(ID glew NAME "GLEW" TARGET inviwo::GLEW MODULE OpenGL
-    URL http://glew.sourceforge.net
-    FILES ${CMAKE_CURRENT_SOURCE_DIR}/ext/glew/license.txt
-)
-ivw_make_package(InviwoOpenGLModule inviwo-module-opengl)

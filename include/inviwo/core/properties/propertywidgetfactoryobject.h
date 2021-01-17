@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2014-2019 Inviwo Foundation
+ * Copyright (c) 2014-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,13 +27,13 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_PROPERTYWIDGETFACTORYOBJECT_H
-#define IVW_PROPERTYWIDGETFACTORYOBJECT_H
+#pragma once
 
 #include <inviwo/core/common/inviwocoredefine.h>
 #include <inviwo/core/properties/property.h>
 #include <inviwo/core/properties/propertysemantics.h>
 #include <string>
+#include <memory>
 
 namespace inviwo {
 
@@ -69,5 +69,3 @@ public:
 };
 
 }  // namespace inviwo
-
-#endif  // IVW_PROPERTYWIDGETFACTORYOBJECT_H

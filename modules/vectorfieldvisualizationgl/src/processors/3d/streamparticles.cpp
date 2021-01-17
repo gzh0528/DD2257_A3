@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2019 Inviwo Foundation
+ * Copyright (c) 2019-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -32,13 +32,13 @@
 #include <inviwo/core/datastructures/geometry/mesh.h>
 #include <inviwo/core/datastructures/geometry/typedmesh.h>
 #include <inviwo/core/datastructures/buffer/buffer.h>
-#include <modules/opengl/buffer/buffergl.h>
-
-#include <modules/opengl/texture/textureutils.h>
-#include <modules/opengl/shader/shaderutils.h>
-
+#include <inviwo/core/common/inviwoapplication.h>
 #include <inviwo/core/util/volumesequenceutils.h>
 #include <inviwo/core/util/zip.h>
+
+#include <modules/opengl/buffer/buffergl.h>
+#include <modules/opengl/texture/textureutils.h>
+#include <modules/opengl/shader/shaderutils.h>
 
 #include <random>
 

@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2014-2019 Inviwo Foundation
+ * Copyright (c) 2014-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,39 +27,60 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_PROCESSORTAGS_H
-#define IVW_PROCESSORTAGS_H
+#pragma once
 
 #include <inviwo/core/common/inviwocoredefine.h>
-#include <inviwo/core/common/inviwo.h>
+
+#include <string>
+#include <vector>
 
 namespace inviwo {
+
+class Tags;
 
 class IVW_CORE_API Tag {
 public:
     Tag() = default;
     Tag(std::string tag);
-    Tag& operator=(const std::string& that);
     const std::string& getString() const;
 
-    friend std::ostream& operator<<(std::ostream& os, const inviwo::Tag& obj);
+    IVW_CORE_API friend std::ostream& operator<<(std::ostream& os, const inviwo::Tag& obj);
+    Tags operator|(const Tag& rhs) const;
+
+    friend inline bool operator==(const Tag& lhs, const Tag& rhs) {
+        return lhs.getString() == rhs.getString();
+    }
+    friend inline bool operator<(const Tag& lhs, const Tag& rhs) {
+        return lhs.getString() < rhs.getString();
+    }
+    friend inline bool operator!=(const Tag& lhs, const Tag& rhs) { return !operator==(lhs, rhs); }
+    friend inline bool operator>(const Tag& lhs, const Tag& rhs) { return operator<(rhs, lhs); }
+    friend inline bool operator<=(const Tag& lhs, const Tag& rhs) { return !operator>(lhs, rhs); }
+    friend inline bool operator>=(const Tag& lhs, const Tag& rhs) { return !operator<(lhs, rhs); }
+
+    // pre-defined platform tags
+    static const Tag GL;
+    static const Tag CL;
+    static const Tag CPU;
+    static const Tag PY;
 
 private:
     std::string tag_;
 };
 
-inline bool operator==(const Tag& lhs, const Tag& rhs) {
-    return lhs.getString() == rhs.getString();
-}
-inline bool operator<(const Tag& lhs, const Tag& rhs) { return lhs.getString() < rhs.getString(); }
-inline bool operator!=(const Tag& lhs, const Tag& rhs) { return !operator==(lhs, rhs); }
-inline bool operator>(const Tag& lhs, const Tag& rhs) { return operator<(rhs, lhs); }
-inline bool operator<=(const Tag& lhs, const Tag& rhs) { return !operator>(lhs, rhs); }
-inline bool operator>=(const Tag& lhs, const Tag& rhs) { return !operator<(lhs, rhs); }
-
 class IVW_CORE_API Tags {
 public:
     Tags() = default;
+
+    /*
+     * Creates tags from a tag.
+     */
+    Tags(const Tag& tag);
+
+    /*
+     * Creates tags from a vector of tags.
+     */
+    Tags(std::vector<Tag> tags);
 
     /*
      * Creates tags from a string. Multiple tags are delimited by ','.
@@ -76,8 +97,8 @@ public:
      */
     Tags& operator=(const std::string& that);
 
-    void addTag(Tag);
-    void addTags(const Tags& t);
+    Tags& addTag(Tag);
+    Tags& addTags(const Tags& t);
 
     size_t size() const;
     bool empty() const;
@@ -86,9 +107,7 @@ public:
 
     int getMatches(const Tags&) const;
 
-    friend std::ostream& operator<<(std::ostream& os, const inviwo::Tags& obj);
-    friend bool operator==(const Tags& lhs, const Tags& rhs);
-    friend bool operator<(const Tags& lhs, const Tags& rhs);
+    IVW_CORE_API friend std::ostream& operator<<(std::ostream& os, const inviwo::Tags& obj);
 
     std::vector<Tag> tags_;
 
@@ -98,14 +117,21 @@ public:
     static const Tags CL;
     static const Tags CPU;
     static const Tags PY;
-};
 
-inline bool operator==(const Tags& lhs, const Tags& rhs) { return lhs.tags_ == rhs.tags_; }
-inline bool operator<(const Tags& lhs, const Tags& rhs) { return lhs.tags_ < rhs.tags_; }
-inline bool operator!=(const Tags& lhs, const Tags& rhs) { return !operator==(lhs, rhs); }
-inline bool operator>(const Tags& lhs, const Tags& rhs) { return operator<(rhs, lhs); }
-inline bool operator<=(const Tags& lhs, const Tags& rhs) { return !operator>(lhs, rhs); }
-inline bool operator>=(const Tags& lhs, const Tags& rhs) { return !operator<(lhs, rhs); }
+    friend inline bool operator==(const Tags& lhs, const Tags& rhs) {
+        return lhs.tags_ == rhs.tags_;
+    }
+    friend inline bool operator<(const Tags& lhs, const Tags& rhs) { return lhs.tags_ < rhs.tags_; }
+    friend inline bool operator!=(const Tags& lhs, const Tags& rhs) {
+        return !operator==(lhs, rhs);
+    }
+    friend inline bool operator>(const Tags& lhs, const Tags& rhs) { return operator<(rhs, lhs); }
+    friend inline bool operator<=(const Tags& lhs, const Tags& rhs) { return !operator>(lhs, rhs); }
+    friend inline bool operator>=(const Tags& lhs, const Tags& rhs) { return !operator<(lhs, rhs); }
+
+    Tags operator|(const Tag& rhs) const;
+    Tags operator|(const Tags& rhs) const;
+};
 
 namespace util {
 
@@ -114,5 +140,3 @@ Tags IVW_CORE_API getPlatformTags(const Tags& t);
 }  // namespace util
 
 }  // namespace inviwo
-
-#endif  // IVW_PROCESSORTAGS_H

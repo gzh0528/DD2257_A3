@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2012-2019 Inviwo Foundation
+ * Copyright (c) 2012-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,13 +27,14 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_FILEPROPERTY_H
-#define IVW_FILEPROPERTY_H
+#pragma once
 
 #include <inviwo/core/common/inviwocoredefine.h>
 #include <inviwo/core/properties/templateproperty.h>
 #include <inviwo/core/util/fileextension.h>
 #include <inviwo/core/util/filedialogstate.h>
+
+#include <vector>
 
 namespace inviwo {
 
@@ -129,5 +130,3 @@ private:
 };
 
 }  // namespace inviwo
-
-#endif  // IVW_FILEPROPERTY_H

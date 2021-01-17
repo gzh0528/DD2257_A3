@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2016-2019 Inviwo Foundation
+ * Copyright (c) 2016-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -66,14 +66,26 @@ void BrushingAndLinkingManager::setSelected(const BrushingAndLinkingInport*,
     owner_->invalidate(invalidationLevel_);
 }
 
+void BrushingAndLinkingManager::clearSelected() {
+    selected_.clear();
+    owner_->invalidate(invalidationLevel_);
+}
+
 void BrushingAndLinkingManager::setFiltered(const BrushingAndLinkingInport* src,
                                             const std::unordered_set<size_t>& indices) {
     filtered_.set(src, indices);
 }
 
+void BrushingAndLinkingManager::clearFiltered() { filtered_.clear(); }
+
 void BrushingAndLinkingManager::setSelectedColumn(const BrushingAndLinkingInport*,
                                                   const std::unordered_set<size_t>& indices) {
     selectedColumns_ = indices;
+    owner_->invalidate(invalidationLevel_);
+}
+
+void BrushingAndLinkingManager::clearColumns() {
+    selected_.clear();
     owner_->invalidate(invalidationLevel_);
 }
 

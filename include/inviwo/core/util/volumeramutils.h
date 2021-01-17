@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2016-2019 Inviwo Foundation
+ * Copyright (c) 2016-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,11 +27,9 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_VOLUMERAMUTILS_H
-#define IVW_VOLUMERAMUTILS_H
+#pragma once
 
 #include <inviwo/core/common/inviwocoredefine.h>
-#include <inviwo/core/common/inviwo.h>
 #include <inviwo/core/datastructures/volume/volumeram.h>
 #include <inviwo/core/common/inviwoapplication.h>
 
@@ -40,8 +38,7 @@ namespace inviwo {
 namespace util {
 
 template <typename C>
-void forEachVoxel(const VolumeRAM &v, C callback) {
-    const auto dims = v.getDimensions();
+void forEachVoxel(const size3_t dims, C callback) {
     size3_t pos;
     for (pos.z = 0; pos.z < dims.z; ++pos.z) {
         for (pos.y = 0; pos.y < dims.y; ++pos.y) {
@@ -53,16 +50,19 @@ void forEachVoxel(const VolumeRAM &v, C callback) {
 }
 
 template <typename C>
-void forEachVoxelParallel(const VolumeRAM &v, C callback, size_t jobs = 0) {
-    const auto dims = v.getDimensions();
+void forEachVoxel(const VolumeRAM &v, C callback) {
+    forEachVoxel(v.getDimensions(), callback);
+}
 
+template <typename C>
+void forEachVoxelParallel(const size3_t dims, C callback, size_t jobs = 0) {
     if (InviwoApplication::isInitialized() && jobs == 0) {
         jobs = 4 * InviwoApplication::getPtr()->getPoolSize();
     }
 
     if (jobs == 0 || !InviwoApplication::isInitialized()) {
         // fallback to serial version
-        forEachVoxel(v, callback);
+        forEachVoxel(dims, callback);
         return;
     }
 
@@ -88,9 +88,11 @@ void forEachVoxelParallel(const VolumeRAM &v, C callback, size_t jobs = 0) {
         e.wait();
     }
 }
+template <typename C>
+void forEachVoxelParallel(const VolumeRAM &v, C callback, size_t jobs = 0) {
+    forEachVoxelParallel(v.getDimensions(), callback, jobs);
+}
 
 }  // namespace util
 
 }  // namespace inviwo
-
-#endif  // IVW_VOLUMERAMUTILS_H

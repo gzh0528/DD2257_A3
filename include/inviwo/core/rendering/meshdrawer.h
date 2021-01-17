@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2014-2019 Inviwo Foundation
+ * Copyright (c) 2014-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,8 +27,7 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_GEOMETRY_DRAWER_H
-#define IVW_GEOMETRY_DRAWER_H
+#pragma once
 
 #include <inviwo/core/common/inviwocoredefine.h>
 #include <inviwo/core/datastructures/geometry/mesh.h>
@@ -110,5 +109,3 @@ protected:
 };
 
 }  // namespace inviwo
-
-#endif  // IVW_GEOMETRY_DRAWER_H

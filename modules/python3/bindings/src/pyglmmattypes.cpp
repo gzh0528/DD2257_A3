@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2014-2019 Inviwo Foundation
+ * Copyright (c) 2014-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -96,7 +96,15 @@ void matxx(py::module &m, const std::string &prefix, const std::string &name,
     addInit<ColumnVector, Mat, Cols>(pym);
     pym.def(py::init<T>())
         .def(py::init<>())
+        .def(py::init([](py::array_t<T> arr) {
+            if (arr.ndim() != 2) throw std::invalid_argument{"Invalid dimensions"};
+            if (arr.shape(0) != Cols) throw std::invalid_argument{"Invalid dimensions"};
+            if (arr.shape(1) != Rows) throw std::invalid_argument{"Invalid dimensions"};
 
+            Mat res;
+            std::copy(arr.data(0), arr.data(0) + Cols * Rows, glm::value_ptr(res));
+            return res;
+        }))
         .def(py::self + py::self)
         .def(py::self - py::self)
         .def(py::self += py::self)

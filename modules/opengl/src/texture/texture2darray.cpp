@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2014-2019 Inviwo Foundation
+ * Copyright (c) 2014-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -29,57 +29,73 @@
 
 #include <modules/opengl/texture/texture2darray.h>
 #include <modules/opengl/openglcapabilities.h>
+#include <modules/opengl/openglutils.h>
 
 namespace inviwo {
 
-Texture2DArray::Texture2DArray(size3_t dimensions, GLFormats::GLFormat glFormat, GLenum filtering,
+Texture2DArray::Texture2DArray(size3_t dimensions, GLFormat glFormat, GLenum filtering,
+                               const SwizzleMask& swizzleMask, const std::array<GLenum, 2>& wrap,
                                GLint level)
-    : Texture(GL_TEXTURE_2D_ARRAY, glFormat, filtering, level), dimensions_(dimensions) {
-    setTextureParameters(&Texture2DArray::default2DArrayTextureParameterFunction);
-}
+    : Texture(GL_TEXTURE_2D_ARRAY, glFormat, filtering, swizzleMask, util::span(wrap), level)
+    , dimensions_(dimensions) {}
 
 Texture2DArray::Texture2DArray(size3_t dimensions, GLint format, GLint internalformat,
-                               GLenum dataType, GLenum filtering, GLint level)
-    : Texture(GL_TEXTURE_2D_ARRAY, format, internalformat, dataType, filtering, level)
-    , dimensions_(dimensions) {
-    setTextureParameters(&Texture2DArray::default2DArrayTextureParameterFunction);
-}
+                               GLenum dataType, GLenum filtering, const SwizzleMask& swizzleMask,
+                               const std::array<GLenum, 2>& wrap, GLint level)
+    : Texture(GL_TEXTURE_2D_ARRAY, format, internalformat, dataType, filtering, swizzleMask,
+              util::span(wrap), level)
+    , dimensions_(dimensions) {}
 
 Texture2DArray::Texture2DArray(const Texture2DArray& rhs)
     : Texture(rhs), dimensions_(rhs.dimensions_) {
-    setTextureParameters(&Texture2DArray::default2DArrayTextureParameterFunction);
+
     initialize(nullptr);
-    if (OpenGLCapabilities::getOpenGLVersion() >= 430) {
-        // GPU memcpy
+    if (OpenGLCapabilities::getOpenGLVersion() >= 430) {  // GPU memcpy
+        std::scoped_lock lock{syncMutex};
+        if (syncObj != 0) {
+            glDeleteSync(syncObj);
+            syncObj = 0;
+        }
+
         glCopyImageSubData(rhs.getID(), rhs.getTarget(), 0, 0, 0, 0, getID(), target_, 0, 0, 0, 0,
                            static_cast<GLsizei>(dimensions_.x), static_cast<GLsizei>(dimensions_.y),
                            static_cast<GLsizei>(dimensions_.z));
-    } else {
-        // Copy data through PBO
+
+        syncObj = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
+    } else {  // Copy data through PBO
         loadFromPBO(&rhs);
     }
 }
+
+Texture2DArray::Texture2DArray(Texture2DArray&& other) = default;
 
 Texture2DArray& Texture2DArray::operator=(const Texture2DArray& rhs) {
     if (this != &rhs) {
         Texture::operator=(rhs);
         dimensions_ = rhs.dimensions_;
-        setTextureParameters(&Texture2DArray::default2DArrayTextureParameterFunction);
         initialize(nullptr);
-        if (OpenGLCapabilities::getOpenGLVersion() >= 430) {
-            // GPU memcpy
+        if (OpenGLCapabilities::getOpenGLVersion() >= 430) {  // GPU memcpy
+            std::scoped_lock lock{syncMutex};
+            if (syncObj != 0) {
+                glDeleteSync(syncObj);
+                syncObj = 0;
+            }
+
             glCopyImageSubData(rhs.getID(), rhs.getTarget(), 0, 0, 0, 0, getID(), target_, 0, 0, 0,
                                0, static_cast<GLsizei>(rhs.dimensions_.x),
                                static_cast<GLsizei>(rhs.dimensions_.y),
                                static_cast<GLsizei>(rhs.dimensions_.z));
-        } else {
-            // Copy data through PBO
+
+            syncObj = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
+        } else {  // Copy data through PBO
             loadFromPBO(&rhs);
         }
     }
 
     return *this;
 }
+
+Texture2DArray& Texture2DArray::operator=(Texture2DArray&& other) = default;
 
 Texture2DArray* Texture2DArray::clone() const { return new Texture2DArray(*this); }
 
@@ -116,11 +132,14 @@ void Texture2DArray::uploadAndResize(const void* data, const size3_t& dim) {
     initialize(data);
 }
 
-void Texture2DArray::default2DArrayTextureParameterFunction(Texture* tex) {
-    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, tex->getFiltering());
-    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, tex->getFiltering());
+void Texture2DArray::setWrapping(const std::array<GLenum, 2>& wrapping) {
+    Texture::setWrapping(util::span(wrapping));
+}
+
+std::array<GLenum, 2> Texture2DArray::getWrapping() const {
+    std::array<GLenum, 2> wrapping{};
+    Texture::getWrapping(util::span(wrapping));
+    return wrapping;
 }
 
 }  // namespace inviwo

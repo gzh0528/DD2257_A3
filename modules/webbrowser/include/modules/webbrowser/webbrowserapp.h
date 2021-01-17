@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2018-2019 Inviwo Foundation
+ * Copyright (c) 2018-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,8 +27,7 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_WEBBROWSERAPP_H
-#define IVW_WEBBROWSERAPP_H
+#pragma once
 
 #include <modules/webbrowser/webbrowsermoduledefine.h>
 
@@ -50,6 +49,24 @@ namespace inviwo {
 class IVW_MODULE_WEBBROWSER_API WebBrowserApp : public CefApp, public CefBrowserProcessHandler {
 public:
     WebBrowserApp();
+    // Provides an opportunity to view and/or modify command-line arguments before
+    // processing by CEF and Chromium. The |process_type| value will be empty for
+    // the browser process. Do not keep a reference to the CefCommandLine object
+    // passed to this method. The CefSettings.command_line_args_disabled value
+    // can be used to start with an empty command-line object. Any values
+    // specified in CefSettings that equate to command-line arguments will be set
+    // before this method is called. Be cautious when using this method to modify
+    // command-line arguments for non-browser processes as this may result in
+    // undefined behavior including crashes.
+    //
+    // Inviwo: Added allow-file-access-from-files to avoid
+    //"Blocked a frame with origin "null" from
+    // accessing a frame with origin "null". Protocols, domains, and ports must match."
+    // This can happen when trying to access a newly opened dialog
+    ///
+    /*--cef(optional_param=process_type)--*/
+    virtual void OnBeforeCommandLineProcessing(const CefString& process_type,
+                                               CefRefPtr<CefCommandLine> command_line) OVERRIDE;
     // CefBrowserProcessHandler methods:
     CefRefPtr<CefBrowserProcessHandler> GetBrowserProcessHandler() OVERRIDE { return this; }
 
@@ -58,5 +75,4 @@ private:
 };
 #include <warn/pop>
 
-};      // namespace inviwo
-#endif  // IVW_WEBBROWSERAPP_H
+};  // namespace inviwo

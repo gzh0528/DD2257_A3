@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2016-2019 Inviwo Foundation
+ * Copyright (c) 2016-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,8 +31,13 @@
 
 #include <inviwo/core/io/serialization/versionconverter.h>
 #include <inviwo/core/common/inviwomodule.h>
+#include <inviwo/core/common/inviwoapplication.h>
 #include <inviwo/core/util/inviwosetupinfo.h>
 #include <inviwo/core/util/filesystem.h>
+#include <inviwo/core/io/serialization/serialization.h>
+
+#include <fmt/format.h>
+#include <fmt/ostream.h>
 
 namespace inviwo {
 
@@ -107,16 +112,18 @@ struct ErrorHandle {
             if (key == "Processor") {
                 std::string module = info_.getModuleForProcessor(error.getType());
                 if (!module.empty()) {
-                    messages.push_back(error.getMessage() + " Processor was in module: \"" +
-                                       module + "\".");
+                    messages.push_back(fmt::format("{} ({})\nProcessor was in module: \"{}\".",
+                                                   error.getMessage(), error.getContext(), module));
                 } else {
-                    messages.push_back(error.getMessage());
+                    messages.push_back(
+                        fmt::format("{} ({})", error.getMessage(), error.getContext()));
                 }
             } else {
-                messages.push_back(error.getMessage());
+                messages.push_back(fmt::format("{} ({})", error.getMessage(), error.getContext()));
             }
-        } catch (Exception& exception) {
-            messages.push_back("Deserialization error: " + exception.getMessage());
+        } catch (Exception& error) {
+            messages.push_back("" + fmt::format("Deserialization error: {} ({})",
+                                                error.getMessage(), error.getContext()));
         }
     }
 
@@ -222,17 +229,16 @@ WorkspaceManager::ClearHandle WorkspaceManager::onClear(const ClearCallback& cal
 
 WorkspaceManager::SerializationHandle WorkspaceManager::onSave(
     const SerializationCallback& callback, WorkspaceSaveModes modes) {
-    return serializers_.add([callback, modes, this](Serializer& s,
-                                                    const ExceptionHandler& exceptionHandler,
-                                                    WorkspaceSaveMode mode) {
+    return serializers_.add([callback, modes](Serializer& s,
+                                              const ExceptionHandler& exceptionHandler,
+                                              WorkspaceSaveMode mode) {
         if (modes.count(mode)) {
-            IVW_UNUSED_PARAM(this);
             try {
                 callback(s);
             } catch (Exception& e) {
                 exceptionHandler(e.getContext());
             } catch (...) {
-                exceptionHandler(IVW_CONTEXT);
+                exceptionHandler(IVW_CONTEXT_CUSTOM("WorkspaceManager"));
             }
         }
     });
@@ -241,14 +247,13 @@ WorkspaceManager::SerializationHandle WorkspaceManager::onSave(
 WorkspaceManager::DeserializationHandle WorkspaceManager::onLoad(
     const DeserializationCallback& callback) {
     return deserializers_.add(
-        [callback, this](Deserializer& d, const ExceptionHandler& exceptionHandler) {
-            IVW_UNUSED_PARAM(this);
+        [callback](Deserializer& d, const ExceptionHandler& exceptionHandler) {
             try {
                 callback(d);
             } catch (Exception& e) {
                 exceptionHandler(e.getContext());
             } catch (...) {
-                exceptionHandler(IVW_CONTEXT);
+                exceptionHandler(IVW_CONTEXT_CUSTOM("WorkspaceManager"));
             }
         });
 }

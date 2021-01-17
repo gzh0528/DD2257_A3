@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2013-2019 Inviwo Foundation
+ * Copyright (c) 2013-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -41,8 +41,8 @@ QLineEdit* SinglePropertySetting::addField() {
     return ext;
 }
 
-double SinglePropertySetting::getFieldAsDouble(int i) {
-    if (i >= 0 && static_cast<size_t>(i) < additionalFields_.size()) {
+double SinglePropertySetting::getFieldAsDouble(size_t i) {
+    if (i < additionalFields_.size()) {
         QLocale locale = additionalFields_[i]->locale();
         return locale.toDouble(
             additionalFields_[i]->text().remove(QChar(' ')).remove(locale.groupSeparator()));

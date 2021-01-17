@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2013-2019 Inviwo Foundation
+ * Copyright (c) 2013-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -38,7 +38,8 @@ std::shared_ptr<VolumeCL> VolumeRAM2CLConverter::createFrom(
     size3_t dimensions = volumeRAM->getDimensions();
     const void* data = volumeRAM->getData();
     return std::make_shared<VolumeCL>(dimensions, volumeRAM->getDataFormat(), data,
-                                      volumeRAM->getSwizzleMask());
+                                      volumeRAM->getSwizzleMask(), volumeRAM->getInterpolation(),
+                                      volumeRAM->getWrapping());
 }
 
 void VolumeRAM2CLConverter::update(std::shared_ptr<const VolumeRAM> volumeSrc,
@@ -47,13 +48,17 @@ void VolumeRAM2CLConverter::update(std::shared_ptr<const VolumeRAM> volumeSrc,
         volumeDst->setDimensions(volumeSrc->getDimensions());
     }
     volumeDst->upload(volumeSrc->getData());
+    volumeDst->setSwizzleMask(volumeSrc->getSwizzleMask());
+    volumeDst->setInterpolation(volumeSrc->getInterpolation());
+    volumeDst->setWrapping(volumeSrc->getWrapping());
 }
 
 std::shared_ptr<VolumeRAM> VolumeCL2RAMConverter::createFrom(
     std::shared_ptr<const VolumeCL> volumeCL) const {
     size3_t dimensions = volumeCL->getDimensions();
     auto destination =
-        createVolumeRAM(dimensions, volumeCL->getDataFormat(), nullptr, volumeCL->getSwizzleMask());
+        createVolumeRAM(dimensions, volumeCL->getDataFormat(), nullptr, volumeCL->getSwizzleMask(),
+                        volumeCL->getInterpolation(), volumeCL->getWrapping());
 
     if (destination) {
         volumeCL->download(destination->getData());
@@ -72,8 +77,9 @@ void VolumeCL2RAMConverter::update(std::shared_ptr<const VolumeCL> volumeSrc,
     }
 
     volumeSrc->download(volumeDst->getData());
-
-    if (volumeDst->hasHistograms()) volumeDst->getHistograms()->setValid(false);
+    volumeDst->setSwizzleMask(volumeSrc->getSwizzleMask());
+    volumeDst->setInterpolation(volumeSrc->getInterpolation());
+    volumeDst->setWrapping(volumeSrc->getWrapping());
 }
 
 }  // namespace inviwo

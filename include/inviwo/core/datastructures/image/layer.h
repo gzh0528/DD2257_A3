@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2014-2019 Inviwo Foundation
+ * Copyright (c) 2014-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,8 +27,7 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_LAYER_H
-#define IVW_LAYER_H
+#pragma once
 
 #include <inviwo/core/common/inviwocoredefine.h>
 #include <inviwo/core/datastructures/data.h>
@@ -51,7 +50,9 @@ public:
     explicit Layer(size2_t defaultDimensions = size2_t(8, 8),
                    const DataFormatBase* defaultFormat = DataVec4UInt8::get(),
                    LayerType type = LayerType::Color,
-                   const SwizzleMask& defaultSwizzleMask = swizzlemasks::rgba);
+                   const SwizzleMask& defaultSwizzleMask = swizzlemasks::rgba,
+                   InterpolationType interpolation = InterpolationType::Linear,
+                   const Wrapping2D& wrapping = wrapping2d::clampAll);
     explicit Layer(std::shared_ptr<LayerRepresentation>);
     Layer(const Layer&) = default;
     Layer& operator=(const Layer& that) = default;
@@ -89,6 +90,12 @@ public:
     void setSwizzleMask(const SwizzleMask& mask);
     SwizzleMask getSwizzleMask() const;
 
+    void setInterpolation(InterpolationType interpolation);
+    InterpolationType getInterpolation() const;
+
+    void setWrapping(const Wrapping2D& wrapping);
+    Wrapping2D getWrapping() const;
+
     /**
      * Copy and resize the representation of this onto the representations of target.
      * Does not change the dimensions of target.
@@ -107,18 +114,12 @@ public:
 private:
     friend class LayerRepresentation;
 
-    /**
-     * \brief update the internal state of the layer based on the given representation
-     * This will affect layer type, dimension, and swizzle mask.
-     *
-     * @param layerRep    layer representation of which the values will be taken from
-     */
-    void updateMetaFromRepresentation(const LayerRepresentation* layerRep);
-
-    LayerType layerType_;
+    LayerType defaultLayerType_;
     size2_t defaultDimensions_;
     const DataFormatBase* defaultDataFormat_;
     SwizzleMask defaultSwizzleMask_;
+    InterpolationType defaultInterpolation_;
+    Wrapping2D defaultWrapping_;
 };
 
 // https://docs.microsoft.com/en-us/cpp/cpp/general-rules-and-limitations?view=vs-2017
@@ -126,5 +127,3 @@ extern template class IVW_CORE_TMPL_EXP DataReaderType<Layer>;
 extern template class IVW_CORE_TMPL_EXP DataWriterType<Layer>;
 
 }  // namespace inviwo
-
-#endif  // IVW_LAYER_H

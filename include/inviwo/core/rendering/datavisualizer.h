@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2018-2019 Inviwo Foundation
+ * Copyright (c) 2018-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,18 +27,17 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_DATAVISUALIZER_H
-#define IVW_DATAVISUALIZER_H
+#pragma once
 
 #include <inviwo/core/common/inviwocoredefine.h>
-#include <inviwo/core/common/inviwo.h>
-
 #include <inviwo/core/ports/inport.h>
 #include <inviwo/core/ports/outport.h>
 #include <inviwo/core/processors/processor.h>
 #include <inviwo/core/util/fileextension.h>
-
 #include <inviwo/core/util/document.h>
+
+#include <vector>
+#include <string>
 
 namespace inviwo {
 
@@ -130,5 +129,3 @@ public:
 };
 
 }  // namespace inviwo
-
-#endif  // IVW_DATAVISUALIZER_H

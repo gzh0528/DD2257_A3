@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2013-2019 Inviwo Foundation
+ * Copyright (c) 2013-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,8 +27,7 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_COLORPROPERTYWDIGETQT_H
-#define IVW_COLORPROPERTYWDIGETQT_H
+#pragma once
 
 #include <modules/qtwidgets/qtwidgetsmoduledefine.h>
 #include <modules/qtwidgets/properties/propertywidgetqt.h>
@@ -152,6 +151,8 @@ void ColorPropertyWidgetQt<T>::createColorDialog() {
         colorDialog_->setWindowModality(Qt::NonModal);
         QObject::connect(colorDialog_, &QColorDialog::currentColorChanged, this,
                          &ColorPropertyWidgetQt<T>::setPropertyValue);
+
+        colorDialog_->installEventFilter(new utilqt::WidgetCloseEventFilter(this));
 
         offsetColorDialog();
     }
@@ -351,5 +352,3 @@ void ColorPropertyWidgetQt<T>::openColorDialog() {
 }
 
 }  // namespace inviwo
-
-#endif  // IVW_COLORPROPERTYWIDGETQT_H

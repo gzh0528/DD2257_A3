@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2012-2019 Inviwo Foundation
+ * Copyright (c) 2012-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,8 +27,7 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_PROPERTY_H
-#define IVW_PROPERTY_H
+#pragma once
 
 #include <inviwo/core/common/inviwocoredefine.h>
 #include <inviwo/core/properties/valuewrapper.h>
@@ -42,11 +41,14 @@
 #include <inviwo/core/util/document.h>
 #include <inviwo/core/metadata/metadataowner.h>
 #include <inviwo/core/util/introspection.h>
+#include <inviwo/core/io/serialization/serialization.h>
 
 #include <functional>
 #include <type_traits>
 
 namespace inviwo {
+
+class NetworkVisitor;
 
 /**
  * \class PropertyTraits
@@ -281,15 +283,6 @@ public:
      */
     void removeOnChange(const BaseCallBack* callback);
 
-    // clang-format off
-    template <typename T>
-    [[deprecated("was declared deprecated. Use `onChange(std::function<void()>)` instead")]]
-    const BaseCallBack* onChange(T* object, void (T::*method)());
-    template <typename T>
-    [[deprecated("was declared deprecated. Use `removeOnChange(const BaseCallBack*)` instead")]]
-    void removeOnChange(T* object);
-    // clang-format on
-
     virtual Property& setUsageMode(UsageMode usageMode);
     virtual UsageMode getUsageMode() const;
 
@@ -310,10 +303,9 @@ public:
      */
     template <typename P, typename DecisionFunc>
     Property& visibilityDependsOn(P& prop, DecisionFunc callback) {
-        typename std::result_of<DecisionFunc(P&)>::type b = true;
-        static_assert(std::is_same<decltype(b), bool>::value,
+        static_assert(std::is_invocable_r_v<bool, DecisionFunc, P&>,
                       "The visibility callback must return a boolean!");
-        static_assert(std::is_base_of<Property, P>::value, "P must be a Property!");
+        static_assert(std::is_base_of_v<Property, P>, "P must be a Property!");
         this->setVisible(callback(prop));
         prop.onChange([callback, &prop, this]() {
             bool visible = callback(prop);
@@ -333,10 +325,9 @@ public:
      */
     template <typename P, typename DecisionFunc>
     Property& readonlyDependsOn(P& prop, DecisionFunc callback) {
-        typename std::result_of<DecisionFunc(P&)>::type b = true;
-        static_assert(std::is_same<decltype(b), bool>::value,
+        static_assert(std::is_invocable_r_v<bool, DecisionFunc, P&>,
                       "The readonly callback must return a boolean!");
-        static_assert(std::is_base_of<Property, P>::value, "P must be a Property!");
+        static_assert(std::is_base_of_v<Property, P>, "P must be a Property!");
         this->setReadOnly(callback(prop));
         prop.onChange([callback, &prop, this]() {
             bool readonly = callback(prop);
@@ -353,6 +344,11 @@ public:
     template <typename P>
     Property& autoLinkToProperty(const std::string& propertyPath);
     const std::vector<std::pair<std::string, std::string>>& getAutoLinkToProperty() const;
+
+    /**
+     * @brief Accept a NetworkVisitor, the visitor will visit this Property.
+     */
+    virtual void accept(NetworkVisitor& visitor);
 
     class IVW_CORE_API OnChangeBlocker {
     public:
@@ -409,22 +405,6 @@ private:
     std::vector<std::pair<std::string, std::string>> autoLinkTo_;
 };
 
-// clang-format off
-template <typename T>
-[[deprecated("was declared deprecated. Use `onChange(std::function<void()>)` instead")]]
-const BaseCallBack* Property::onChange(T* o, void (T::*m)()) {
-    return onChangeCallback_.addLambdaCallback([o, m]() {
-        if (m) (*o.*m)();
-    });
-}
-
-template <typename T>
-[[deprecated("was declared deprecated. Use `removeOnChange(const BaseCallBack*)` instead")]]
-void Property::removeOnChange(T* o) {
-    onChangeCallback_.removeMemberFunction(o);
-}
-// clang-format on
-
 template <typename T, typename U>
 void Property::setStateAsDefault(T& property, const U& state) {
     U tmp = property;
@@ -441,5 +421,3 @@ Property& Property::autoLinkToProperty(const std::string& propertyPath) {
 }
 
 }  // namespace inviwo
-
-#endif  // IVW_PROPERTY_H

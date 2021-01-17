@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2012-2019 Inviwo Foundation
+ * Copyright (c) 2012-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,22 +27,16 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_INVIWOAPPLICATION_H
-#define IVW_INVIWOAPPLICATION_H
+#pragma once
 
 #include <inviwo/core/common/inviwocoredefine.h>
-#include <inviwo/core/common/inviwo.h>
 #include <inviwo/core/common/modulemanager.h>
 #include <inviwo/core/common/runtimemoduleregistration.h>
-#include <inviwo/core/processors/processortags.h>
-#include <inviwo/core/resourcemanager/resourcemanagerobserver.h>
 #include <inviwo/core/util/singleton.h>
 #include <inviwo/core/util/threadpool.h>
-#include <inviwo/core/util/commandlineparser.h>
 #include <inviwo/core/util/vectoroperations.h>
 #include <inviwo/core/util/raiiutils.h>
 #include <inviwo/core/util/pathtype.h>
-#include <inviwo/core/util/stringconversion.h>
 #include <inviwo/core/util/dispatcher.h>
 #include <inviwo/core/datastructures/representationfactory.h>
 #include <inviwo/core/datastructures/representationmetafactory.h>
@@ -50,13 +44,13 @@
 #include <inviwo/core/datastructures/representationconvertermetafactory.h>
 #include <inviwo/core/network/workspacemanager.h>
 #include <inviwo/core/properties/propertyvisibility.h>
+#include <inviwo/core/common/inviwoapplicationutil.h>
 
 #include <warn/push>
 #include <warn/ignore/all>
 #include <queue>
 #include <memory>
 #include <mutex>
-#include <condition_variable>
 #include <future>
 #include <locale>
 #include <set>
@@ -66,6 +60,8 @@ namespace inviwo {
 
 class ProcessorNetwork;
 class ProcessorNetworkEvaluator;
+class CommandLineParser;
+struct AppResourceManagerObserver;
 
 class ResourceManager;
 class CameraFactory;
@@ -104,6 +100,7 @@ class FileLogger;
 class ConsoleLogger;
 
 class TimerThread;
+class FileSystemObserver;
 
 /**
  * \class InviwoApplication
@@ -113,8 +110,7 @@ class TimerThread;
  * All modules should be owned and accessed trough this singleton, as well as the processor network
  *and the evaluator.
  */
-class IVW_CORE_API InviwoApplication : public Singleton<InviwoApplication>,
-                                       public ResourceManagerObserver {
+class IVW_CORE_API InviwoApplication : public Singleton<InviwoApplication> {
 public:
     InviwoApplication();
     InviwoApplication(std::string displayName);
@@ -219,23 +215,21 @@ public:
     virtual std::locale getUILocale() const;
 
     template <class F, class... Args>
-    auto dispatchPool(F&& f, Args&&... args)
-        -> std::future<typename std::result_of<F(Args...)>::type>;
+    auto dispatchPool(F&& f, Args&&... args) -> std::future<std::invoke_result_t<F, Args...>>;
 
     /**
      * Enqueue a functor to be run in the GUI thread
      * @returns a future with the result of the functor.
      */
     template <class F, class... Args>
-    auto dispatchFront(F&& f, Args&&... args)
-        -> std::future<typename std::result_of<F(Args...)>::type>;
+    auto dispatchFront(F&& f, Args&&... args) -> std::future<std::invoke_result_t<F, Args...>>;
 
     /**
      * Enqueue a functor to be run in the GUI thread.
      */
     void dispatchFrontAndForget(std::function<void()> fun);
 
-    virtual void processFront();
+    virtual size_t processFront();
 
     /**
      * Get the current number of worker threads in the thread pool
@@ -251,6 +245,8 @@ public:
     void waitForPool();
     void setPostEnqueueFront(std::function<void()> func);
     void setProgressCallback(std::function<void(std::string)> progressCallback);
+
+    ThreadPool& getThreadPool();
 
     /**
      * Returns the ResourceManager owned the InviwoApplication
@@ -403,14 +399,20 @@ public:
 
     ///@}
 
+    /**
+     * Sets the a FileSystemObserver for the application
+     * The FileObservers will register themselves in the FileSystemObserver of the
+     * InviwoApplication by default. Usually one would set the FileSystemObserver in the main
+     * function just after creating the app.
+     * By default the FileSystemObserver is nullptr, and no file observation is provided.
+     * @see FileSystemObserver
+     * @see FileObservers
+     */
+    void setFileSystemObserver(std::unique_ptr<FileSystemObserver> observer);
+    FileSystemObserver* getFileSystemObserver() const;
+
     // Methods to be implemented by deriving classes
     virtual void closeInviwoApplication();
-    virtual void registerFileObserver(FileObserver* fileObserver);
-    virtual void unRegisterFileObserver(FileObserver* fileObserver);
-    virtual void startFileObservation(std::string fileName);
-    virtual void stopFileObservation(std::string fileName);
-    enum class Message { Ok, Error };
-    virtual void playSound(Message soundID);
 
     TimerThread& getTimerThread();
     const std::string& getDisplayName() const;
@@ -427,8 +429,6 @@ public:
      */
     void setApplicationUsageMode(UsageMode mode);
 
-    virtual void onResourceManagerEnableStateChanged() override;
-
 protected:
     struct Queue {
         // Task queue
@@ -441,10 +441,11 @@ protected:
     };
 
     std::string displayName_;
-    CommandLineParser commandLineParser_;
+    std::unique_ptr<CommandLineParser> commandLineParser_;
     std::shared_ptr<ConsoleLogger> consoleLogger_;
     std::shared_ptr<FileLogger> filelogger_;
     std::function<void(std::string)> progressCallback_;
+    std::unique_ptr<FileSystemObserver> fileSystemObserver_;
 
     ThreadPool pool_;
     Queue queue_;  // "Interaction/GUI" queue
@@ -472,6 +473,7 @@ protected:
     std::unique_ptr<RepresentationMetaFactory> representationMetaFactory_;
     std::unique_ptr<RepresentationConverterMetaFactory> representationConverterMetaFactory_;
     std::unique_ptr<SystemSettings> systemSettings_;
+    std::unique_ptr<AppResourceManagerObserver> resourcemanagerobserver_;
     std::unique_ptr<SystemCapabilities> systemCapabilities_;
     std::vector<std::unique_ptr<ModuleCallbackAction>> moduleCallbackActions_;
     ModuleManager moduleManager_;
@@ -499,8 +501,7 @@ private:
  * @returns a future with the result of the functor.
  */
 template <class F, class... Args>
-auto dispatchFront(F&& f, Args&&... args)
-    -> std::future<typename std::result_of<F(Args...)>::type> {
+auto dispatchFront(F&& f, Args&&... args) -> std::future<std::invoke_result_t<F, Args...>> {
     return InviwoApplication::getPtr()->dispatchFront(std::forward<F>(f),
                                                       std::forward<Args>(args)...);
 }
@@ -513,35 +514,10 @@ inline void dispatchFrontAndForget(std::function<void()> fun) {
 }
 
 template <class F, class... Args>
-auto dispatchPool(F&& f, Args&&... args) -> std::future<typename std::result_of<F(Args...)>::type> {
+auto dispatchPool(F&& f, Args&&... args) -> std::future<std::invoke_result_t<F, Args...>> {
     return InviwoApplication::getPtr()->dispatchPool(std::forward<F>(f),
                                                      std::forward<Args>(args)...);
 }
-
-namespace util {
-
-/**
- * Utility function to get the InviwoApplication from a ProcessorNetwork
- */
-IVW_CORE_API InviwoApplication* getInviwoApplication(ProcessorNetwork*);
-/**
- * Utility function to get the InviwoApplication from a Processor
- */
-IVW_CORE_API InviwoApplication* getInviwoApplication(Processor*);
-/**
- * Utility function to get the InviwoApplication from a PropertyOwner
- */
-IVW_CORE_API InviwoApplication* getInviwoApplication(PropertyOwner*);
-/**
- * Utility function to get the InviwoApplication from a Property
- */
-IVW_CORE_API InviwoApplication* getInviwoApplication(Property*);
-/**
- * Utility function to get the InviwoApplication
- */
-IVW_CORE_API InviwoApplication* getInviwoApplication();
-
-}  // namespace util
 
 template <class T>
 T* InviwoApplication::getSettingsByType() {
@@ -560,14 +536,14 @@ T* InviwoApplication::getCapabilitiesByType() {
 
 template <class F, class... Args>
 auto InviwoApplication::dispatchPool(F&& f, Args&&... args)
-    -> std::future<typename std::result_of<F(Args...)>::type> {
+    -> std::future<std::invoke_result_t<F, Args...>> {
     return pool_.enqueue(std::forward<F>(f), std::forward<Args>(args)...);
 }
 
 template <class F, class... Args>
 auto InviwoApplication::dispatchFront(F&& f, Args&&... args)
-    -> std::future<typename std::result_of<F(Args...)>::type> {
-    using return_type = typename std::result_of<F(Args...)>::type;
+    -> std::future<std::invoke_result_t<F, Args...>> {
+    using return_type = std::invoke_result_t<F, Args...>;
 
     auto task = std::make_shared<std::packaged_task<return_type()>>(
         std::bind(std::forward<F>(f), std::forward<Args>(args)...));
@@ -655,5 +631,3 @@ inline ProcessorWidgetFactory* InviwoApplication::getProcessorWidgetFactory() co
 }
 
 }  // namespace inviwo
-
-#endif  // IVW_INVIWOAPPLICATION_H

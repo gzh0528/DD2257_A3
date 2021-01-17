@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2013-2019 Inviwo Foundation
+ * Copyright (c) 2013-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -93,7 +93,7 @@ void BufferCLGL::setSize(size_t size) {
     // Make sure that the OpenCL buffer is deleted before changing the size.
     // By observing the BufferObject we will make sure that the shared OpenCL buffer is
     // deleted and reattached after resizing is done.
-    bufferObject_->setSize(size * getSizeOfElement());
+    bufferObject_->setSizeInBytes(size * getSizeOfElement());
 }
 
 void BufferCLGL::upload(const void* data, size_t size) {

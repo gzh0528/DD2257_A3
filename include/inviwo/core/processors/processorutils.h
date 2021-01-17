@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2018-2019 Inviwo Foundation
+ * Copyright (c) 2018-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,12 +27,14 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_PROCESSORUTILS_H
-#define IVW_PROCESSORUTILS_H
+#pragma once
 
 #include <inviwo/core/common/inviwocoredefine.h>
-#include <inviwo/core/common/inviwo.h>
+#include <inviwo/core/common/inviwoapplication.h>
 #include <inviwo/core/processors/processortraits.h>
+#include <inviwo/core/util/glmvec.h>
+
+#include <type_traits>
 
 namespace inviwo {
 
@@ -92,17 +94,23 @@ private:
 template <typename T, typename... Args>
 std::unique_ptr<T> makeProcessor(ivec2 pos, Args&&... args) {
     auto name = ProcessorTraits<T>::getProcessorInfo().displayName;
-    auto p = std::make_unique<T>(std::forward<Args>(args)...);
+
+    std::unique_ptr<T> p;
+
+    if constexpr (std::is_constructible_v<T, Args...>) {
+        p = std::make_unique<T>(std::forward<Args>(args)...);
+    } else {
+        p = std::make_unique<T>(std::forward<Args>(args)..., InviwoApplication::getPtr());
+    }
+
     if (p->getIdentifier().empty()) p->setIdentifier(name);
     if (p->getDisplayName().empty()) p->setDisplayName(name);
 
     setPosition(p.get(), pos);
 
-    return std::move(p);
+    return p;
 }
 
 }  // namespace util
 
 }  // namespace inviwo
-
-#endif  // IVW_PROCESSORUTILS_H

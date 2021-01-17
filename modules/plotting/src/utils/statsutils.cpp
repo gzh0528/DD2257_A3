@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2016-2019 Inviwo Foundation
+ * Copyright (c) 2016-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -37,7 +37,8 @@ template <typename Tx, typename Ty>
 RegresionResult linearRegresion(const Tx &X, const Ty &Y) {
     RegresionResult res;
     if (X.getSize() != Y.getSize()) {
-        throw Exception("Buffers are not of equal length");
+        throw Exception("Buffers are not of equal length",
+                        IVW_CONTEXT_CUSTOM("statsutil::detail::linearRegresion"));
     }
     auto &xvec = X.getDataContainer();
     auto &yvec = Y.getDataContainer();

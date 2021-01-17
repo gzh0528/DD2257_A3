@@ -8,14 +8,15 @@ set(HEADER_FILES
     include/modules/postprocessing/postprocessingmodule.h
     include/modules/postprocessing/postprocessingmoduledefine.h
     include/modules/postprocessing/processors/depthdarkening.h
+    include/modules/postprocessing/processors/depthoffield.h
     include/modules/postprocessing/processors/fog.h
     include/modules/postprocessing/processors/fxaa.h
     include/modules/postprocessing/processors/hdrbloom.h
     include/modules/postprocessing/processors/imagebrightnesscontrast.h
     include/modules/postprocessing/processors/imageedgedarken.h
+    include/modules/postprocessing/processors/imagefilter.h
     include/modules/postprocessing/processors/imagehuesaturationluminance.h
     include/modules/postprocessing/processors/imageopacity.h
-    include/modules/postprocessing/processors/imagesharpen.h
     include/modules/postprocessing/processors/ssao.h
     include/modules/postprocessing/processors/tonemapping.h
 )
@@ -26,14 +27,15 @@ ivw_group("Header Files" ${HEADER_FILES})
 set(SOURCE_FILES
     src/postprocessingmodule.cpp
     src/processors/depthdarkening.cpp
+    src/processors/depthoffield.cpp
     src/processors/fog.cpp
     src/processors/fxaa.cpp
     src/processors/hdrbloom.cpp
     src/processors/imagebrightnesscontrast.cpp
     src/processors/imageedgedarken.cpp
+    src/processors/imagefilter.cpp
     src/processors/imagehuesaturationluminance.cpp
     src/processors/imageopacity.cpp
-    src/processors/imagesharpen.cpp
     src/processors/ssao.cpp
     src/processors/tonemapping.cpp
 )
@@ -53,6 +55,9 @@ set(SHADER_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/glsl/depthdarkening.frag
     ${CMAKE_CURRENT_SOURCE_DIR}/glsl/depthlinearize.frag
     ${CMAKE_CURRENT_SOURCE_DIR}/glsl/displaytex.frag
+    ${CMAKE_CURRENT_SOURCE_DIR}/glsl/dof_approx.comp
+    ${CMAKE_CURRENT_SOURCE_DIR}/glsl/dof_approx.frag
+    ${CMAKE_CURRENT_SOURCE_DIR}/glsl/dof_exact.frag
     ${CMAKE_CURRENT_SOURCE_DIR}/glsl/edgedarken.frag
     ${CMAKE_CURRENT_SOURCE_DIR}/glsl/fog.glsl
     ${CMAKE_CURRENT_SOURCE_DIR}/glsl/fog.frag
@@ -66,7 +71,6 @@ set(SHADER_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/glsl/hbao_reinterleave.frag
     ${CMAKE_CURRENT_SOURCE_DIR}/glsl/huesaturationluminance.frag
     ${CMAKE_CURRENT_SOURCE_DIR}/glsl/imageopacity.frag
-    ${CMAKE_CURRENT_SOURCE_DIR}/glsl/imagesharpen.frag
     ${CMAKE_CURRENT_SOURCE_DIR}/glsl/rgbl.frag
     ${CMAKE_CURRENT_SOURCE_DIR}/glsl/tonemapping.frag
     ${CMAKE_CURRENT_SOURCE_DIR}/glsl/viewnormal.frag

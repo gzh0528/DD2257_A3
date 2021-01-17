@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2014-2019 Inviwo Foundation
+ * Copyright (c) 2014-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -36,6 +36,7 @@
 #include <modules/opengl/texture/textureutils.h>
 #include <modules/opengl/volume/volumeutils.h>
 #include <inviwo/core/datastructures/volume/volume.h>
+#include <inviwo/core/algorithm/boundingbox.h>
 
 namespace inviwo {
 
@@ -58,7 +59,7 @@ MultichannelRaycaster::MultichannelRaycaster()
     , outport_("outport")
     , transferFunctions_("transfer-functions", "Transfer functions")
     , raycasting_("raycaster", "Raycasting")
-    , camera_("camera", "Camera")
+    , camera_("camera", "Camera", util::boundingBox(volumePort_))
     , lighting_("lighting", "Lighting", &camera_)
     , positionIndicator_("positionindicator", "Position Indicator") {
     transferFunctions_.addProperty(

@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2014-2019 Inviwo Foundation
+ * Copyright (c) 2014-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,12 +27,13 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_VOLUMEDATAREADERDIALOG_H
-#define IVW_VOLUMEDATAREADERDIALOG_H
+#pragma once
 
 #include <inviwo/core/util/formats.h>
 #include <inviwo/core/util/dialog.h>
 #include <inviwo/core/datastructures/datamapper.h>
+
+#include <string>
 
 namespace inviwo {
 
@@ -49,16 +50,14 @@ public:
     virtual dvec3 getSpacing() const = 0;
     virtual bool getEndianess() const = 0;
     virtual DataMapper getDataMapper() const = 0;
-    virtual size_t getDataOffset() const = 0;
+    virtual size_t getByteOffset() const = 0;
 
     virtual void setFormat(const DataFormatBase* format) = 0;
     virtual void setDimensions(uvec3 dim) = 0;
     virtual void setSpacing(dvec3 spacing) = 0;
     virtual void setEndianess(bool endian) = 0;
     virtual void setDataMapper(const DataMapper& datamapper) = 0;
-    virtual void setDataOffset(size_t offset) = 0;
+    virtual void setByteOffset(size_t offset) = 0;
 };
 
 }  // namespace inviwo
-
-#endif  // IVW_VOLUMEDATAREADERDIALOG_H

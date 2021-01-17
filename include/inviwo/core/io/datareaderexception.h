@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2015-2019 Inviwo Foundation
+ * Copyright (c) 2015-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,12 +27,12 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_DATAREADEREXCEPTION_H
-#define IVW_DATAREADEREXCEPTION_H
+#pragma once
 
 #include <inviwo/core/common/inviwocoredefine.h>
-#include <inviwo/core/common/inviwo.h>
 #include <inviwo/core/util/exception.h>
+
+#include <string>
 
 namespace inviwo {
 
@@ -43,5 +43,3 @@ public:
 };
 
 }  // namespace inviwo
-
-#endif  // IVW_DATAREADEREXCEPTION_H

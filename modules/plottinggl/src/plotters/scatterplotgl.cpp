@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2016-2019 Inviwo Foundation
+ * Copyright (c) 2016-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,6 +31,7 @@
 #include <modules/opengl/buffer/buffergl.h>
 #include <modules/opengl/buffer/bufferobject.h>
 #include <modules/opengl/buffer/bufferobjectarray.h>
+#include <modules/opengl/shader/shaderutils.h>
 #include <modules/opengl/texture/textureutils.h>
 #include <modules/opengl/openglutils.h>
 
@@ -40,6 +41,10 @@
 #include <inviwo/core/interaction/events/touchevent.h>
 #include <inviwo/core/datastructures/buffer/buffer.h>
 #include <inviwo/core/datastructures/buffer/bufferram.h>
+#include <inviwo/core/datastructures/geometry/basicmesh.h>
+#include <inviwo/core/properties/cameraproperty.h>
+#include <inviwo/core/util/colorconversion.h>
+#include <inviwo/core/util/zip.h>
 #include <modules/opengl/buffer/bufferobjectarray.h>
 
 namespace inviwo {
@@ -61,21 +66,24 @@ ScatterPlotGL::Properties::Properties(std::string identifier, std::string displa
           TransferFunction({{0.0, vec4(1.0f)}, {1.0, vec4(1.0f)}}))
     , color_("color", "Color", vec4(1, 0, 0, 1), vec4(0), vec4(1), vec4(0.1f),
              InvalidationLevel::InvalidOutput, PropertySemantics::Color)
-    , hoverColor_("hoverColor", "Hover color", vec4(1.0f, 0.77f, 0.25f, 1))
+    , hoverColor_("hoverColor", "Hover Color", vec4(1.0f, 0.906f, 0.612f, 1))
+    , selectionColor_("selectionColor", "Selection Color", vec4(1.0f, 0.769f, 0.247f, 1))
+    , boxSelectionSettings_("dragRectSettings", "Box Selection/Filtering")
     , margins_("margins", "Margins", 5, 5, 5, 5)
     , axisMargin_("axisMargin", "Axis Margin", 15.0f, 0.0f, 50.0f)
 
-    , borderWidth_("borderWidth", "Border width", 2, 0, 20)
-    , borderColor_("borderColor", "Border color", vec4(0, 0, 0, 1))
+    , borderWidth_("borderWidth", "Border Width", 2, 0, 20)
+    , borderColor_("borderColor", "Border Color", vec4(0, 0, 0, 1))
     , hovering_("hovering", "Enable Hovering", true)
 
     , axisStyle_("axisStyle", "Global Axis Style")
     , xAxis_("xAxis", "X Axis")
     , yAxis_("yAxis", "Y Axis", AxisProperty::Orientation::Vertical) {
     hoverColor_.setSemantics(PropertySemantics::Color);
+    selectionColor_.setSemantics(PropertySemantics::Color);
     borderColor_.setSemantics(PropertySemantics::Color);
 
-    util::for_each_in_tuple([&](auto &e) { this->addProperty(e); }, props());
+    util::for_each_in_tuple([&](auto& e) { this->addProperty(e); }, props());
 
     axisStyle_.registerProperties(xAxis_, yAxis_);
 
@@ -88,7 +96,7 @@ ScatterPlotGL::Properties::Properties(std::string identifier, std::string displa
     tf_.setCurrentStateAsDefault();
 }
 
-ScatterPlotGL::Properties::Properties(const ScatterPlotGL::Properties &rhs)
+ScatterPlotGL::Properties::Properties(const ScatterPlotGL::Properties& rhs)
     : CompositeProperty(rhs)
     , useCircle_(rhs.useCircle_)
     , radiusRange_(rhs.radiusRange_)
@@ -96,6 +104,8 @@ ScatterPlotGL::Properties::Properties(const ScatterPlotGL::Properties &rhs)
     , tf_(rhs.tf_)
     , color_(rhs.color_)
     , hoverColor_(rhs.hoverColor_)
+    , selectionColor_(rhs.selectionColor_)
+    , boxSelectionSettings_(rhs.boxSelectionSettings_)
     , margins_(rhs.margins_)
     , axisMargin_(rhs.axisMargin_)
     , borderWidth_(rhs.borderWidth_)
@@ -104,16 +114,16 @@ ScatterPlotGL::Properties::Properties(const ScatterPlotGL::Properties &rhs)
     , axisStyle_(rhs.axisStyle_)
     , xAxis_(rhs.xAxis_)
     , yAxis_(rhs.yAxis_) {
-    util::for_each_in_tuple([&](auto &e) { this->addProperty(e); }, props());
+    util::for_each_in_tuple([&](auto& e) { this->addProperty(e); }, props());
     axisStyle_.unregisterAll();
     axisStyle_.registerProperties(xAxis_, yAxis_);
 }
 
-ScatterPlotGL::Properties *ScatterPlotGL::Properties::clone() const {
+ScatterPlotGL::Properties* ScatterPlotGL::Properties::clone() const {
     return new Properties(*this);
 }
 
-ScatterPlotGL::ScatterPlotGL(Processor *processor)
+ScatterPlotGL::ScatterPlotGL(Processor* processor)
     : properties_("scatterplot", "Scatterplot")
     , shader_("scatterplot.vert", "scatterplot.geom", "scatterplot.frag")
     , xAxis_(nullptr)
@@ -121,50 +131,109 @@ ScatterPlotGL::ScatterPlotGL(Processor *processor)
     , color_(nullptr)
     , radius_(nullptr)
     , axisRenderers_({{properties_.xAxis_, properties_.yAxis_}})
-    , picking_(processor, 1, [this](PickingEvent *p) { objectPicked(p); })
-    , processor_(processor) {
+    , picking_(processor, 1, [this](PickingEvent* p) { objectPicked(p); })
+    , processor_(processor)
+    , boxSelectionHandler_(properties_.boxSelectionSettings_, xAxis_, yAxis_,
+                           [&](dvec2 p, const size2_t& dims) {
+                               const dvec4 margins =
+                                   properties_.margins_.getAsVec4() +
+                                   properties_.axisMargin_.get();  // top, right, bottom, left
+
+                               dvec2 bottomLeft{margins.w, margins.z};
+                               dvec2 topRight{static_cast<double>(dims.x) - margins.y,
+                                              static_cast<double>(dims.y) - margins.x};
+                               if (bottomLeft.x > topRight.x) {
+                                   std::swap(bottomLeft.x, topRight.x);
+                               }
+                               if (bottomLeft.y > topRight.y) {
+                                   std::swap(bottomLeft.y, topRight.y);
+                               }
+
+                               // clamp position to plotting area
+                               p = glm::clamp(p, bottomLeft, topRight);
+                               const dvec2 pNormalized = (p - bottomLeft) / (topRight - bottomLeft);
+
+                               const dvec2 rangeX = properties_.xAxis_.range_.get();
+                               const dvec2 rangeY = properties_.yAxis_.range_.get();
+                               const dvec2 extent{rangeX.y - rangeX.x, rangeY.y - rangeY.x};
+
+                               return dvec2{pNormalized * extent + dvec2{rangeX.x, rangeY.x}};
+                           })
+    , selectionRectRenderer_(properties_.boxSelectionSettings_) {
     if (processor_) {
         shader_.onReload([this]() { processor_->invalidate(InvalidationLevel::InvalidOutput); });
     }
     properties_.hovering_.onChange([this]() {
         if (!properties_.hovering_.get()) {
-            hoveredIndices_.clear();
+            hoverIndex_ = std::nullopt;
         }
     });
+
+    boxSelectionChangedCallBack_ = boxSelectionHandler_.addSelectionChangedCallback(
+        [this](const std::vector<bool>& selected, bool append) {
+            ensureSelectAndFilterSizes();
+            for (auto&& [ind, elem] : util::enumerate(selected)) {
+                if (append && elem)
+                    selected_[ind] = elem;
+                else {
+                    selected_[ind] = elem;
+                }
+            }
+
+            selectedIndicesGLDirty_ = true;
+            // selection changed, inform processor
+            selectionChangedCallback_.invoke(selected_);
+        });
+    boxFilteringChangedCallBack_ = boxSelectionHandler_.addFilteringChangedCallback(
+        [this](const std::vector<bool>& filtered, bool append) {
+            ensureSelectAndFilterSizes();
+            for (auto&& [ind, elem] : util::enumerate(filtered)) {
+                if (append && elem)
+                    filtered_[ind] = elem;
+                else {
+                    filtered_[ind] = elem;
+                }
+            }
+            filteringDirty_ = true;
+            // May filter selected points
+            selectedIndicesGLDirty_ = true;
+            filteringChangedCallback_.invoke(filtered_);
+        });
 }
 
-void ScatterPlotGL::plot(Image &dest, IndexBuffer *indices, bool useAxisRanges) {
+void ScatterPlotGL::plot(Image& dest, IndexBuffer* indices, bool useAxisRanges) {
     utilgl::activateAndClearTarget(dest);
     plot(dest.getDimensions(), indices, useAxisRanges);
     utilgl::deactivateCurrentTarget();
 }
 
-void ScatterPlotGL::plot(Image &dest, const Image &src, IndexBuffer *indices, bool useAxisRanges) {
+void ScatterPlotGL::plot(Image& dest, const Image& src, IndexBuffer* indices, bool useAxisRanges) {
     utilgl::activateTargetAndCopySource(dest, src);
     plot(dest.getDimensions(), indices, useAxisRanges);
     utilgl::deactivateCurrentTarget();
 }
 
-void ScatterPlotGL::plot(ImageOutport &dest, IndexBuffer *indices, bool useAxisRanges) {
+void ScatterPlotGL::plot(ImageOutport& dest, IndexBuffer* indices, bool useAxisRanges) {
     utilgl::activateAndClearTarget(dest);
     plot(dest.getDimensions(), indices, useAxisRanges);
     utilgl::deactivateCurrentTarget();
 }
 
-void ScatterPlotGL::plot(ImageOutport &dest, ImageInport &src, IndexBuffer *indices,
+void ScatterPlotGL::plot(ImageOutport& dest, ImageInport& src, IndexBuffer* indices,
                          bool useAxisRanges) {
     utilgl::activateTargetAndCopySource(dest, src);
     plot(dest.getDimensions(), indices, useAxisRanges);
     utilgl::deactivateCurrentTarget();
 }
 
-void ScatterPlotGL::plot(const ivec2 &start, const ivec2 &size, IndexBuffer *indices,
+void ScatterPlotGL::plot(const ivec2& start, const ivec2& size, IndexBuffer* indices,
                          bool useAxisRanges) {
     utilgl::ViewportState viewport(start.x, start.y, size.x, size.y);
     plot(size, indices, useAxisRanges);
 }
 
-void ScatterPlotGL::plot(const size2_t &dims, IndexBuffer *indexBuffer, bool useAxisRanges) {
+void ScatterPlotGL::plot(const size2_t& dims, IndexBuffer* indexBuffer, bool useAxisRanges) {
+    ensureSelectAndFilterSizes();
     // adjust all margins by axis margin
     vec4 margins = properties_.margins_.getAsVec4() + properties_.axisMargin_.get();
 
@@ -241,7 +310,7 @@ void ScatterPlotGL::plot(const size2_t &dims, IndexBuffer *indexBuffer, bool use
 
     if (radius_) {
         shader_.setUniform("minmaxR", minmaxR_);
-        shader_.setUniform("has_radius", 1);
+        shader_.setUniform("has_radius", (minmaxR_.x != minmaxR_.y ? 1 : 0));
 
         auto rbuf = radius_->getRepresentation<BufferGL>();
         auto rbufObj = rbuf->getBufferObject();
@@ -250,28 +319,57 @@ void ScatterPlotGL::plot(const size2_t &dims, IndexBuffer *indexBuffer, bool use
     } else {
         shader_.setUniform("has_radius", 0);
     }
+    // Will be called if no indexBuffer is specified.
+    // (assuming brushing & linking filters, so internal filters should not be applied)
+    auto setupInternalFiltering = [this, xbuf]() {
+        if (!filteringDirty_) return;
 
-    IndexBuffer *indices;
+        std::vector<uint32_t> selectedIndices;
+
+        // no indices given, draw all non-filtered data points
+        size_t nFiltered = std::count(filtered_.begin(), filtered_.end(), true);
+        // std::reduce<size_t>(filtered_.begin(), filtered_.end(), size_t(0), [);
+        auto nNotFiltered = xbuf->getSize() - nFiltered;
+
+        if (!indices_) indices_ = std::make_unique<IndexBuffer>(nNotFiltered);
+        auto& inds = indices_->getEditableRAMRepresentation()->getDataContainer();
+        inds.clear();
+        inds.reserve(nNotFiltered);
+
+        if (indexColumn_) {
+            auto& indexCol =
+                indexColumn_->getTypedBuffer()->getRAMRepresentation()->getDataContainer();
+            for (auto [ind, filtered] : util::enumerate(filtered_)) {
+                if (!filtered) {
+                    inds.push_back(indexCol[ind]);
+                }
+            }
+        } else {
+            auto indicesSeq =
+                util::make_sequence<unsigned int>(0, static_cast<unsigned int>(xbuf->getSize()), 1);
+            std::copy_if(indicesSeq.begin(), indicesSeq.end(), std::back_inserter(inds),
+                         [this](auto val) { return !filtered_[val]; });
+        }
+        filteringDirty_ = false;
+    };
+    IndexBuffer* indices;
     if (radius_) {
+
         if (indexBuffer) {
             // copy selected indices
             indices_ = std::unique_ptr<IndexBuffer>(indexBuffer->clone());
         } else {
-            // no indices given, draw all data points
-            if (!indices_) indices_ = std::make_unique<IndexBuffer>(xbuf->getSize());
-            auto &inds = indices_->getEditableRAMRepresentation()->getDataContainer();
-            inds.resize(xbuf->getSize());
-            std::iota(inds.begin(), inds.end(), 0);
+            setupInternalFiltering();
         }
         indices = indices_.get();
 
         // sort according to radii, larger first
-        auto &inds = indices->getEditableRAMRepresentation()->getDataContainer();
+        auto& inds = indices->getEditableRAMRepresentation()->getDataContainer();
 
         radius_->getRepresentation<BufferRAM>()->dispatch<void, dispatching::filter::Scalars>(
             [&inds](auto bufferpr) {
-                auto &radii = bufferpr->getDataContainer();
-                std::sort(inds.begin(), inds.end(), [&radii](const uint32_t &a, const uint32_t &b) {
+                auto& radii = bufferpr->getDataContainer();
+                std::sort(inds.begin(), inds.end(), [&radii](const uint32_t& a, const uint32_t& b) {
                     return radii[a] > radii[b];
                 });
             });
@@ -280,11 +378,7 @@ void ScatterPlotGL::plot(const size2_t &dims, IndexBuffer *indexBuffer, bool use
             // copy selected indices
             indices = indexBuffer;
         } else {
-            // no indices given, draw all data points
-            if (!indices_) indices_ = std::make_unique<IndexBuffer>(xbuf->getSize());
-            auto &inds = indices_->getEditableRAMRepresentation()->getDataContainer();
-            inds.resize(xbuf->getSize());
-            std::iota(inds.begin(), inds.end(), 0);
+            setupInternalFiltering();
             indices = indices_.get();
         }
     }
@@ -295,27 +389,75 @@ void ScatterPlotGL::plot(const size2_t &dims, IndexBuffer *indexBuffer, bool use
     glDrawElements(GL_POINTS, static_cast<uint32_t>(indices->getSize()), indicesGL->getFormatType(),
                    nullptr);
     indicesGL->getBufferObject()->unbind();
+    // draw selected and hovered points on top
 
-    if (!hoveredIndices_.empty()) {
-        // draw hovered points on top
+    if (selectedIndicesGLDirty_ || nSelectedButNotFiltered_ > 0) {
+        shader_.setUniform("has_color", 0);
+        shader_.setUniform("default_color", properties_.selectionColor_.get());
+        if (selectedIndicesGLDirty_) {
+            nSelectedButNotFiltered_ = 0;
+            std::vector<uint32_t> selectedIndices;
+            if (indexColumn_) {
+                auto& indexCol =
+                    indexColumn_->getTypedBuffer()->getRAMRepresentation()->getDataContainer();
+                for (auto [ind, selected, filtered] : util::enumerate(selected_, filtered_)) {
+                    if (selected && !filtered) {
+                        selectedIndices.push_back(indexCol[ind]);
+                    }
+                }
+            } else {
+                for (auto [ind, selected, filtered] : util::enumerate(selected_, filtered_)) {
+                    if (selected && !filtered) {
+                        selectedIndices.push_back(static_cast<uint32_t>(ind));
+                    }
+                }
+            }
+
+            if (selectedIndicesGL_.getSizeInBytes() <
+                static_cast<GLsizeiptr>(selectedIndices.size() * sizeof(uint32_t))) {
+                selectedIndicesGL_.setSizeInBytes(selectedIndices.size() * sizeof(uint32_t));
+            }
+            nSelectedButNotFiltered_ = selectedIndices.size();
+            selectedIndicesGL_.upload(selectedIndices.data(),
+                                      selectedIndices.size() * sizeof(uint32_t));
+            selectedIndicesGLDirty_ = false;
+        }
+        if (nSelectedButNotFiltered_ > 0) {
+            selectedIndicesGL_.bind();
+            glDrawElements(GL_POINTS, static_cast<uint32_t>(nSelectedButNotFiltered_),
+                           selectedIndicesGL_.getFormatType(), nullptr);
+            selectedIndicesGL_.unbind();
+        }
+    }
+    if (hoverIndex_) {
         shader_.setUniform("has_color", 0);
         shader_.setUniform("default_color", properties_.hoverColor_.get());
-        glDrawElements(
-            GL_POINTS, static_cast<uint32_t>(hoveredIndices_.size()), GL_UNSIGNED_INT,
-            std::vector<uint32_t>(hoveredIndices_.begin(), hoveredIndices_.end()).data());
+
+        if (hoverIndexDirty_) {
+            // Will both bind and upload
+            hoverIndexGL_.upload(static_cast<const void*>(&(*hoverIndex_)), sizeof(uint32_t));
+            hoverIndexDirty_ = false;
+        } else {
+            hoverIndexGL_.bind();
+        }
+        glDrawElements(GL_POINTS, 1, hoverIndexGL_.getFormatType(), nullptr);
+        hoverIndexGL_.unbind();
     }
 
     shader_.deactivate();
     boa_->unbind();
 
-    renderAxis(dims);
-}
+    // Render selection rectangle
+    selectionRectRenderer_.render(boxSelectionHandler_.getDragRectangle(), dims);
 
-void ScatterPlotGL::setXAxisLabel(const std::string &label) {
+    renderAxis(dims);
+}  // namespace plot
+
+void ScatterPlotGL::setXAxisLabel(const std::string& label) {
     properties_.xAxis_.setCaption(label);
 }
 
-void ScatterPlotGL::setYAxisLabel(const std::string &label) {
+void ScatterPlotGL::setYAxisLabel(const std::string& label) {
     properties_.yAxis_.setCaption(label);
 }
 
@@ -338,6 +480,7 @@ void ScatterPlotGL::setXAxisData(std::shared_ptr<const BufferBase> buffer) {
 
         properties_.xAxis_.setRange(minmaxX_);
     }
+    boxSelectionHandler_.setXAxisData(buffer);
 }
 
 void ScatterPlotGL::setYAxisData(std::shared_ptr<const BufferBase> buffer) {
@@ -349,6 +492,7 @@ void ScatterPlotGL::setYAxisData(std::shared_ptr<const BufferBase> buffer) {
 
         properties_.yAxis_.setRange(minmaxY_);
     }
+    boxSelectionHandler_.setYAxisData(buffer);
 }
 
 void ScatterPlotGL::setColorData(std::shared_ptr<const BufferBase> buffer) {
@@ -388,7 +532,41 @@ void ScatterPlotGL::setIndexColumn(std::shared_ptr<const TemplateColumn<uint32_t
     }
 }
 
-void ScatterPlotGL::renderAxis(const size2_t &dims) {
+void ScatterPlotGL::setSelectedIndices(const std::unordered_set<size_t>& indices) {
+    ensureSelectAndFilterSizes();
+    std::fill(selected_.begin(), selected_.end(), false);
+    selected_.resize(xAxis_->getSize(), false);
+    for (auto i : indices) {
+        selected_[i] = true;
+    }
+    selectedIndicesGLDirty_ = true;
+}
+
+auto ScatterPlotGL::addToolTipCallback(std::function<ToolTipFunc> callback)
+    -> ToolTipCallbackHandle {
+    return tooltipCallback_.add(callback);
+}
+
+auto ScatterPlotGL::addSelectionChangedCallback(std::function<SelectionFunc> callback)
+    -> SelectionCallbackHandle {
+    return selectionChangedCallback_.add(callback);
+}
+
+auto ScatterPlotGL::addFilteringChangedCallback(std::function<SelectionFunc> callback)
+    -> SelectionCallbackHandle {
+    return filteringChangedCallback_.add(callback);
+}
+
+void ScatterPlotGL::invokeEvent(Event* event) {
+    boxSelectionHandler_.invokeEvent(event);
+    if (event->hasBeenUsed()) {
+        if (processor_) {
+            processor_->invalidate(InvalidationLevel::InvalidOutput);
+        }
+    }
+}
+
+void ScatterPlotGL::renderAxis(const size2_t& dims) {
     const size2_t lowerLeft(properties_.margins_.getLeft(), properties_.margins_.getBottom());
     const size2_t upperRight(dims.x - 1 - properties_.margins_.getRight(),
                              dims.y - 1 - properties_.margins_.getTop());
@@ -403,64 +581,74 @@ void ScatterPlotGL::renderAxis(const size2_t &dims) {
                              size2_t(lowerLeft.x, upperRight.y - padding));
 }
 
-void ScatterPlotGL::objectPicked(PickingEvent *p) {
-    auto idToDataFrameIndex = [this](uint32_t id) -> std::tuple<bool, uint32_t> {
+void ScatterPlotGL::objectPicked(PickingEvent* p) {
+    auto idToDataFrameIndex = [this](uint32_t id) -> std::optional<uint32_t> {
         if (!indexColumn_) {
-            return std::tuple<bool, uint32_t>{false, 0};
+            return std::nullopt;
         }
-        auto &indexCol = indexColumn_->getTypedBuffer()->getRAMRepresentation()->getDataContainer();
+        auto& indexCol = indexColumn_->getTypedBuffer()->getRAMRepresentation()->getDataContainer();
         auto it = util::find(indexCol, static_cast<uint32_t>(id));
         if (it != indexCol.end()) {
-            return std::tuple<bool, uint32_t>{true, *it};
+            return *it;
         } else {
-            return std::tuple<bool, uint32_t>{false, 0};
+            return std::nullopt;
         }
     };
 
     const uint32_t id = static_cast<uint32_t>(p->getPickedId());
     auto rowIndex = idToDataFrameIndex(id);
 
+    // Show tooltip for current item
+    if (rowIndex) {
+        if (p->getHoverState() == PickingHoverState::Move ||
+            p->getHoverState() == PickingHoverState::Enter) {
+
+            tooltipCallback_.invoke(p, rowIndex.value());
+
+        } else if (p->getHoverState() == PickingHoverState::Exit) {
+            p->setToolTip("");
+        }
+    }
+
     if (properties_.hovering_.get()) {
         if (p->getHoverState() == PickingHoverState::Enter) {
-            hoveredIndices_.insert(id);
+            hoverIndex_ = id;
+            hoverIndexDirty_ = true;
             if (processor_) {
                 processor_->invalidate(InvalidationLevel::InvalidOutput);
             }
         } else if (p->getHoverState() == PickingHoverState::Exit) {
-            hoveredIndices_.erase(id);
+            hoverIndex_ = std::nullopt;
             if (processor_) {
                 processor_->invalidate(InvalidationLevel::InvalidOutput);
             }
         }
     }
 
-    auto logRowData = [&]() {
-        if (std::get<0>(rowIndex) && xAxis_ && yAxis_) {
-            std::ostringstream ss;
-            ss << "Index: " << std::get<1>(rowIndex) << "\n"
-               << properties_.xAxis_.getCaption() << ": "
-               << xAxis_->getRepresentation<BufferRAM>()->getAsDouble(id) << "\n"
-               << properties_.yAxis_.getCaption() << ": "
-               << yAxis_->getRepresentation<BufferRAM>()->getAsDouble(id);
-            if (color_) {
-                ss << "\nColor Value: " << color_->getRepresentation<BufferRAM>()->getAsDouble(id);
-            }
-            if (radius_) {
-                ss << "\nRadius: " << radius_->getRepresentation<BufferRAM>()->getAsDouble(id);
-            }
-            LogWarn(ss.str());
-        }
-    };
-
     if ((p->getPressState() == PickingPressState::Release) &&
         (p->getPressItem() == PickingPressItem::Primary) &&
         (p->getCurrentGlobalPickingId() == p->getPressedGlobalPickingId())) {
-        logRowData();
+        ensureSelectAndFilterSizes();
+        selected_[id] = !selected_[id];
+        selectedIndicesGLDirty_ = true;
+
+        // selection changed, inform processor
+        selectionChangedCallback_.invoke(selected_);
     }
+    p->setUsed(true);
 }
 
 uint32_t ScatterPlotGL::getGlobalPickId(uint32_t localIndex) const {
     return static_cast<uint32_t>(picking_.getPickingId(localIndex));
+}
+
+void ScatterPlotGL::ensureSelectAndFilterSizes() {
+    if (xAxis_->getSize() != selected_.size() || xAxis_->getSize() != filtered_.size()) {
+        selected_.resize(xAxis_->getSize(), false);
+        filtered_.resize(xAxis_->getSize(), false);
+        selectedIndicesGLDirty_ = true;
+        filteringDirty_ = true;
+    }
 }
 
 }  // namespace plot

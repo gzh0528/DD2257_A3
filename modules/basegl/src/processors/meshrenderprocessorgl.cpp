@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2013-2019 Inviwo Foundation
+ * Copyright (c) 2013-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -43,6 +43,7 @@
 #include <modules/opengl/openglutils.h>
 
 #include <modules/base/algorithm/dataminmax.h>
+#include <inviwo/core/algorithm/boundingbox.h>
 
 #include <limits>
 
@@ -62,17 +63,13 @@ MeshRenderProcessorGL::MeshRenderProcessorGL()
     , inport_("geometry")
     , imageInport_("imageInport")
     , outport_("image")
-    , camera_("camera", "Camera", vec3(0.0f, 0.0f, 2.0f), vec3(0.0f, 0.0f, 0.0f),
-              vec3(0.0f, 1.0f, 0.0f), &inport_)
-    , centerViewOnGeometry_("centerView", "Center view on geometry")
-    , setNearFarPlane_("setNearFarPlane", "Calculate Near and Far Plane")
-    , resetViewParams_("resetView", "Reset Camera")
+    , camera_("camera", "Camera", util::boundingBox(inport_))
     , trackball_(&camera_)
     , overrideColorBuffer_("overrideColorBuffer", "Override Color Buffer", false,
                            InvalidationLevel::InvalidResources)
     , overrideColor_("overrideColor", "Override Color", vec4(0.75f, 0.75f, 0.75f, 1.0f), vec4(0.0f),
                      vec4(1.0f))
-    , geomProperties_("geometry", "Geometry Rendering Properties")
+    , meshProperties_("geometry", "Geometry Rendering Properties")
     , cullFace_("cullFace", "Cull Face",
                 {{"culldisable", "Disable", GL_NONE},
                  {"cullfront", "Front", GL_FRONT},
@@ -91,26 +88,13 @@ MeshRenderProcessorGL::MeshRenderProcessorGL()
                         InvalidationLevel::InvalidResources)
     , shader_("meshrendering.vert", "meshrendering.frag", false) {
 
-    addPort(inport_).onChange([this]() { updateDrawers(); });
+    addPort(inport_);
     addPort(imageInport_).setOptional(true);
-    addPort(outport_).addResizeEventListener(&camera_);
+    addPort(outport_);
 
-    addProperties(camera_, centerViewOnGeometry_, setNearFarPlane_, resetViewParams_);
-    addProperties(geomProperties_, lightingProperty_, trackball_, layers_);
+    addProperties(camera_, meshProperties_, lightingProperty_, trackball_, layers_);
 
-    centerViewOnGeometry_.onChange([&]() {
-        if (!inport_.hasData()) return;
-        meshutil::centerViewOnMeshes(inport_.getVectorData(), camera_);
-    });
-    setNearFarPlane_.onChange([&]() {
-        if (!inport_.hasData()) return;
-        auto nearFar = meshutil::computeNearFarPlanes(
-            meshutil::axisAlignedBoundingBox(inport_.getVectorData()), camera_);
-        camera_.setNearFarPlaneDist(nearFar.first, nearFar.second);
-    });
-
-    resetViewParams_.onChange([this]() { camera_.resetCamera(); });
-    geomProperties_.addProperties(cullFace_, enableDepthTest_, overrideColorBuffer_,
+    meshProperties_.addProperties(cullFace_, enableDepthTest_, overrideColorBuffer_,
                                   overrideColor_);
 
     overrideColor_.setSemantics(PropertySemantics::Color)
@@ -168,44 +152,16 @@ void MeshRenderProcessorGL::process() {
     utilgl::BlendModeState blendModeStateGL(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     utilgl::setUniforms(shader_, camera_, lightingProperty_, overrideColor_);
-    for (auto& drawer : drawers_) {
-        utilgl::setShaderUniforms(shader_, *(drawer.second->getMesh()), "geometry");
-        shader_.setUniform("pickingEnabled", meshutil::hasPickIDBuffer(drawer.second->getMesh()));
-        drawer.second->draw();
+    for (auto mesh : inport_) {
+        utilgl::setShaderUniforms(shader_, *mesh, "geometry");
+        shader_.setUniform("pickingEnabled", meshutil::hasPickIDBuffer(mesh.get()));
+        MeshDrawerGL::DrawObject drawer{mesh->getRepresentation<MeshGL>(),
+                                        mesh->getDefaultMeshInfo()};
+        drawer.draw();
     }
 
     shader_.deactivate();
     utilgl::deactivateCurrentTarget();
-}
-
-void MeshRenderProcessorGL::updateDrawers() {
-    auto changed = inport_.getChangedOutports();
-    DrawerMap temp;
-    std::swap(temp, drawers_);
-
-    std::map<const Outport*, std::vector<std::shared_ptr<const Mesh>>> data;
-    for (auto& elem : inport_.getSourceVectorData()) {
-        data[elem.first].push_back(elem.second);
-    }
-
-    for (auto elem : data) {
-        auto ibegin = temp.lower_bound(elem.first);
-        auto iend = temp.upper_bound(elem.first);
-
-        if (util::contains(changed, elem.first) || ibegin == temp.end() ||
-            static_cast<long>(elem.second.size()) !=
-                std::distance(ibegin, iend)) {  // data is changed or new.
-
-            for (auto geo : elem.second) {
-                auto factory = getNetwork()->getApplication()->getMeshDrawerFactory();
-                if (auto renderer = factory->create(geo.get())) {
-                    drawers_.emplace(std::make_pair(elem.first, std::move(renderer)));
-                }
-            }
-        } else {  // reuse the old data.
-            drawers_.insert(std::make_move_iterator(ibegin), std::make_move_iterator(iend));
-        }
-    }
 }
 
 }  // namespace inviwo

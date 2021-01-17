@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2016-2019 Inviwo Foundation
+ * Copyright (c) 2016-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -32,7 +32,7 @@
 
 #include <modules/base/basemoduledefine.h>
 #include <inviwo/core/common/inviwo.h>
-#include <inviwo/core/processors/processor.h>
+#include <inviwo/core/processors/poolprocessor.h>
 #include <inviwo/core/ports/volumeport.h>
 #include <inviwo/core/properties/ordinalproperty.h>
 #include <inviwo/core/properties/optionproperty.h>
@@ -55,20 +55,15 @@ namespace inviwo {
  *   * __outputVolume__ Output volume
  *
  */
-class IVW_MODULE_BASE_API VolumeLaplacianProcessor : public Processor,
-                                                     public ActivityIndicatorOwner {
+class IVW_MODULE_BASE_API VolumeLaplacianProcessor : public PoolProcessor {
 public:
     VolumeLaplacianProcessor();
     virtual ~VolumeLaplacianProcessor() = default;
 
-    virtual void process() override;
-
+    static const ProcessorInfo processorInfo_;
     virtual const ProcessorInfo getProcessorInfo() const override;
 
-    virtual void invalidate(InvalidationLevel invalidationLevel,
-                            Property* modifiedProperty = nullptr) override;
-
-    static const ProcessorInfo processorInfo_;
+    virtual void process() override;
 
 private:
     VolumeInport inport_;
@@ -79,8 +74,6 @@ private:
 
     VolumeInformationProperty inVolume_;
     VolumeInformationProperty outVolume_;
-
-    std::future<std::shared_ptr<Volume>> result_;
 };
 
 }  // namespace inviwo

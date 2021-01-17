@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2012-2019 Inviwo Foundation
+ * Copyright (c) 2012-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,17 +27,18 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_VOLUMERAM_H
-#define IVW_VOLUMERAM_H
+#pragma once
 
 #include <inviwo/core/common/inviwocoredefine.h>
-#include <inviwo/core/common/inviwo.h>
 #include <inviwo/core/datastructures/volume/volumerepresentation.h>
 #include <inviwo/core/datastructures/histogram.h>
+#include <inviwo/core/util/glm.h>
 #include <inviwo/core/util/formats.h>
 #include <inviwo/core/util/formatdispatching.h>
 
 namespace inviwo {
+
+class HistogramCalculationState;
 
 /**
  * \ingroup datastructures
@@ -64,15 +65,6 @@ public:
     virtual void setData(void* data, size3_t dimensions) = 0;
     virtual void removeDataOwnership() = 0;
 
-    // Histograms
-    virtual bool hasHistograms() const = 0;
-    virtual HistogramContainer* getHistograms(size_t bins = 2048u,
-                                              size3_t sampleRate = size3_t(1)) = 0;
-
-    virtual const HistogramContainer* getHistograms(size_t bins = 2048u,
-                                                    size3_t sampleRate = size3_t(1)) const = 0;
-    virtual void calculateHistograms(size_t bins, size3_t sampleRate, const bool& stop) const = 0;
-
     // uniform getters and setters
     virtual double getAsDouble(const size3_t& pos) const = 0;
     virtual dvec2 getAsDVec2(const size3_t& pos) const = 0;
@@ -93,10 +85,6 @@ public:
     virtual void setFromNormalizedDVec2(const size3_t& pos, dvec2 val) = 0;
     virtual void setFromNormalizedDVec3(const size3_t& pos, dvec3 val) = 0;
     virtual void setFromNormalizedDVec4(const size3_t& pos, dvec4 val) = 0;
-
-    virtual void setValuesFromVolume(const VolumeRAM* src, const size3_t& dstOffset,
-                                     const size3_t& subSize, const size3_t& subOffset) = 0;
-    void setValuesFromVolume(const VolumeRAM* src, const size3_t& dstOffset = size3_t(0));
 
     virtual size_t getNumberOfBytes() const = 0;
 
@@ -123,7 +111,7 @@ public:
      *     using VolumeType = util::PrecisionType<decltype(vrprecision)>;
      *     using ValueType = util::PrecisionValueType<decltype(vrprecision)>;
      *
-     *     T* data = vrprecision->getDataTyped();
+     *     ValueType* data = vrprecision->getDataTyped();
      *     auto dim = vrprecision->getDimensions();
      *     return std::count_if(data, data + dim.x * dim.y * dim.z,
      *                          [](auto x){return x > ValueType{0};});
@@ -223,5 +211,3 @@ auto VolumeRAM::dispatch(Callable&& callable, Args&&... args) const -> Result {
 }
 
 }  // namespace inviwo
-
-#endif  // IVW_VOLUMERAM_H

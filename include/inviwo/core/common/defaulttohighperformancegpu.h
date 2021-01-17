@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2013-2019 Inviwo Foundation
+ * Copyright (c) 2013-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,8 +27,8 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_DEFAULTTOHIGHPERFORMANCEGPU_H
-#define IVW_DEFAULTTOHIGHPERFORMANCEGPU_H
+#pragma once
+
 // Include this file once in your main.cpp to enable the application
 // to default to the high performance GPU if multiple ones are
 // available on the system.
@@ -55,5 +55,3 @@ __declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
 }
 
 #endif
-
-#endif  // IVW_DEFAULTTOHIGHPERFORMANCEGPU_H

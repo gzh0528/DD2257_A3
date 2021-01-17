@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2013-2019 Inviwo Foundation
+ * Copyright (c) 2013-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -96,30 +96,6 @@ const Layer* TransferFunction::getData() const {
 }
 
 size_t TransferFunction::getTextureSize() const { return dataRepr_->getDimensions().x; }
-
-size_t TransferFunction::getNumPoints() const { return size(); }
-
-const TFPrimitive* TransferFunction::getPoint(size_t i) const { return &get(i); }
-
-TFPrimitive* TransferFunction::getPoint(size_t i) { return &get(i); }
-
-void TransferFunction::addPoint(const vec2& pos) { add(pos); }
-
-void TransferFunction::addPoint(const vec2& pos, const vec4& color) {
-    add(TFPrimitiveData({pos.x, color}));
-}
-
-void TransferFunction::addPoint(const float& pos, const vec4& color) {
-    add(TFPrimitiveData({pos, color}));
-}
-
-void TransferFunction::addPoint(const TFPrimitiveData& point) { add(point); }
-
-void TransferFunction::addPoints(const std::vector<TFPrimitiveData>& points) { add(points); }
-
-void TransferFunction::removePoint(TFPrimitive* dataPoint) { remove(*dataPoint); }
-
-void TransferFunction::clearPoints() { clear(); }
 
 void TransferFunction::setMaskMin(double maskMin) {
     maskMin_ = maskMin;
@@ -306,7 +282,7 @@ std::string TransferFunction::serializationItemKey() const { return "Point"; }
 
 bool operator==(const TransferFunction& lhs, const TransferFunction& rhs) {
     if (lhs.maskMin_ != rhs.maskMin_) return false;
-    if (lhs.maskMax_ == rhs.maskMax_) return false;
+    if (lhs.maskMax_ != rhs.maskMax_) return false;
 
     return static_cast<const TFPrimitiveSet&>(lhs) == static_cast<const TFPrimitiveSet&>(rhs);
 }

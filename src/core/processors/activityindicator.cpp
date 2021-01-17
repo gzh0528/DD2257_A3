@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2015-2019 Inviwo Foundation
+ * Copyright (c) 2015-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -32,8 +32,10 @@
 namespace inviwo {
 
 void ActivityIndicator::setActive(bool active) {
-    active_ = active;
-    notifyActivityIndicatorChanged(active_);
+    if (active_ != active) {
+        active_ = active;
+        notifyActivityIndicatorChanged(active_);
+    }
 }
 
 bool ActivityIndicator::isActive() const { return active_; }

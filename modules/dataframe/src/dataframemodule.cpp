@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2019 Inviwo Foundation
+ * Copyright (c) 2019-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,15 +30,20 @@
 #include <inviwo/dataframe/dataframemodule.h>
 #include <inviwo/dataframe/io/json/dataframepropertyjsonconverter.h>
 #include <inviwo/dataframe/processors/csvsource.h>
+#include <inviwo/dataframe/processors/dataframefloat32converter.h>
+#include <inviwo/dataframe/processors/dataframejoin.h>
 #include <inviwo/dataframe/processors/dataframesource.h>
 #include <inviwo/dataframe/processors/dataframeexporter.h>
 #include <inviwo/dataframe/processors/imagetodataframe.h>
 #include <inviwo/dataframe/processors/syntheticdataframe.h>
 #include <inviwo/dataframe/processors/volumetodataframe.h>
 #include <inviwo/dataframe/processors/volumesequencetodataframe.h>
+#include <inviwo/dataframe/properties/colormapproperty.h>
 
 #include <inviwo/dataframe/io/csvreader.h>
 #include <inviwo/dataframe/io/jsonreader.h>
+
+#include <inviwo/core/properties/propertyconverter.h>
 
 #include <modules/json/jsonmodule.h>
 
@@ -49,8 +54,10 @@ DataFrameModule::DataFrameModule(InviwoApplication* app) : InviwoModule(app, "Da
 
     // Processors
     registerProcessor<CSVSource>();
+    registerProcessor<DataFrameJoin>();
     registerProcessor<DataFrameSource>();
     registerProcessor<DataFrameExporter>();
+    registerProcessor<DataFrameFloat32Converter>();
     registerProcessor<ImageToDataFrame>();
     registerProcessor<SyntheticDataFrame>();
     registerProcessor<VolumeToDataFrame>();
@@ -58,6 +65,7 @@ DataFrameModule::DataFrameModule(InviwoApplication* app) : InviwoModule(app, "Da
 
     registerDefaultsForDataType<DataFrame>();
     // Properties
+    registerProperty<ColormapProperty>();
     registerProperty<DataFrameColumnProperty>();
 
     // Readers and writes
@@ -65,6 +73,7 @@ DataFrameModule::DataFrameModule(InviwoApplication* app) : InviwoModule(app, "Da
     registerDataReader(std::make_unique<JSONDataFrameReader>());
 
     // Data converters
+    registerPropertyConverter(std::make_unique<OptionToStringConverter<DataFrameColumnProperty>>());
     app->getModuleByType<JSONModule>()->registerPropertyJSONConverter<DataFrameColumnProperty>();
 }
 

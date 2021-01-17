@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2017-2019 Inviwo Foundation
+ * Copyright (c) 2017-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -43,11 +43,12 @@
 #include <inviwopy/pynetwork.h>
 #include <inviwopy/pyglmtypes.h>
 #include <modules/python3/pybindutils.h>
-#include <inviwopy/pyport.h>
-#include <modules/python3/pybindutils.h>
+#include <modules/python3/pyportutils.h>
 
 #include <pybind11/pybind11.h>
 #include <pybind11/numpy.h>
+
+#include <fmt/format.h>
 
 namespace inviwo {
 
@@ -57,18 +58,34 @@ struct BufferRAMHelper {
         namespace py = pybind11;
         using T = typename DataFormat::type;
 
-        std::ostringstream className;
-        className << "Buffer" << DataFormat::str();
+        std::string className = fmt::format("Buffer{}", DataFormat::str());
         py::class_<Buffer<T, BufferTarget::Data>, BufferBase,
-                   std::shared_ptr<Buffer<T, BufferTarget::Data>>>(m, className.str().c_str())
-            .def(py::init<size_t>())
-            .def(py::init<size_t, BufferUsage>());
+                   std::shared_ptr<Buffer<T, BufferTarget::Data>>>(m, className.c_str())
+            .def(py::init<size_t>(), py::arg("size"))
+            .def(py::init<size_t, BufferUsage>(), py::arg("size"),
+                 py::arg("usage") = BufferUsage::Static)
+            .def(py::init([](py::array data, BufferUsage usage) {
+                     pyutil::checkDataFormat<1>(DataFormat::get(), data.shape(0), data);
+                     auto ram = std::make_shared<BufferRAMPrecision<T, BufferTarget::Data>>(
+                         data.shape(0), usage);
+                     memcpy(ram->getData(), data.data(0), data.nbytes());
+                     return new Buffer<T, BufferTarget::Data>(ram);
+                 }),
+                 py::arg("data"), py::arg("usage") = BufferUsage::Static);
 
-        className << "Index";
+        className = fmt::format("IndexBuffer{}", DataFormat::str());
         py::class_<Buffer<T, BufferTarget::Index>, BufferBase,
-                   std::shared_ptr<Buffer<T, BufferTarget::Index>>>(m, className.str().c_str())
+                   std::shared_ptr<Buffer<T, BufferTarget::Index>>>(m, className.c_str())
             .def(py::init<size_t>())
-            .def(py::init<size_t, BufferUsage>());
+            .def(py::init<size_t, BufferUsage>())
+            .def(py::init([](py::array data, BufferUsage usage) {
+                     pyutil::checkDataFormat<1>(DataFormat::get(), data.shape(0), data);
+                     auto ram = std::make_shared<BufferRAMPrecision<T, BufferTarget::Index>>(
+                         data.shape(0), usage);
+                     memcpy(ram->getData(), data.data(0), data.nbytes());
+                     return new Buffer<T, BufferTarget::Index>(ram);
+                 }),
+                 py::arg("data"), py::arg("usage") = BufferUsage::Static);
     }
 };
 
@@ -133,7 +150,12 @@ void exposeBuffer(pybind11::module &m) {
                           pyutil::checkDataFormat<1>(rep->getDataFormat(), rep->getSize(), data);
 
                           memcpy(rep->getData(), data.data(0), data.nbytes());
-                      });
+                      })
+        .def("__repr__", [](const BufferBase &self) {
+            return fmt::format("<Buffer: target = {} usage = {} format = {} size = {}>",
+                               toString(self.getBufferTarget()), toString(self.getBufferUsage()),
+                               self.getDataFormat()->getString(), self.getSize());
+        });
 
     util::for_each_type<DefaultDataFormats>{}(BufferRAMHelper{}, m);
 

@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2013-2019 Inviwo Foundation
+ * Copyright (c) 2013-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -75,9 +75,13 @@ public:
     ~TextureUnitContainer() = default;
 
     void push_back(TextureUnit&& unit);
+    TextureUnit& emplace_back();
 
     TextureUnit& operator[](size_t i);
+    const TextureUnit& operator[](size_t i) const;
+
     size_t size() const;
+    void clear();
 
 private:
     std::vector<TextureUnit> units_;

@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2012-2019 Inviwo Foundation
+ * Copyright (c) 2012-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -38,6 +38,7 @@
 #include <modules/opengl/volume/volumeutils.h>
 #include <inviwo/core/common/inviwoapplication.h>
 #include <inviwo/core/util/rendercontext.h>
+#include <inviwo/core/algorithm/boundingbox.h>
 
 namespace inviwo {
 
@@ -57,11 +58,11 @@ VolumeRaycaster::VolumeRaycaster()
     , exitPort_("exit")
     , backgroundPort_("bg")
     , outport_("outport")
-    , channel_("channel", "Render Channel")
+    , channel_("channel", "Render Channel", {{"Channel 1", "Channel 1", 0}}, 0)
     , raycasting_("raycaster", "Raycasting")
     , isotfComposite_("isotfComposite", "TF & Isovalues", &volumePort_,
                       InvalidationLevel::InvalidResources)
-    , camera_("camera", "Camera")
+    , camera_("camera", "Camera", util::boundingBox(volumePort_))
     , lighting_("lighting", "Lighting", &camera_)
     , positionIndicator_("positionindicator", "Position Indicator")
     , toggleShading_("toggleShading", "Toggle Shading", [this](Event* e) { toggleShading(e); },
@@ -77,9 +78,7 @@ VolumeRaycaster::VolumeRaycaster()
 
     backgroundPort_.setOptional(true);
 
-    channel_.addOption("Channel 1", "Channel 1", 0);
     channel_.setSerializationMode(PropertySerializationMode::All);
-    channel_.setCurrentStateAsDefault();
 
     volumePort_.onChange([this]() {
         if (volumePort_.hasData()) {
@@ -138,12 +137,14 @@ void VolumeRaycaster::process() {
         if (newVolume->hasRepresentation<VolumeGL>()) {
             loadedVolume_ = newVolume;
         } else {
+            notifyObserversStartBackgroundWork(this, 1);
             dispatchPool([this, newVolume]() {
                 RenderContext::getPtr()->activateLocalRenderContext();
                 newVolume->getRep<kind::GL>();
                 glFinish();
                 dispatchFront([this, newVolume]() {
                     loadedVolume_ = newVolume;
+                    notifyObserversFinishBackgroundWork(this, 1);
                     invalidate(InvalidationLevel::InvalidOutput);
                 });
             });

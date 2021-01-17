@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2016-2019 Inviwo Foundation
+ * Copyright (c) 2016-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -43,6 +43,7 @@
 #include <inviwo/core/util/filesystem.h>
 #include <inviwo/core/util/fileextension.h>
 #include <inviwo/core/util/filedialogstate.h>
+#include <inviwo/core/common/inviwoapplication.h>
 
 namespace inviwo {
 

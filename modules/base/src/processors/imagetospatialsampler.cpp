@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2017-2019 Inviwo Foundation
+ * Copyright (c) 2017-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -42,7 +42,8 @@ const ProcessorInfo ImageToSpatialSampler::processorInfo_{
 };
 const ProcessorInfo ImageToSpatialSampler::getProcessorInfo() const { return processorInfo_; }
 
-ImageToSpatialSampler::ImageToSpatialSampler() : Processor(), image_("image"), sampler_("sampler") {
+ImageToSpatialSampler::ImageToSpatialSampler()
+    : Processor(), image_("image", true), sampler_("sampler") {
     addPort(image_);
     addPort(sampler_);
 }

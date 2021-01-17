@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2013-2019 Inviwo Foundation
+ * Copyright (c) 2013-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,11 +27,9 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_MINMAXPROPERTY_H
-#define IVW_MINMAXPROPERTY_H
+#pragma once
 
 #include <inviwo/core/common/inviwocoredefine.h>
-#include <inviwo/core/common/inviwo.h>
 #include <inviwo/core/properties/templateproperty.h>
 #include <inviwo/core/properties/ordinalproperty.h>
 #include <algorithm>
@@ -237,7 +235,7 @@ void MinMaxProperty<T>::set(const Property* srcProperty) {
         const bool rangeChanged = modified;
         modified |= increment_.update(prop->increment_);
         modified |= minSeparation_.update(prop->minSeparation_);
-        modified |= value_.update(clamp(value_.value));
+        modified |= value_.update(clamp(prop->value_));
         if (modified) this->propertyModified();
         if (rangeChanged) onRangeChangeCallback_.invokeAll();
     } else {
@@ -324,10 +322,12 @@ MinMaxProperty<T>& MinMaxProperty<T>::setRangeNormalized(const range_type& newRa
 
 template <typename T>
 MinMaxProperty<T>& MinMaxProperty<T>::resetToDefaultState() {
-    range_.reset();
-    increment_.reset();
-    minSeparation_.reset();
-    TemplateProperty<range_type>::resetToDefaultState();
+    bool modified = false;
+    modified |= range_.reset();
+    modified |= increment_.reset();
+    modified |= minSeparation_.reset();
+    modified |= value_.reset();
+    if (modified) this->propertyModified();
     return *this;
 }
 
@@ -418,5 +418,3 @@ Document MinMaxProperty<T>::getDescription() const {
 }
 
 }  // namespace inviwo
-
-#endif  // IVW_MINMAXPROPERTY_H

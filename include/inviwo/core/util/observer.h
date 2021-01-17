@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2012-2019 Inviwo Foundation
+ * Copyright (c) 2012-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,14 +27,13 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_OBSERVER_H
-#define IVW_OBSERVER_H
+#pragma once
 
 #include <inviwo/core/common/inviwocoredefine.h>
 #include <unordered_set>
 #include <functional>
 #include <algorithm>
-#include <inviwo/core/util/stdextensions.h>
+#include <vector>
 
 namespace inviwo {
 
@@ -199,8 +198,8 @@ public:
     Observable<T>& operator=(const Observable<T>& other);
 
     /**
-     * This operation will remove all observers of this, and make all observers of other observe this
-     * instead.
+     * This operation will remove all observers of this, and make all observers of other observe
+     * this instead.
      */
     Observable<T>& operator=(Observable<T>&& other);
     virtual ~Observable();
@@ -244,12 +243,12 @@ Observable<T>::Observable(Observable<T>&& rhs) {
 }
 
 template <typename T>
-Observable<T>& inviwo::Observable<T>::operator=(const Observable<T>&) {
+Observable<T>& Observable<T>::operator=(const Observable<T>&) {
     return *this;
 }
 
 template <typename T>
-Observable<T>& inviwo::Observable<T>::operator=(Observable<T>&& that) {
+Observable<T>& Observable<T>::operator=(Observable<T>&& that) {
     if (this != &that) {
         removeObservers();
         for (auto& elem : that.observers_) addObserver(elem);
@@ -309,7 +308,10 @@ void Observable<T>::forEachObserver(C callback) {
 
     // Add and Remove any observers that was added/removed while we invoked the callbacks.
     if (invocationCount_ == 0) {
-        if (toRemove) util::erase_remove(observers_, nullptr);
+        if (toRemove) {
+            observers_.erase(std::remove(observers_.begin(), observers_.end(), nullptr),
+                             observers_.end());
+        }
         observers_.insert(observers_.end(), toAdd_.begin(), toAdd_.end());
         toAdd_.clear();
     }
@@ -328,7 +330,8 @@ void Observable<T>::removeObserver(Observer* observer) {
 template <typename T>
 bool Observable<T>::addObserverInternal(Observer* aObserver) {
     auto observer = static_cast<T*>(aObserver);
-    if (!util::contains(observers_, observer)) {
+    const auto it = std::find(observers_.begin(), observers_.end(), observer);
+    if (it == observers_.end()) {
         if (invocationCount_ == 0) {
             observers_.push_back(observer);
         } else {
@@ -343,7 +346,7 @@ bool Observable<T>::addObserverInternal(Observer* aObserver) {
 template <typename T>
 bool Observable<T>::removeObserverInternal(Observer* aObserver) {
     auto observer = static_cast<T*>(aObserver);
-    auto it = util::find(observers_, observer);
+    auto it = std::find(observers_.begin(), observers_.end(), observer);
     if (it != observers_.end()) {
         if (invocationCount_ == 0) {
             observers_.erase(it);
@@ -373,5 +376,3 @@ private:
 }  // namespace util
 
 }  // namespace inviwo
-
-#endif  // IVW_OBSERVER_H

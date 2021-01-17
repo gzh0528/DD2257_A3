@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2012-2019 Inviwo Foundation
+ * Copyright (c) 2012-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,12 +27,12 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_EXCEPTION_H
-#define IVW_EXCEPTION_H
+#pragma once
 
 #include <inviwo/core/common/inviwocoredefine.h>
 #include <inviwo/core/util/stringconversion.h>
 #include <inviwo/core/util/sourcecontext.h>
+
 #include <string>
 #include <functional>
 #include <exception>
@@ -134,5 +134,3 @@ struct IVW_CORE_API StandardExceptionHandler {
 }  // namespace inviwo
 
 #include <warn/pop>
-
-#endif  // IVW_EXCEPTION_H

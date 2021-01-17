@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2018-2019 Inviwo Foundation
+ * Copyright (c) 2018-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -62,7 +62,7 @@ IVW_MODULE_BASE_API void centerViewOnMeshes(const std::vector<std::shared_ptr<co
  */
 IVW_MODULE_BASE_API std::pair<float, float> computeNearFarPlanes(
     std::pair<vec3, vec3> worldSpaceBoundingBox, const CameraProperty& camera,
-    float farNearRatio = 1.f / 10000.f);
+    float nearFarRatio = 1.f / 10000.f);
 
 }  // namespace meshutil
 

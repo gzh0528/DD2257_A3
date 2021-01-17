@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2018-2019 Inviwo Foundation
+ * Copyright (c) 2018-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -47,6 +47,8 @@ namespace sml = boost::sml;
 #include <warn/ignore/all>
 #include <gtest/gtest.h>
 #include <warn/pop>
+
+#include <array>
 
 namespace inviwo {
 

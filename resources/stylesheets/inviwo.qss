@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2012-2019 Inviwo Foundation
+ * Copyright (c) 2012-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -44,6 +44,7 @@ QWidget {
 QDockWidget > .QWidget, 
 QDockWidget > .QScrollArea, 
 QDockWidget > .QSplitter, 
+QWidget[bgType="window"],
 QDialog,
 QStatusBar,
 QSplitter#WelcomeWidget {
@@ -372,6 +373,13 @@ QWidget#CompositeWidget > .QPushButton {
     min-height: 0.3125em;
     min-width: 2.5em;    
 }
+
+QWidget#ButtonGroupPropertyWidgetQt > .QPushButton {
+    /* overwrite minimum size for push buttons within the composite properties */
+    min-height: 0.3125em;
+    min-width: 0.5em;    
+}
+
 QPushButton:default {
     background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
                                 stop:0 #6f6f75, stop:0.1 #144c72, stop:0.9 #144c72, stop:1 #222224);
@@ -837,14 +845,20 @@ QWidget#CompositeWidget QToolButton#collapseButton {
     height: 0.8em;
     margin-right: 0.0625em;
 }
-QWidget#CompositeWidget QToolButton#addListItemButton {
+QWidget#CompositeWidget QToolButton#addListItemButton,
+QWidget#CompositeWidget QToolButton#removeListItemButton {
     border: 0.0625em solid transparent;
     background-color: transparent;
     width: 0.75em;
     height: 0.75em;
 }
+QWidget#CompositeWidget QToolButton#removeListItemButton {
+    width: 0.5em;
+    height: 0.5em;
+}
 QWidget#CompositeWidget QToolButton#collapseButton:hover,
-QWidget#CompositeWidget QToolButton#addListItemButton:hover {
+QWidget#CompositeWidget QToolButton#addListItemButton:hover,
+QWidget#CompositeWidget QToolButton#removeListItemButton:hover {
     border: 0.0625em solid #268bd2;
 }
 QWidget#CompositeWidget QToolButton#collapseButton:open {
@@ -859,21 +873,65 @@ QWidget#CompositeWidget QToolButton#addListItemButton {
 QWidget#CompositeWidget QToolButton#addListItemButton:disabled {
     image: url(:svgicons/listitem-add-disabled.svg);
 }
+QWidget#CompositeWidget QToolButton#removeListItemButton {
+    image: url(:svgicons/listitem-remove-enabled.svg);
+}
+QWidget#CompositeWidget QToolButton#removeListItemButton:disabled {
+    image: url(:svgicons/listitem-remove-disabled.svg);
+}
 
+/************************ 
+QTableView
+************************/
+QTableView QTableCornerButton::section {
+    border: none;
+    border-bottom: 0.125em solid #4a4a4f; 
+    border-right: 0.125em solid #4a4a4f; 
+    background: #2a2a2e;
+}
+QTableView QHeaderView::down-arrow {
+    image: url(:/svgicons/arrow-down-enabled.svg);
+    subcontrol-position: center left;
+    margin-left: 0.2em;
+}
+QTableView QHeaderView::up-arrow {
+    image: url(:/svgicons/arrow-up-enabled.svg);
+    subcontrol-position: center left;
+    padding-left: 0.2em;
+}
+QTableView, QTableWidget {
+    border: none;
+    color: #999999;
+    alternate-background-color: #3b3b3d;
+    selection-color: #999;
+    selection-background-color: #47474b;
+    gridline-color: #4a4a4f;
+}
+QTableView QHeaderView::section {
+    padding: 0.1875em;
+    padding-left: 0.4em;
+    border: 0.0325em solid #4a4a4f; 
+    background: #2a2a2e;
+}
+QTableView QHeaderView::section:checked {
+    background-color: #424245;
+}
+QTableView QHeaderView::section:horizontal {
+    border-bottom: 0.125em solid #4a4a4f; 
+}
+QTableView QHeaderView::section:vertical {
+    border-right: 0.125em solid #4a4a4f; 
+}
 
 /************************ 
 ConsoleWidget
 ************************/
-
 QDockWidget#ConsoleWidget QTextEdit {
     border: none;
     border-bottom: 0.125em ridge #4a4a4f;
 }
 QDockWidget#ConsoleWidget QTableView {
     border: none;
-    color: #999999;
-    selection-color: #999;
-    selection-background-color: #47474b;
     border-bottom: 0.125em ridge #4a4a4f;
 }
 QDockWidget#ConsoleWidget QTableView QHeaderView::section {

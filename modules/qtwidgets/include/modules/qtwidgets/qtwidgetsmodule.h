@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2014-2019 Inviwo Foundation
+ * Copyright (c) 2014-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,8 +27,7 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_QTWIDGETMODULE_H
-#define IVW_QTWIDGETMODULE_H
+#pragma once
 
 #include <modules/qtwidgets/qtwidgetsmoduledefine.h>
 #include <modules/qtwidgets/tfhelpwindow.h>
@@ -36,12 +35,6 @@
 #include <inviwo/core/common/inviwomodule.h>
 
 namespace inviwo {
-
-struct ColorWidgetReghelper;
-struct OrdinalWidgetReghelper;
-struct MinMaxWidgetReghelper;
-struct MinMaxTextWidgetReghelper;
-struct OptionWidgetReghelper;
 
 class IVW_MODULE_QTWIDGETS_API QtWidgetsModule : public InviwoModule {
 public:
@@ -53,15 +46,7 @@ public:
     void showTFHelpWindow() const;
 
 private:
-    friend ColorWidgetReghelper;
-    friend OrdinalWidgetReghelper;
-    friend MinMaxWidgetReghelper;
-    friend MinMaxTextWidgetReghelper;
-    friend OptionWidgetReghelper;
-
     std::unique_ptr<TFMenuHelper> tfMenuHelper_;
 };
 
 }  // namespace inviwo
-
-#endif  // IVW_QTWIDGETMODULE_H

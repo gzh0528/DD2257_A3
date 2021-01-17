@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2012-2019 Inviwo Foundation
+ * Copyright (c) 2012-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,13 +27,8 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_SERIALIZATION_H
-#define IVW_SERIALIZATION_H
+#pragma once
 
-#include <inviwo/core/io/serialization/serializebase.h>
-#include <inviwo/core/io/serialization/serializer.h>
 #include <inviwo/core/io/serialization/serializable.h>
+#include <inviwo/core/io/serialization/serializer.h>
 #include <inviwo/core/io/serialization/deserializer.h>
-#include <inviwo/core/util/factory.h>
-
-#endif

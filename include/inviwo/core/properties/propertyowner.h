@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2012-2019 Inviwo Foundation
+ * Copyright (c) 2012-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,14 +27,15 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_PROPERTYOWNER_H
-#define IVW_PROPERTYOWNER_H
+#pragma once
 
 #include <inviwo/core/common/inviwocoredefine.h>
-#include <inviwo/core/common/inviwo.h>
 #include <inviwo/core/properties/propertyownerobserver.h>
 #include <inviwo/core/properties/property.h>
 #include <inviwo/core/interaction/events/eventlistener.h>
+
+#include <vector>
+#include <memory>
 
 namespace inviwo {
 
@@ -43,6 +44,7 @@ class Event;
 class EventProperty;
 class CompositeProperty;
 class InviwoApplication;
+class NetworkVisitor;
 
 class IVW_CORE_API PropertyOwner : public PropertyOwnerObservable,
                                    public virtual Serializable,
@@ -138,7 +140,6 @@ protected:
     PropertyOwner(const PropertyOwner& rhs);
     PropertyOwner& operator=(const PropertyOwner& that) = delete;
 
-
     // Add the properties belonging the property owner
     // PropertyOwner do not assume owner ship here since in the most common case these are
     // pointers to members of derived classes.
@@ -153,6 +154,9 @@ protected:
     // allocated on the heap.
     std::vector<std::unique_ptr<Property>> ownedProperties_;
 
+    void forEachProperty(std::function<void(Property&)> callback,
+                         bool recursiveSearch = false) const;
+
 private:
     Property* removeProperty(std::vector<Property*>::iterator it);
     bool findPropsForComposites(TxElement*);
@@ -160,34 +164,21 @@ private:
 };
 
 template <class T>
-std::vector<T*> PropertyOwner::getPropertiesByType(bool recursiveSearch /* = false */) const {
+std::vector<T*> PropertyOwner::getPropertiesByType(bool recursiveSearch) const {
     std::vector<T*> foundProperties;
-    for (size_t i = 0; i < properties_.size(); i++) {
-        if (dynamic_cast<T*>(properties_[i])) {
-            foundProperties.push_back(static_cast<T*>(properties_[i]));
-        } else if (recursiveSearch && dynamic_cast<PropertyOwner*>(properties_[i])) {
-            std::vector<T*> subProperties =
-                dynamic_cast<PropertyOwner*>(properties_[i])->getPropertiesByType<T>(true);
-            foundProperties.insert(foundProperties.end(), subProperties.begin(),
-                                   subProperties.end());
-        }
-    }
+    forEachProperty(
+        [&](Property& property) {
+            if (auto p = dynamic_cast<T*>(&property)) {
+                foundProperties.push_back(p);
+            }
+        },
+        recursiveSearch);
+
     return foundProperties;
 }
 
-namespace detail {
-inline void addPropertyHelper(PropertyOwner&) {}
-template <typename... Ts>
-void addPropertyHelper(PropertyOwner& owner, Property& p, Ts&... props) {
-    owner.addProperty(p);
-    addPropertyHelper(owner, props...);
-}
-}  // namespace detail
-
 template <typename... Ts>
 void PropertyOwner::addProperties(Ts&... properties) {
-    detail::addPropertyHelper(*this, properties...);
+    (addProperty(properties), ...);
 }
 }  // namespace inviwo
-
-#endif  // IVW_PROPERTYOWNER_H

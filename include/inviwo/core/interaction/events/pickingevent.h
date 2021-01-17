@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2016-2019 Inviwo Foundation
+ * Copyright (c) 2016-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,15 +27,16 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_PICKINGEVENT_H
-#define IVW_PICKINGEVENT_H
+#pragma once
 
 #include <inviwo/core/common/inviwocoredefine.h>
-#include <inviwo/core/common/inviwo.h>
 #include <inviwo/core/interaction/events/event.h>
 #include <inviwo/core/interaction/events/interactionevent.h>
 #include <inviwo/core/interaction/pickingstate.h>
 #include <inviwo/core/util/constexprhash.h>
+#include <inviwo/core/util/glmvec.h>
+
+#include <memory>
 
 namespace inviwo {
 
@@ -176,13 +177,15 @@ public:
     PickingHoverState getHoverState() const;
     PickingPressItems getPressItems() const;
 
+    KeyModifiers modifiers() const;
+
     void invoke(Processor* p);
     const PickingAction* getPickingAction() const;
 
     virtual uint64_t hash() const override;
     static constexpr uint64_t chash() { return util::constexpr_hash("org.inviwo.PickingEvent"); }
 
-    Event* getEvent() const;
+    InteractionEvent* getEvent() const;
 
     template <typename EventType>
     EventType* getEventAs() const;
@@ -229,5 +232,3 @@ EventType* PickingEvent::getEventAs() const {
 }
 
 }  // namespace inviwo
-
-#endif  // IVW_PICKINGEVENT_H

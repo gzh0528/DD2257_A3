@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2017-2019 Inviwo Foundation
+ * Copyright (c) 2017-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,10 +27,7 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_STATECOORDINATOR_H
-#define IVW_STATECOORDINATOR_H
-
-#include <inviwo/core/common/inviwocoredefine.h>
+#pragma once
 
 #include <functional>
 
@@ -97,5 +94,3 @@ private:
 };
 
 }  // namespace inviwo
-
-#endif  // IVW_STATECOORDINATOR_H

@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2013-2019 Inviwo Foundation
+ * Copyright (c) 2013-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,13 +27,15 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_OPENGLQT_MODULE_H
-#define IVW_OPENGLQT_MODULE_H
+#pragma once
 
 #include <modules/openglqt/openglqtmoduledefine.h>
 #include <inviwo/core/common/inviwomodule.h>
 #include <inviwo/core/network/processornetworkevaluationobserver.h>
 #include <inviwo/core/util/canvas.h>
+#include <inviwo/core/util/rendercontext.h>
+
+#include <modules/openglqt/hiddencanvasqt.h>
 
 namespace inviwo {
 
@@ -47,9 +49,8 @@ public:
     virtual void onProcessorNetworkEvaluationEnd() override;
 
 private:
-    std::unique_ptr<Canvas> sharedCanvas_;
+    ContextHolder* holder_ = nullptr;
+    HiddenCanvasQt sharedCanvas_;
 };
 
 }  // namespace inviwo
-
-#endif  // IVW_OPENGLQT_MODULE_H

@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2012-2019 Inviwo Foundation
+ * Copyright (c) 2012-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -290,20 +290,23 @@ void ProcessorGraphicsItem::editIdentifier() {
     identifierLabel_->setSelected(true);
 }
 
-void ProcessorGraphicsItem::paint(QPainter* p, const QStyleOptionGraphicsItem* options,
-                                  QWidget* widget) {
-    IVW_UNUSED_PARAM(options);
-    IVW_UNUSED_PARAM(widget);
+void ProcessorGraphicsItem::paint(QPainter* p,
+                                  [[maybe_unused]] const QStyleOptionGraphicsItem* options,
+                                  [[maybe_unused]] QWidget* widget) {
+
     const float roundedCorners = 9.0f;
 
     p->save();
     p->setRenderHint(QPainter::Antialiasing, true);
     QColor selectionColor("#7a191b");
+    QColor deprecatedColor("#562e14");
     QColor backgroundColor("#3b3d3d");
     QColor borderColor("#282828");
 
     if (isSelected()) {
         p->setBrush(selectionColor);
+    } else if (processor_->getProcessorInfo().codeState == CodeState::Deprecated) {
+        p->setBrush(deprecatedColor);
     } else {
         p->setBrush(backgroundColor);
     }

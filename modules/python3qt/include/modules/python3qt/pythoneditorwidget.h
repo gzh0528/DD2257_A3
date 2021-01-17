@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2013-2019 Inviwo Foundation
+ * Copyright (c) 2013-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -74,7 +74,9 @@ public:
     void save();
     void saveAs();
     void open();
+    void runOrStop(bool run);
     void run();
+    void stop();
     void show();
     void setDefaultText();
     void clearOutput();

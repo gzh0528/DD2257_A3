@@ -71,6 +71,7 @@ void LICProcessor::process() {
 
     // Hint: Output an image showing which pixels you have visited for debugging
     std::vector<std::vector<int>> visited(texDims_.x, std::vector<int>(texDims_.y, 0));
+
     // TODO: Implement LIC and FastLIC
     // This code instead sets all pixels to the same gray value
 

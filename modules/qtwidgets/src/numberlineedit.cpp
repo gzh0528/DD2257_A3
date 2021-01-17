@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2019 Inviwo Foundation
+ * Copyright (c) 2019-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -165,6 +165,7 @@ NumberLineEdit::NumberLineEdit(bool intMode, QWidget *parent)
     // need a high precision in QDoubleSpinBox since min and max values are rounded using the
     // number of decimals
     QDoubleSpinBox::setDecimals(20);
+    setFocusPolicy(Qt::StrongFocus);
 }
 
 NumberLineEdit::~NumberLineEdit() = default;
@@ -193,7 +194,18 @@ QSize NumberLineEdit::minimumSizeHint() const {
     return cachedMinimumSizeHint_;
 }
 
+bool NumberLineEdit::isValid() const { return !invalid_; }
+
+void NumberLineEdit::setInvalid(bool invalid) {
+    invalid_ = invalid;
+    setValue(value());
+}
+
 QString NumberLineEdit::textFromValue(double value) const {
+    if (invalid_) {
+        return "-";
+    }
+
     auto formatNumber = [&](double v) {
         if (integerMode_) {
             return nlePrivate_->formatAsInt(v);
@@ -265,6 +277,10 @@ void NumberLineEdit::changeEvent(QEvent *e) {
         updateGeometry();
     }
     QDoubleSpinBox::changeEvent(e);
+}
+
+void NumberLineEdit::wheelEvent(QWheelEvent *e) {
+    if (hasFocus() && !invalid_) QDoubleSpinBox::wheelEvent(e);
 }
 
 }  // namespace inviwo

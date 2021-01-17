@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2013-2019 Inviwo Foundation
+ * Copyright (c) 2013-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -54,7 +54,7 @@ namespace inviwo {
 
 const ProcessorInfo VolumeSliceGL::processorInfo_{
     "org.inviwo.VolumeSliceGL",  // Class identifier
-    "Volume Slice",              // Display name
+    "Volume Slice Viewer",       // Display name
     "Volume Operation",          // Category
     CodeState::Stable,           // Code state
     Tags::GL,                    // Tags
@@ -64,13 +64,18 @@ const ProcessorInfo VolumeSliceGL::getProcessorInfo() const { return processorIn
 VolumeSliceGL::VolumeSliceGL()
     : Processor()
     , inport_("volume")
-    , outport_("outport", DataFormat<glm::u8vec4>::get(), false)
+    , outport_("outport", DataFormat<glm::u8vec4>::get())
     , shader_("standard.vert", "volumeslice.frag", false)
     , indicatorShader_("standard.vert", "standard.frag", true)
     , trafoGroup_("trafoGroup", "Transformations")
     , pickGroup_("pickGroup", "Position Selection")
     , tfGroup_("tfGroup", "Transfer Function Properties")
-    , sliceAlongAxis_("sliceAxis", "Slice along axis")
+    , sliceAlongAxis_("sliceAxis", "Slice along axis",
+                      {{"x", "y-z plane (X axis)", static_cast<int>(CartesianCoordinateAxis::X)},
+                       {"y", "z-x plane (Y axis)", static_cast<int>(CartesianCoordinateAxis::Y)},
+                       {"z", "x-y plane (Z axis)", static_cast<int>(CartesianCoordinateAxis::Z)},
+                       {"p", "Plane Equation", 3}},
+                      0)
     , sliceX_("sliceX", "X Volume Position", 128, 1, 256, 1, InvalidationLevel::Valid)
     , sliceY_("sliceY", "Y Volume Position", 128, 1, 256, 1, InvalidationLevel::Valid)
     , sliceZ_("sliceZ", "Z Volume Position", 128, 1, 256, 1, InvalidationLevel::Valid)
@@ -80,11 +85,22 @@ VolumeSliceGL::VolumeSliceGL()
                    vec3(1.f, 1.f, 1.f), vec3(0.01f, 0.01f, 0.01f))
     , planePosition_("planePosition", "Plane Position", vec3(0.5f), vec3(0.0f), vec3(1.0f))
     , imageScale_("imageScale", "Scale", 1.0f, 0.1f, 10.0f)
-    , rotationAroundAxis_("rotation", "Rotation (ccw)", InvalidationLevel::Valid)
+    , rotationAroundAxis_("rotation", "Rotation (ccw)",
+                          {{"0", "0 deg", 0},
+                           {"90", "90 deg", 1},
+                           {"180", "180 deg", 2},
+                           {"270", "270 deg", 3},
+                           {"free", "Free Rotation", 4}},
+                          0, InvalidationLevel::Valid)
     , imageRotation_("imageRotation", "Angle", 0, 0, glm::radians(360.f))
     , flipHorizontal_("flipHorizontal", "Horizontal Flip", false)
     , flipVertical_("flipVertical", "Vertical Flip", false)
-    , volumeWrapping_("volumeWrapping", "Volume Texture Wrapping")
+    , volumeWrapping_("volumeWrapping", "Volume Texture Wrapping",
+                      {{"color", "Fill with Color", GL_CLAMP_TO_EDGE},
+                       {"edge", "Fill with Edge", GL_CLAMP_TO_EDGE},
+                       {"repeat", "Repeat", GL_REPEAT},
+                       {"m-repeat", "Mirrored Repeat", GL_MIRRORED_REPEAT}},
+                      0)
     , fillColor_("fillColor", "Fill Color", vec4(0.0f, 0.0f, 0.0f, 0.0f), vec4(0.0f), vec4(1.0f),
                  vec4(0.01f), InvalidationLevel::InvalidOutput, PropertySemantics::Color)
     , posPicking_("posPicking", "Enable Picking", false)
@@ -137,47 +153,19 @@ VolumeSliceGL::VolumeSliceGL()
     addPort(outport_);
 
     inport_.onChange([this]() { updateMaxSliceNumber(); });
-    sliceAlongAxis_.addOption("x", "y-z plane (X axis)",
-                              static_cast<int>(CartesianCoordinateAxis::X));
-    sliceAlongAxis_.addOption("y", "z-x plane (Y axis)",
-                              static_cast<int>(CartesianCoordinateAxis::Y));
-    sliceAlongAxis_.addOption("z", "x-y plane (Z axis)",
-                              static_cast<int>(CartesianCoordinateAxis::Z));
-    sliceAlongAxis_.addOption("p", "Plane Equation", 3);
-    sliceAlongAxis_.set(static_cast<int>(CartesianCoordinateAxis::X));
-    sliceAlongAxis_.setCurrentStateAsDefault();
-    sliceAlongAxis_.onChange([this]() { modeChange(); });
-    addProperty(sliceAlongAxis_);
 
-    addProperty(sliceX_);
-    addProperty(sliceY_);
-    addProperty(sliceZ_);
+    sliceAlongAxis_.onChange([this]() { modeChange(); });
+    addProperties(sliceAlongAxis_, sliceX_, sliceY_, sliceZ_);
+
     // Invalidate selected voxel cursor when current slice changes
     sliceX_.onChange([this]() { sliceChange(); });
     sliceY_.onChange([this]() { sliceChange(); });
     sliceZ_.onChange([this]() { sliceChange(); });
 
-    addProperty(planeNormal_);
-    addProperty(planePosition_);
+    addProperties(planeNormal_, planePosition_);
 
     planePosition_.onChange([this]() { positionChange(); });
     planeNormal_.onChange([this]() { planeSettingsChanged(); });
-
-    // Transformations
-    rotationAroundAxis_.addOption("0", "0 deg", 0);
-    rotationAroundAxis_.addOption("90", "90 deg", 1);
-    rotationAroundAxis_.addOption("180", "180 deg", 2);
-    rotationAroundAxis_.addOption("270", "270 deg", 3);
-    rotationAroundAxis_.addOption("free", "Free Rotation", 4);
-    rotationAroundAxis_.set(0);
-    rotationAroundAxis_.setCurrentStateAsDefault();
-
-    volumeWrapping_.addOption("color", "Fill with Color", GL_CLAMP_TO_EDGE);
-    volumeWrapping_.addOption("edge", "Fill with Edge", GL_CLAMP_TO_EDGE);
-    volumeWrapping_.addOption("repeat", "Repeat", GL_REPEAT);
-    volumeWrapping_.addOption("m-repeat", "Mirrored Repeat", GL_MIRRORED_REPEAT);
-    volumeWrapping_.setSelectedIndex(0);
-    volumeWrapping_.setCurrentStateAsDefault();
 
     volumeWrapping_.onChange([&]() {
         if (volumeWrapping_.getSelectedIdentifier() == "color") {
@@ -195,13 +183,8 @@ VolumeSliceGL::VolumeSliceGL()
 
     imageRotation_.setVisible(false);
 
-    trafoGroup_.addProperty(rotationAroundAxis_);
-    trafoGroup_.addProperty(imageRotation_);
-    trafoGroup_.addProperty(imageScale_);
-    trafoGroup_.addProperty(flipHorizontal_);
-    trafoGroup_.addProperty(flipVertical_);
-    trafoGroup_.addProperty(volumeWrapping_);
-    trafoGroup_.addProperty(fillColor_);
+    trafoGroup_.addProperties(rotationAroundAxis_, imageRotation_, imageScale_, flipHorizontal_,
+                              flipVertical_, volumeWrapping_, fillColor_);
 
     rotationAroundAxis_.onChange([this]() { rotationModeChange(); });
     imageRotation_.onChange([this]() { planeSettingsChanged(); });
@@ -212,10 +195,7 @@ VolumeSliceGL::VolumeSliceGL()
     addProperty(trafoGroup_);
 
     // Position Selection
-    pickGroup_.addProperty(posPicking_);
-    pickGroup_.addProperty(showIndicator_);
-    pickGroup_.addProperty(indicatorColor_);
-    pickGroup_.addProperty(indicatorSize_);
+    pickGroup_.addProperties(posPicking_, showIndicator_, indicatorColor_, indicatorSize_);
 
     posPicking_.onChange([this]() { modeChange(); });
     indicatorColor_.onChange([this]() { invalidateMesh(); });
@@ -277,7 +257,7 @@ VolumeSliceGL::VolumeSliceGL()
     addProperty(gestureShiftSlice_);
 }
 
-VolumeSliceGL::~VolumeSliceGL() {}
+VolumeSliceGL::~VolumeSliceGL() = default;
 
 void VolumeSliceGL::initializeResources() {
     updateMaxSliceNumber();
@@ -296,8 +276,11 @@ void VolumeSliceGL::initializeResources() {
 }
 
 void VolumeSliceGL::invokeEvent(Event* event) {
-    if (!handleInteractionEvents_) return;
+    if (dynamic_cast<InteractionEvent*>(event) && !handleInteractionEvents_) return;
     Processor::invokeEvent(event);
+    if (auto re = event->getAs<ResizeEvent>()) {
+        planeSettingsChanged();
+    }
 }
 
 void VolumeSliceGL::modeChange() {
@@ -346,14 +329,16 @@ void VolumeSliceGL::planeSettingsChanged() {
     const vec3 normal = glm::normalize(planeNormal_.get());
     const Plane plane(planePosition_.get(), normal);
 
-    // In worldSpace.
-    const mat4 texToWorld(inport_.getData()->getCoordinateTransformer().getTextureToWorldMatrix());
+    // In worldSpace, ignoring translation because it should not affect rotation (fixes issue #875)
+    const mat4 texToWorld(
+        mat3(inport_.getData()->getCoordinateTransformer().getTextureToWorldMatrix()));
+
     const vec3 worldNormal(
         glm::normalize(vec3(glm::inverseTranspose(texToWorld) * vec4(normal, 0.0f))));
     const mat4 boxrotation(glm::toMat4(glm::rotation(worldNormal, vec3(0.0f, 0.0f, 1.0f))));
 
     // Construct the edges of a unit box and intersect with the plane.
-    std::vector<IntersectionResult> points;
+    std::vector<std::optional<vec3>> points;
     points.reserve(12);
 
     points.push_back(plane.getIntersection(vec3(0.0f, 0.0f, 0.0f), vec3(1.0f, 0.0f, 0.0f)));
@@ -375,8 +360,8 @@ void VolumeSliceGL::planeSettingsChanged() {
     vec2 xrange(std::numeric_limits<float>::max(), std::numeric_limits<float>::min());
     vec2 yrange(std::numeric_limits<float>::max(), std::numeric_limits<float>::min());
     for (auto& point : points) {
-        if (point.intersects_) {
-            vec4 corner = vec4(point.intersection_, 1.0f);
+        if (point) {
+            vec4 corner = vec4(*point, 1.0f);
             corner = boxrotation * texToWorld * corner;
 
             xrange[0] = std::min(xrange[0], corner.x);
@@ -418,16 +403,17 @@ void VolumeSliceGL::planeSettingsChanged() {
 }
 
 void VolumeSliceGL::process() {
-    if (volumeDimensions_ != inport_.getData()->getDimensions()) {
-        volumeDimensions_ = inport_.getData()->getDimensions();
-        updateMaxSliceNumber();
-        modeChange();
-        vec2 dim{glm::length(vec3(volumeDimensions_))};
-        outport_.setDimensions(static_cast<size2_t>(dim));  // set default dimensions.
-    }
-    if (texToWorld_ != inport_.getData()->getCoordinateTransformer().getTextureToWorldMatrix()) {
-        texToWorld_ = inport_.getData()->getCoordinateTransformer().getTextureToWorldMatrix();
-        planeSettingsChanged();
+    if (inport_.isChanged()) {
+        if (volumeDimensions_ != inport_.getData()->getDimensions()) {
+            volumeDimensions_ = inport_.getData()->getDimensions();
+            updateMaxSliceNumber();
+            modeChange();
+        }
+        if (texToWorld_ !=
+            inport_.getData()->getCoordinateTransformer().getTextureToWorldMatrix()) {
+            texToWorld_ = inport_.getData()->getCoordinateTransformer().getTextureToWorldMatrix();
+            planeSettingsChanged();
+        }
     }
 
     utilgl::activateAndClearTarget(outport_, ImageType::ColorOnly);
@@ -470,7 +456,7 @@ void VolumeSliceGL::renderPositionIndicator() {
         updateIndicatorMesh();
     }
 
-    MeshDrawerGL drawer(meshCrossHair_.get());
+    MeshDrawerGL drawer(&meshCrossHair_);
 
     utilgl::GlBoolState smooth(GL_LINE_SMOOTH, true);
     utilgl::BlendModeState blend(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -483,33 +469,7 @@ void VolumeSliceGL::renderPositionIndicator() {
     indicatorShader_.deactivate();
 }
 
-void VolumeSliceGL::updateIndicatorMesh() {
-    const vec2 pos = getScreenPosFromVolPos();
-
-    const size2_t canvasSize(outport_.getDimensions());
-    const vec2 indicatorSize =
-        vec2(indicatorSize_.get() / canvasSize.x, indicatorSize_.get() / canvasSize.y);
-    const vec4 color(indicatorColor_.get());
-
-    meshCrossHair_ = std::make_unique<Mesh>();
-    meshCrossHair_->setModelMatrix(mat4(1.0f));
-    // add two vertical and two horizontal lines with a gap around the selected position
-    auto posBuf = util::makeBuffer<vec2>(
-        {// horizontal
-         vec2(-0.5f, pos.y) * 2.0f - 1.0f, vec2(pos.x - indicatorSize.x, pos.y) * 2.0f - 1.0f,
-         vec2(pos.x + indicatorSize.x, pos.y) * 2.0f - 1.0f, vec2(1.5f, pos.y) * 2.0f - 1.0f,
-
-         // vertical
-         vec2(pos.x, -0.5f) * 2.0f - 1.0f, vec2(pos.x, pos.y - indicatorSize.y) * 2.0f - 1.0f,
-         vec2(pos.x, pos.y + indicatorSize.y) * 2.0f - 1.0f, vec2(pos.x, 1.5f) * 2.0f - 1.0f,
-
-         // box
-         vec2(pos.x - indicatorSize.x, pos.y - indicatorSize.y) * 2.0f - 1.0f,
-         vec2(pos.x + indicatorSize.x, pos.y - indicatorSize.y) * 2.0f - 1.0f,
-         vec2(pos.x + indicatorSize.x, pos.y + indicatorSize.y) * 2.0f - 1.0f,
-         vec2(pos.x - indicatorSize.x, pos.y + indicatorSize.y) * 2.0f - 1.0f});
-
-    auto colorBuf = util::makeBuffer<vec4>(std::vector<vec4>(12, color));
+VolumeSliceGL::ColoredMesh2D VolumeSliceGL::createIndicatorMesh() {
 
     // indices for cross lines
     auto indexBuf1 =
@@ -519,13 +479,55 @@ void VolumeSliceGL::updateIndicatorMesh() {
     auto indexBuf2 =
         util::makeIndexBuffer(util::table([&](int i) { return static_cast<uint32_t>(i); }, 8, 12));
 
-    // clear up existing attribute buffers
-    // meshCrossHair_->deinitialize();
-    meshCrossHair_->addBuffer(BufferType::PositionAttrib, posBuf);
-    meshCrossHair_->addBuffer(BufferType::ColorAttrib, colorBuf);
-    meshCrossHair_->addIndicies(Mesh::MeshInfo(DrawType::Lines, ConnectivityType::None), indexBuf1);
+    ColoredMesh2D meshCrossHair(DrawType::Lines, ConnectivityType::None);
+    meshCrossHair.setModelMatrix(mat4(1.0f));
+    // Add 12 arbitrary vertices, which need to be updated later
+    meshCrossHair.addVertices({{vec2(0.f), vec4(1.f)},
+                               {vec2(0.f), vec4(1.f)},
+                               {vec2(0.f), vec4(1.f)},
+                               {vec2(0.f), vec4(1.f)},
+                               {vec2(0.f), vec4(1.f)},
+                               {vec2(0.f), vec4(1.f)},
+                               {vec2(0.f), vec4(1.f)},
+                               {vec2(0.f), vec4(1.f)},
+                               {vec2(0.f), vec4(1.f)},
+                               {vec2(0.f), vec4(1.f)},
+                               {vec2(0.f), vec4(1.f)},
+                               {vec2(0.f), vec4(1.f)}});
+    meshCrossHair.addIndices(Mesh::MeshInfo(DrawType::Lines, ConnectivityType::None), indexBuf1);
+    meshCrossHair.addIndices(Mesh::MeshInfo(DrawType::Lines, ConnectivityType::Loop), indexBuf2);
 
-    meshCrossHair_->addIndicies(Mesh::MeshInfo(DrawType::Lines, ConnectivityType::Loop), indexBuf2);
+    return meshCrossHair;
+}
+
+void VolumeSliceGL::updateIndicatorMesh() {
+    const vec2 pos = getScreenPosFromVolPos();
+
+    const size2_t canvasSize(outport_.getDimensions());
+    const vec2 indicatorSize =
+        vec2(indicatorSize_.get() / canvasSize.x, indicatorSize_.get() / canvasSize.y);
+
+    // add two vertical and two horizontal lines with a gap around the selected position
+    auto posBuf =
+        meshCrossHair_.getTypedEditableRAMRepresentation<buffertraits::PositionsBuffer2D>();
+    posBuf->getDataContainer() = {
+        // horizontal
+        vec2(-0.5f, pos.y) * 2.0f - 1.0f, vec2(pos.x - indicatorSize.x, pos.y) * 2.0f - 1.0f,
+        vec2(pos.x + indicatorSize.x, pos.y) * 2.0f - 1.0f, vec2(1.5f, pos.y) * 2.0f - 1.0f,
+
+        // vertical
+        vec2(pos.x, -0.5f) * 2.0f - 1.0f, vec2(pos.x, pos.y - indicatorSize.y) * 2.0f - 1.0f,
+        vec2(pos.x, pos.y + indicatorSize.y) * 2.0f - 1.0f, vec2(pos.x, 1.5f) * 2.0f - 1.0f,
+
+        // box
+        vec2(pos.x - indicatorSize.x, pos.y - indicatorSize.y) * 2.0f - 1.0f,
+        vec2(pos.x + indicatorSize.x, pos.y - indicatorSize.y) * 2.0f - 1.0f,
+        vec2(pos.x + indicatorSize.x, pos.y + indicatorSize.y) * 2.0f - 1.0f,
+        vec2(pos.x - indicatorSize.x, pos.y + indicatorSize.y) * 2.0f - 1.0f};
+
+    auto colorBuf = meshCrossHair_.getTypedEditableRAMRepresentation<buffertraits::ColorsBuffer>();
+    const vec4 color(indicatorColor_.get());
+    colorBuf->getDataContainer() = std::vector<vec4>(12, color);
 
     meshDirty_ = false;
 }

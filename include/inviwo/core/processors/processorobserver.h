@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2013-2019 Inviwo Foundation
+ * Copyright (c) 2013-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,8 +27,7 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_PROCESSOROBSERVER_H
-#define IVW_PROCESSOROBSERVER_H
+#pragma once
 
 #include <inviwo/core/properties/property.h>
 #include <inviwo/core/ports/port.h>
@@ -76,19 +75,30 @@ public:
 
     /**
      * Called after the processor has changed its source state.
-     * The processor argument is the modified processor
      */
     virtual void onProcessorSourceChanged(Processor*){};
     /**
      * Called after the processor has changed its sink state.
-     * The processor argument is the modified processor
      */
     virtual void onProcessorSinkChanged(Processor*){};
     /**
      * Called after the processor has changed its ready state.
-     * The processor argument is the modified processor
      */
     virtual void onProcessorReadyChanged(Processor*){};
+    /**
+     * Called after a processor inport and its connected outport(s) changed active state.
+     * @see Processor::isConnectionActive
+     */
+    virtual void onProcessorActiveConnectionsChanged(Processor*){};
+
+    /**
+     * @brief Called when a processor initiates a background computation
+     */
+    virtual void onProcessorStartBackgroundWork(Processor*, size_t /*jobs*/){};
+    /**
+     * @brief Called when a processor finishes a background computation
+     */
+    virtual void onProcessorFinishBackgroundWork(Processor*, size_t /*jobs*/){};
 };
 
 /** \class ProcessorObservable
@@ -146,8 +156,16 @@ protected:
     void notifyObserversReadyChange(Processor* p) {
         forEachObserver([&](ProcessorObserver* o) { o->onProcessorReadyChanged(p); });
     }
+    void notifyObserversActiveConnectionsChange(Processor* p) {
+        forEachObserver([&](ProcessorObserver* o) { o->onProcessorActiveConnectionsChanged(p); });
+    }
+
+    void notifyObserversStartBackgroundWork(Processor* p, size_t jobs = 1) {
+        forEachObserver([&](ProcessorObserver* o) { o->onProcessorStartBackgroundWork(p, jobs); });
+    }
+    void notifyObserversFinishBackgroundWork(Processor* p, size_t jobs = 1) {
+        forEachObserver([&](ProcessorObserver* o) { o->onProcessorFinishBackgroundWork(p, jobs); });
+    }
 };
 
 }  // namespace inviwo
-
-#endif  // IVW_PROCESSOROBSERVER_H

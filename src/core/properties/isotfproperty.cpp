@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2018-2019 Inviwo Foundation
+ * Copyright (c) 2018-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -82,9 +82,9 @@ void IsoTFProperty::set(const Property* property) {
     }
 }
 
-void IsoTFProperty::set(const IsoValueProperty& p) { isovalues_.set(p); }
+void IsoTFProperty::set(const IsoValueProperty* p) { isovalues_.set(p); }
 
-void IsoTFProperty::set(const TransferFunctionProperty& p) { tf_.set(p); }
+void IsoTFProperty::set(const TransferFunctionProperty* p) { tf_.set(p); }
 
 void IsoTFProperty::setMask(double maskMin, double maskMax) { tf_.setMask(maskMin, maskMax); }
 

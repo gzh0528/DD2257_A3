@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2012-2019 Inviwo Foundation
+ * Copyright (c) 2012-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -43,5 +43,6 @@ const std::string SerializeConstants::RefAttribute = "reference";
 const std::string SerializeConstants::IDAttribute = "id";
 
 const std::string SerializeConstants::VectorAttributes[] = {"x", "y", "z", "w"};
+const std::string SerializeConstants::MatrixAttributes[] = {"col0", "col1", "col2", "col3"};
 
 }  // namespace inviwo

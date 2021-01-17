@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2017-2019 Inviwo Foundation
+ * Copyright (c) 2017-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -37,7 +37,7 @@
 #include <inviwo/core/datastructures/image/layerram.h>
 #include <inviwo/core/datastructures/image/layerramprecision.h>
 
-#ifndef __clang__
+#ifdef IVW_USE_OPENMP
 #include <omp.h>
 #endif
 
@@ -97,12 +97,11 @@ void util::layerRAMDistanceTransform(const LayerRAMPrecision<T> *inLayer,
                                      Predicate predicate, ValueTransform valueTransform,
                                      ProgressCallback callback) {
 
-#ifndef __clang__
+#ifdef IVW_USE_OPENMP
     omp_set_num_threads(std::thread::hardware_concurrency());
 #endif
 
     using int64 = glm::int64;
-    using i64vec2 = glm::tvec2<int64>;
 
     auto square = [](auto a) { return a * a; };
 

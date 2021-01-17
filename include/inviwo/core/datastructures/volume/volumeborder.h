@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2014-2019 Inviwo Foundation
+ * Copyright (c) 2014-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,11 +27,10 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_VOLUMEBORDER_H
-#define IVW_VOLUMEBORDER_H
+#pragma once
 
 #include <inviwo/core/common/inviwocoredefine.h>
-#include <inviwo/core/common/inviwo.h>
+#include <inviwo/core/util/glm.h>
 
 namespace inviwo {
 
@@ -50,5 +49,3 @@ public:
 };
 
 }  // namespace inviwo
-
-#endif  // IVW_VOLUMEBORDER_H

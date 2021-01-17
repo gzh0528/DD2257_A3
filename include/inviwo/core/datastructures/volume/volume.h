@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2012-2019 Inviwo Foundation
+ * Copyright (c) 2012-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,18 +27,18 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_VOLUME_H
-#define IVW_VOLUME_H
+#pragma once
 
 #include <inviwo/core/common/inviwocoredefine.h>
-#include <inviwo/core/common/inviwo.h>
 #include <inviwo/core/datastructures/data.h>
 #include <inviwo/core/datastructures/spatialdata.h>
+#include <inviwo/core/datastructures/histogramtools.h>
 #include <inviwo/core/datastructures/image/imagetypes.h>
 #include <inviwo/core/datastructures/datamapper.h>
 #include <inviwo/core/datastructures/representationtraits.h>
 #include <inviwo/core/datastructures/volume/volumerepresentation.h>
 #include <inviwo/core/metadata/metadataowner.h>
+#include <inviwo/core/util/glm.h>
 #include <inviwo/core/util/document.h>
 #include <inviwo/core/io/datareader.h>
 #include <inviwo/core/io/datawriter.h>
@@ -47,7 +47,7 @@
 
 namespace inviwo {
 
-class CameraProperty;
+class Camera;
 
 /**
  * \ingroup datastructures
@@ -62,11 +62,14 @@ class CameraProperty;
  */
 class IVW_CORE_API Volume : public Data<Volume, VolumeRepresentation>,
                             public StructuredGridEntity<3>,
-                            public MetaDataOwner {
+                            public MetaDataOwner,
+                            public HistogramSupplier {
 public:
     explicit Volume(size3_t defaultDimensions = size3_t(128, 128, 128),
                     const DataFormatBase* defaultFormat = DataUInt8::get(),
-                    const SwizzleMask& defaultSwizzleMask = swizzlemasks::rgba);
+                    const SwizzleMask& defaultSwizzleMask = swizzlemasks::rgba,
+                    InterpolationType interpolation = InterpolationType::Linear,
+                    const Wrapping3D& wrapping = wrapping3d::clampAll);
     explicit Volume(std::shared_ptr<VolumeRepresentation>);
     Volume(const Volume&) = default;
     Volume& operator=(const Volume& that) = default;
@@ -101,6 +104,12 @@ public:
      */
     void setSwizzleMask(const SwizzleMask& mask);
     SwizzleMask getSwizzleMask() const;
+
+    void setInterpolation(InterpolationType interpolation);
+    InterpolationType getInterpolation() const;
+
+    void setWrapping(const Wrapping3D& wrapping);
+    Wrapping3D getWrapping() const;
 
     virtual const StructuredCameraCoordinateTransformer<3>& getCoordinateTransformer(
         const Camera& camera) const override;
@@ -145,10 +154,14 @@ public:
     template <typename Kind>
     const typename representation_traits<Volume, Kind>::type* getRep() const;
 
+    std::shared_ptr<HistogramCalculationState> calculateHistograms(size_t bins = 2048) const;
+
 protected:
     size3_t defaultDimensions_;
     const DataFormatBase* defaultDataFormat_;
     SwizzleMask defaultSwizzleMask_;
+    InterpolationType defaultInterpolation_;
+    Wrapping3D defaultWrapping_;
 };
 
 template <typename Kind>
@@ -171,5 +184,3 @@ extern template class IVW_CORE_TMPL_EXP DataInport<VolumeSequence>;
 extern template class IVW_CORE_TMPL_EXP DataOutport<VolumeSequence>;
 
 }  // namespace inviwo
-
-#endif  // IVW_VOLUME_H

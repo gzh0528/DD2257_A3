@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2014-2019 Inviwo Foundation
+ * Copyright (c) 2014-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -48,14 +48,22 @@ public:
 
     // override for qgraphicsitem_cast (refer qt documentation)
     enum { Type = UserType + ProcessorProgressGraphicsType };
-    int type() const { return Type; }
+    int type() const override { return Type; }
 
 protected:
-    void paint(QPainter* p, const QStyleOptionGraphicsItem* options, QWidget* widget);
+    void paint(QPainter* p, const QStyleOptionGraphicsItem* options, QWidget* widget) override;
 
     // ProgressBarObserver methods
-    virtual void progressChanged();
-    virtual void progressBarVisibilityChanged();
+    /**
+     * This method will be called when observed object changes.
+     * @param New progress between [0 1]
+     */
+    virtual void progressChanged(float) override;
+    /**
+     * This method will be called when observed object changes.
+     * @param visibility state that ProgressBar changed into
+     */
+    virtual void progressBarVisibilityChanged(bool) override;
 
 private:
     QSize size_;

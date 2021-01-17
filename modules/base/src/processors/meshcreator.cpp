@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2013-2019 Inviwo Foundation
+ * Copyright (c) 2013-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -38,6 +38,7 @@
 #include <inviwo/core/interaction/events/wheelevent.h>
 
 #include <modules/base/algorithm/meshutils.h>
+#include <inviwo/core/algorithm/boundingbox.h>
 
 namespace inviwo {
 
@@ -69,7 +70,7 @@ MeshCreator::MeshCreator()
                [&](PickingEvent* p) {
                    if (enablePicking_) handlePicking(p);
                })
-    , camera_("camera", "Camera")
+    , camera_("camera", "Camera", util::boundingBox(outport_))
     , pickingUpdate_{[](PickingEvent*) {}} {
 
     addPort(outport_);

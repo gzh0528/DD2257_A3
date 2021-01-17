@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2014-2019 Inviwo Foundation
+ * Copyright (c) 2014-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -40,6 +40,12 @@
 #include <inviwo/qt/applicationbase/inviwoapplicationqt.h>
 #include <inviwo/core/util/consolelogger.h>
 #include <inviwo/core/moduleregistration.h>
+#include <inviwo/core/util/commandlineparser.h>
+
+#include <warn/push>
+#include <warn/ignore/all>
+#include <QSurfaceFormat>
+#include <warn/pop>
 
 using namespace inviwo;
 
@@ -48,6 +54,14 @@ int main(int argc, char** argv) {
     inviwo::util::OnScopeExit deleteLogcentral([]() { inviwo::LogCentral::deleteInstance(); });
     auto logger = std::make_shared<inviwo::ConsoleLogger>();
     LogCentral::getPtr()->registerLogger(logger);
+
+    // Must be set before constructing QApplication
+    QApplication::setAttribute(Qt::AA_ShareOpenGLContexts);
+    QApplication::setAttribute(Qt::AA_UseDesktopOpenGL);
+    QSurfaceFormat defaultFormat;
+    defaultFormat.setMajorVersion(10);
+    defaultFormat.setProfile(QSurfaceFormat::CoreProfile);
+    QSurfaceFormat::setDefaultFormat(defaultFormat);
 
     InviwoApplicationQt inviwoApp(argc, argv, "Inviwo-Qt");
     inviwoApp.printApplicationInfo();
@@ -114,10 +128,6 @@ int main(int argc, char** argv) {
         util::log(exception.getContext(),
                   "Incomplete network loading " + workspace + " due to " + exception.getMessage(),
                   LogLevel::Error);
-        return 1;
-    } catch (const ticpp::Exception& exception) {
-        LogErrorCustom("qtminimum", "Unable to load network " + workspace +
-                                        " due to deserialization error: " + exception.what());
         return 1;
     }
 

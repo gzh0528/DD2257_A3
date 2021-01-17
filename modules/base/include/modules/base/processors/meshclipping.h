@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2013-2019 Inviwo Foundation
+ * Copyright (c) 2013-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -83,14 +83,6 @@ public:
 protected:
     virtual void process() override;
 
-    /**
-     * Clip mesh against plane. Replaces removed parts with triangles aligned with the plane.
-     * @throws Exception if mesh is not a SimpleMesh or BasicMesh
-     * @param mesh to clip
-     * @param plane in world space coordinate system.
-     */
-    std::shared_ptr<Mesh> clipGeometryAgainstPlane(const Mesh *mesh, const Plane &plane);
-
 private:
     void onAlignPlaneNormalToCameraNormalPressed();
 
@@ -102,14 +94,16 @@ private:
     BoolProperty movePointAlongNormal_;
     BoolProperty moveCameraAlongNormal_;
     FloatProperty pointPlaneMove_;
+
+    BoolProperty capClippedHoles_;
+
     FloatVec3Property planePoint_;   ///< World space plane position
     FloatVec3Property planeNormal_;  ///< World space plane normal
+
     ButtonProperty alignPlaneNormalToCameraNormal_;
     CameraProperty camera_;
 
     float previousPointPlaneMove_;
-
-    static const float EPSILON;
 };
 }  // namespace inviwo
 

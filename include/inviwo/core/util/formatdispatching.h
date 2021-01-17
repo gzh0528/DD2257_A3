@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2016-2019 Inviwo Foundation
+ * Copyright (c) 2016-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,8 +27,7 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_FORMATDISPATCHING_H
-#define IVW_FORMATDISPATCHING_H
+#pragma once
 
 #include <inviwo/core/common/inviwocoredefine.h>
 #include <inviwo/core/util/formats.h>
@@ -111,11 +110,7 @@ struct DispatchHelper<Result, B, E, std::tuple<Formats...>> {
                 IVW_CONTEXT_CUSTOM("Dispatching"));
 
         if (id == Format::id()) {
-#ifdef _WIN32  // TODO: remove win fix when VS does the right thing...
-            return (obj.operator()<Result, Format>(std::forward<Args>(args)...));
-#else
             return (obj.template operator()<Result, Format>(std::forward<Args>(args)...));
-#endif
         } else if (static_cast<int>(id) < static_cast<int>(Format::id())) {
             return DispatchHelper<Result, B, M - 1, std::tuple<Formats...>>::dispatch(
                 id, std::forward<Callable>(obj), std::forward<Args>(args)...);
@@ -246,6 +241,66 @@ struct Vec3s : std::integral_constant<bool, Format::comp == 3> {};
 template <typename Format>
 struct Vec4s : std::integral_constant<bool, Format::comp == 4> {};
 
+/**
+ * Match all scalar signed or unsigned integer types
+ */
+template <typename Format>
+struct IntegerScalars
+    : std::integral_constant<bool, Format::comp == 1 && Format::numtype != NumericType::Float> {};
+
+/**
+ * Match all scalar signed integer types
+ */
+template <typename Format>
+struct SignedIntegerScalars
+    : std::integral_constant<bool,
+                             Format::comp == 1 && Format::numtype == NumericType::SignedInteger> {};
+
+/**
+ * Match all scalar unsigned integer types
+ */
+template <typename Format>
+struct UnsignedIntegerScalars
+    : std::integral_constant<bool, Format::comp == 1 &&
+                                       Format::numtype == NumericType::UnsignedInteger> {};
+
+/**
+ * Match all scalar floating point types
+ */
+template <typename Format>
+struct FloatScalars
+    : std::integral_constant<bool, Format::comp == 1 && Format::numtype == NumericType::Float> {};
+
+/**
+ * Match all signed or unsigned integer vector types
+ */
+template <typename Format>
+struct IntegerVecs
+    : std::integral_constant<bool, Format::comp >= 2 && Format::numtype != NumericType::Float> {};
+
+/**
+ * Match all signed or unsigned integer vector types
+ */
+template <typename Format>
+struct SignedIntegerVecs
+    : std::integral_constant<bool,
+                             Format::comp >= 2 && Format::numtype == NumericType::SignedInteger> {};
+
+/**
+ * Match all signed or unsigned integer vector types
+ */
+template <typename Format>
+struct UnsignedIntegerVecs
+    : std::integral_constant<bool, Format::comp >= 2 &&
+                                       Format::numtype == NumericType::UnsignedInteger> {};
+
+/**
+ * Match all floating point vector types
+ */
+template <typename Format>
+struct FloatVecs
+    : std::integral_constant<bool, Format::comp >= 2 && Format::numtype == NumericType::Float> {};
+
 }  // namespace filter
 
 }  // namespace dispatching
@@ -267,7 +322,7 @@ template <typename T>
 using PrecisionType = typename std::remove_pointer<typename std::remove_const<T>::type>::type;
 
 template <typename T>
-using PrecsionType [[deprecated("Use `PrecisionType` instead")]] =
+using PrecsionType[[deprecated("Use `PrecisionType` instead")]] =
     typename std::remove_pointer<typename std::remove_const<T>::type>::type;
 
 /**
@@ -285,11 +340,9 @@ template <typename T>
 using PrecisionValueType = typename PrecisionType<T>::type;
 
 template <typename T>
-using PrecsionValueType [[deprecated("Use `PrecisionValueType` instead")]] =
+using PrecsionValueType[[deprecated("Use `PrecisionValueType` instead")]] =
     typename PrecisionType<T>::type;
 
 }  // namespace util
 
 }  // namespace inviwo
-
-#endif  // IVW_FORMATDISPATCHING_H

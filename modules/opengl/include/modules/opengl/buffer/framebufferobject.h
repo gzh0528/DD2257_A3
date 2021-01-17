@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2012-2019 Inviwo Foundation
+ * Copyright (c) 2012-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -43,6 +43,10 @@ class IVW_MODULE_OPENGL_API FrameBufferObject {
 
 public:
     FrameBufferObject();
+    FrameBufferObject(const FrameBufferObject&) = delete;
+    FrameBufferObject(FrameBufferObject&& rhs);
+    FrameBufferObject& operator=(const FrameBufferObject&) = delete;
+    FrameBufferObject& operator=(FrameBufferObject&& rhs) noexcept;
     ~FrameBufferObject();
 
     /**

@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2012-2019 Inviwo Foundation
+ * Copyright (c) 2012-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -150,6 +150,7 @@ public:
 
     // Callback when the shader is reloaded. A reload can for example be triggered by a file change.
     const BaseCallBack *onReload(std::function<void()> callback);
+    std::shared_ptr<std::function<void()>> onReloadScoped(std::function<void()> callback);
     void removeOnReload(const BaseCallBack *callback);
 
 private:
@@ -160,6 +161,7 @@ private:
 
     void rebuildShader(ShaderObject *obj);
     void linkShader(bool notifyRebuild = false);
+    bool checkLinkStatus() const;
 
     static const transform_t transform;
     static const const_transform_t const_transform;

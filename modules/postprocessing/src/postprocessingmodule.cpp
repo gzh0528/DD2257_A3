@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2016-2019 Inviwo Foundation
+ * Copyright (c) 2016-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -28,6 +28,7 @@
  *********************************************************************************/
 
 #include <modules/postprocessing/postprocessingmodule.h>
+#include <modules/postprocessing/processors/depthoffield.h>
 #include <modules/postprocessing/processors/ssao.h>
 #include <modules/postprocessing/processors/fog.h>
 #include <modules/postprocessing/processors/fxaa.h>
@@ -37,7 +38,7 @@
 #include <modules/postprocessing/processors/imageedgedarken.h>
 #include <modules/postprocessing/processors/imagehuesaturationluminance.h>
 #include <modules/postprocessing/processors/imageopacity.h>
-#include <modules/postprocessing/processors/imagesharpen.h>
+#include <modules/postprocessing/processors/imagefilter.h>
 #include <modules/postprocessing/processors/depthdarkening.h>
 #include <modules/opengl/shader/shadermanager.h>
 
@@ -52,6 +53,7 @@ PostProcessingModule::PostProcessingModule(InviwoApplication* app)
     // Register objects that can be shared with the rest of inviwo here:
 
     // Processors
+    registerProcessor<DepthOfField>();
     registerProcessor<SSAO>();
     registerProcessor<FXAA>();
     registerProcessor<Fog>();
@@ -61,7 +63,7 @@ PostProcessingModule::PostProcessingModule(InviwoApplication* app)
     registerProcessor<ImageEdgeDarken>();
     registerProcessor<DepthDarkening>();
     registerProcessor<ImageHueSaturationLuminance>();
-    registerProcessor<ImageSharpen>();
+    registerProcessor<ImageFilter>();
     registerProcessor<ImageOpacity>();
 
     // Properties

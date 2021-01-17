@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2016-2019 Inviwo Foundation
+ * Copyright (c) 2016-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -33,9 +33,10 @@
 #include <modules/base/basemoduledefine.h>
 #include <inviwo/core/common/inviwo.h>
 #include <inviwo/core/util/indexmapper.h>
+#include <inviwo/core/datastructures/volume/volume.h>
 #include <inviwo/core/datastructures/volume/volumeramprecision.h>
 
-#ifndef __clang__
+#ifdef IVW_USE_OPENMP
 #include <omp.h>
 #endif
 
@@ -95,12 +96,11 @@ void util::volumeRAMDistanceTransform(const VolumeRAMPrecision<T> *inVolume,
                                       Predicate predicate, ValueTransform valueTransform,
                                       ProgressCallback callback) {
 
-#ifndef __clang__
+#ifdef IVW_USE_OPENMP
     omp_set_num_threads(std::thread::hardware_concurrency());
 #endif
 
     using int64 = glm::int64;
-    using i64vec3 = glm::tvec3<int64>;
 
     auto square = [](auto a) { return a * a; };
 

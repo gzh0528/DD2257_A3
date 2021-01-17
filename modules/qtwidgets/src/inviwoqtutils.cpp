@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2012-2019 Inviwo Foundation
+ * Copyright (c) 2012-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -38,7 +38,7 @@
 #include <inviwo/core/datastructures/transferfunction.h>
 #include <inviwo/core/properties/transferfunctionproperty.h>
 #include <inviwo/core/properties/isovalueproperty.h>
-#include <inviwo/core/properties/tfpropertyconcept.h>
+#include <modules/qtwidgets/tf/tfpropertyconcept.h>
 
 #include <inviwo/core/util/logcentral.h>
 #include <warn/push>
@@ -459,7 +459,7 @@ QMenu* addMenu(std::string menuName, QMenu* before) {
             return menuBar->addMenu(menuName.c_str());
         }
     }
-    throw Exception("No Qt main window found");
+    throw Exception("No Qt main window found", IVW_CONTEXT_CUSTOM("utilqt::addMenu"));
 }
 
 QMenu* getMenu(std::string menuName, bool createIfNotFound) {
@@ -483,7 +483,7 @@ QMenu* getMenu(std::string menuName, bool createIfNotFound) {
             return nullptr;
         }
     }
-    throw Exception("No Qt main window found");
+    throw Exception("No Qt main window found", IVW_CONTEXT_CUSTOM("utilqt::getMenu"));
 }
 
 QImage layerToQImage(const Layer& layer) {
@@ -492,8 +492,8 @@ QImage layerToQImage(const Layer& layer) {
 }
 
 void addImageActions(QMenu& menu, const Image& image, LayerType visibleLayer, size_t visibleIndex) {
-    QMenu* copy = menu.addMenu("Copy");
-    QMenu* save = menu.addMenu("Save");
+    QMenu* copy = menu.addMenu(QIcon(":svgicons/edit-copy.svg"), "Copy");
+    QMenu* save = menu.addMenu(QIcon(":svgicons/save-as.svg"), "Save");
 
     auto addAction = [&copy, &save](const std::string& name, const Layer* layer, bool visible) {
         std::ostringstream oss;
@@ -606,6 +606,19 @@ int emToPx(const QWidget* w, double em) {
 int emToPx(const QFontMetrics& m, double em) {
     const auto pxPerEm = m.boundingRect(QString(100, 'M')).width() / 100.0;
     return static_cast<int>(std::round(pxPerEm * em));
+}
+
+WidgetCloseEventFilter::WidgetCloseEventFilter(QObject* parent) : QObject(parent) {}
+
+bool WidgetCloseEventFilter::eventFilter(QObject* obj, QEvent* ev) {
+    if (ev->type() == QEvent::Close) {
+        auto dialog = qobject_cast<QWidget*>(obj);
+        dialog->hide();
+        ev->ignore();
+        return true;
+    } else {
+        return false;
+    }
 }
 
 }  // namespace utilqt

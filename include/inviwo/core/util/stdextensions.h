@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2012-2019 Inviwo Foundation
+ * Copyright (c) 2012-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,13 +27,13 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_STDEXTENSIONS_H
-#define IVW_STDEXTENSIONS_H
+#pragma once
 
 #include <inviwo/core/common/inviwocoredefine.h>
-#include <inviwo/core/util/glm.h>
+
 #include <inviwo/core/util/foreacharg.h>
 #include <inviwo/core/util/hashcombine.h>
+
 #include <warn/push>
 #include <warn/ignore/all>
 #include <memory>
@@ -93,14 +93,15 @@ std::unique_ptr<Derived> dynamic_unique_ptr_cast(
 namespace detail {
 
 template <typename Index, typename Functor, Index... Is>
-auto make_array(Functor&& func, std::integer_sequence<Index, Is...>)
+constexpr auto make_array(Functor&& func, std::integer_sequence<Index, Is...>) noexcept
     -> std::array<decltype(func(std::declval<Index>())), sizeof...(Is)> {
     return {{func(Is)...}};
 }
 }  // namespace detail
 
 template <std::size_t N, typename Index = size_t, typename Functor>
-auto make_array(Functor&& func) -> std::array<decltype(func(std::declval<Index>())), N> {
+constexpr auto make_array(Functor&& func) noexcept
+    -> std::array<decltype(func(std::declval<Index>())), N> {
     return detail::make_array<Index>(std::forward<Functor>(func),
                                      std::make_integer_sequence<Index, N>());
 }
@@ -120,8 +121,25 @@ T* defaultConstructType() {
     return nullptr;
 }
 
-template <class...>
-using void_t = void;
+/**
+* Helper struct to allow passing multiple lambda expressions to std::visit.
+* Example useage:
+* \code{.cpp}
+*  std::variant<int, std::string, float, double> data = ...;
+*  std::visit(util::overloaded{[](const int& arg) {   }, // called if data contains an int
+                               [](const std::string &arg) {  }, // called if data contains a string
+                               [](const auto& arg) {  }} // use auto to capture "the other types"
+                               , data);
+*
+* \endcode
+*
+*/
+template <class... Ts>
+struct overloaded : Ts... {
+    using Ts::operator()...;
+};
+template <class... Ts>
+overloaded(Ts...)->overloaded<Ts...>;
 
 // type trait to check if T is derived from std::basic_string
 namespace detail {
@@ -130,7 +148,7 @@ struct is_string : std::false_type {};
 
 template <typename T>
 struct is_string<
-    T, void_t<typename T::value_type, typename T::traits_type, typename T::allocator_type>>
+    T, std::void_t<typename T::value_type, typename T::traits_type, typename T::allocator_type>>
     : std::is_base_of<std::basic_string<typename T::value_type, typename T::traits_type,
                                         typename T::allocator_type>,
                       T> {};
@@ -361,6 +379,10 @@ bool none_of(const T& cont, UnaryPredicate pred) {
 
 template <class Iter>
 struct iter_range : std::pair<Iter, Iter> {
+    using value_type = typename std::iterator_traits<Iter>::value_type;
+    using const_iterator = Iter;
+    using iterator = Iter;
+    using std::pair<Iter, Iter>::pair;
     iter_range(std::pair<Iter, Iter> const& x) : std::pair<Iter, Iter>(x) {}
     Iter begin() const { return this->first; }
     Iter end() const { return this->second; }
@@ -407,11 +429,11 @@ auto copy_if(const T& cont, P pred) -> std::vector<typename T::value_type> {
 
 template <typename T, typename UnaryOperation>
 auto transform(const T& cont, UnaryOperation op)
-    -> std::vector<typename std::result_of<UnaryOperation(typename T::value_type)>::type> {
+    -> std::vector<std::invoke_result_t<UnaryOperation, const typename T::value_type>> {
     using std::begin;
     using std::end;
 
-    std::vector<typename std::result_of<UnaryOperation(typename T::value_type)>::type> res;
+    std::vector<std::invoke_result_t<UnaryOperation, const typename T::value_type>> res;
     res.reserve(std::distance(begin(cont), end(cont)));
     std::transform(begin(cont), end(cont), std::back_inserter(res), op);
     return res;
@@ -456,123 +478,29 @@ bool is_future_ready(const std::future<T>& future) {
 }
 
 /**
- * A type trait for std container types
- * from: http://stackoverflow.com/a/16316640
- * This is a slightly modified version to avoid constexpr.
- *
- * Requirements on Container T:
- * \code{.cpp}
- *     T::iterator = T::begin();
- *     T::iterator = T::end();
- *     T::const_iterator = T::begin() const;
- *     T::const_iterator = T::end() const;
- *
- *     *T::iterator = T::value_type &
- *     *T::const_iterator = T::value_type const &
- * \endcode
+ * Get the index of a type in a tuple, returns the index of the first matching type
  */
-
-template <typename T>
-class is_container {
-    using test_type = typename std::remove_const<T>::type;
-
-    template <typename A,
-              class = typename std::enable_if<
-                  std::is_same<decltype(std::declval<A>().begin()), typename A::iterator>::value &&
-                  std::is_same<decltype(std::declval<A>().end()), typename A::iterator>::value &&
-                  std::is_same<decltype(std::declval<const A>().begin()),
-                               typename A::const_iterator>::value &&
-                  std::is_same<decltype(std::declval<const A>().end()),
-                               typename A::const_iterator>::value &&
-                  std::is_same<decltype(*std::declval<typename A::iterator>()),
-                               typename A::value_type&>::value &&
-                  std::is_same<decltype(*std::declval<const typename A::iterator>()),
-                               typename A::value_type const&>::value>::type>
-    static std::true_type test(int);
-
-    template <class>
-    static std::false_type test(...);
-
-public:
-    static const bool value = decltype(test<test_type>(0))::value;
-};
-
-template <class T>
-class is_stream_insertable {
-    template <typename U, class = typename std::enable_if<std::is_convertible<
-                              decltype(std::declval<std::ostream&>() << std::declval<U>()),
-                              std::ostream&>::value>::type>
-    static std::true_type check(int);
-    template <class>
-    static std::false_type check(...);
-
-public:
-    static const bool value = decltype(check<T>(0))::value;
-};
-
-// primary template handles types that do not support dereferencing:
-template <class, class = void_t<>>
-struct is_dereferenceable : std::false_type {};
-// specialization recognizes types that do support dereferencing:
-template <class T>
-struct is_dereferenceable<T, void_t<decltype(*std::declval<T>())>> : std::true_type {};
+template <class T, typename Tuple, size_t count = 0>
+constexpr size_t index_of() {
+    static_assert(count < std::tuple_size_v<Tuple>, "Type T not found in Tuple");
+    if constexpr (std::is_same_v<T, std::tuple_element_t<count, Tuple>>) {
+        return count;
+    } else {
+        return index_of<T, Tuple, count + 1>();
+    }
+}
 
 /**
- * A type trait to determine if type "Type" is constructible from arguments "Arguments...".
- * Example:
- *     util::is_constructible<MyType, FirstArg, SecondArg>::value
+ * Get the index of the first type in the Tuple that is derived from T
  */
-template <typename Type, typename... Arguments>
-struct is_constructible {
-    template <typename U, decltype(U(std::declval<Arguments>()...))* = nullptr>
-    static std::true_type check(int);
-    template <class>
-    static std::false_type check(...);
-
-public:
-    static const bool value = decltype(check<Type>(0))::value;
-};
-
-template <typename F, typename... Args>
-struct is_invocable
-    : std::is_constructible<std::function<void(Args...)>,
-                            std::reference_wrapper<typename std::remove_reference<F>::type>> {};
-
-template <typename R, typename F, typename... Args>
-struct is_invocable_r
-    : std::is_constructible<std::function<R(Args...)>,
-                            std::reference_wrapper<typename std::remove_reference<F>::type>> {};
-
-namespace detail {
-
-// https://stackoverflow.com/a/22882504/600633
-struct is_callable_test {
-    template <typename F, typename... A>
-    static decltype(std::declval<F>()(std::declval<A>()...), std::true_type()) f(int);
-
-    template <typename F, typename... A>
-    static std::false_type f(...);
-};
-
-template <typename F, typename... A>
-struct is_callable : decltype(is_callable_test::f<F, A...>(0)) {};
-
-template <typename F, typename... A>
-struct is_callable<F(A...)> : is_callable<F, A...> {};
-
-}  // namespace detail
-
-/**
- * A type trait to determine if type "callback" cann be called with certain arguments.
- * Example:
- *     util::is_callable_with<float>(callback)
- *     where
- *        callback = [](float){}  -> true
- *        callback = [](std::string){}  -> false
- */
-template <typename... A, typename F>
-constexpr detail::is_callable<F, A...> is_callable_with(F&&) {
-    return detail::is_callable<F(A...)>{};
+template <class T, typename Tuple, size_t count = 0>
+constexpr size_t index_of_derived() {
+    static_assert(count < std::tuple_size_v<Tuple>, "Type T not found in Tuple");
+    if constexpr (std::is_base_of_v<T, std::tuple_element_t<count, Tuple>>) {
+        return count;
+    } else {
+        return index_of_derived<T, Tuple, count + 1>();
+    }
 }
 
 namespace hashtuple {
@@ -631,5 +559,3 @@ ForwardIt rotateRetval(ForwardIt first, ForwardIt n_first, ForwardIt last) {
 }
 
 }  // namespace std
-
-#endif  // IVW_STDEXTENSIONS_H

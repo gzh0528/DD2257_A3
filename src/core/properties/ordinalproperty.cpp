@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2018-2019 Inviwo Foundation
+ * Copyright (c) 2018-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -66,5 +66,29 @@ template class IVW_CORE_TMPL_INST OrdinalProperty<dmat4>;
 
 template class IVW_CORE_TMPL_INST OrdinalProperty<glm::dquat>;
 template class IVW_CORE_TMPL_INST OrdinalProperty<glm::fquat>;
+
+OrdinalPropertyState<vec4> util::ordinalColor(float r, float g, float b, float a,
+                                              InvalidationLevel invalidationLevel) {
+    return ordinalColor(vec4(r, g, b, a), invalidationLevel);
+}
+OrdinalPropertyState<vec4> util::ordinalColor(const vec4& value,
+                                              InvalidationLevel invalidationLevel) {
+    return {value,
+            {vec4{0.0f}, ConstraintBehavior::Immutable},
+            {vec4{1.0f}, ConstraintBehavior::Immutable},
+            vec4{0.01f},
+            invalidationLevel,
+            PropertySemantics::Color};
+}
+
+OrdinalPropertyState<vec3> util::ordinalColor(const vec3& value,
+                                              InvalidationLevel invalidationLevel) {
+    return {value,
+            {vec3{0.0f}, ConstraintBehavior::Immutable},
+            {vec3{1.0f}, ConstraintBehavior::Immutable},
+            vec3{0.01f},
+            invalidationLevel,
+            PropertySemantics::Color};
+}
 
 }  // namespace inviwo

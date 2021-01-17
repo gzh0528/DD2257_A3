@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2015-2019 Inviwo Foundation
+ * Copyright (c) 2015-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -59,22 +59,16 @@ protected:
 class IVW_MODULE_CIMG_API CImgVolumeRAMLoader
     : public DiskRepresentationLoader<VolumeRepresentation> {
 public:
-    CImgVolumeRAMLoader(VolumeDisk* volumeDisk);
+    CImgVolumeRAMLoader(const std::string& sourceFile);
     virtual CImgVolumeRAMLoader* clone() const override;
     virtual ~CImgVolumeRAMLoader() = default;
-    virtual std::shared_ptr<VolumeRepresentation> createRepresentation() const override;
-    virtual void updateRepresentation(std::shared_ptr<VolumeRepresentation> dest) const override;
-
-    using type = std::shared_ptr<VolumeRAM>;
-    template <typename ReturnType, typename T>
-    std::shared_ptr<VolumeRAM> operator()(void* data) const {
-        using F = typename T::type;
-        return std::make_shared<VolumeRAMPrecision<F>>(static_cast<F*>(data),
-                                                       volumeDisk_->getDimensions());
-    }
+    virtual std::shared_ptr<VolumeRepresentation> createRepresentation(
+        const VolumeRepresentation& src) const override;
+    virtual void updateRepresentation(std::shared_ptr<VolumeRepresentation> dest,
+                                      const VolumeRepresentation& src) const override;
 
 private:
-    VolumeDisk* volumeDisk_;
+    std::string sourceFile_;
 };
 
 }  // namespace inviwo

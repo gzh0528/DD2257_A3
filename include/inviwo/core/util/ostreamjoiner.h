@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2016-2019 Inviwo Foundation
+ * Copyright (c) 2016-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,8 +27,7 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_OSTREAMJOINER_H
-#define IVW_OSTREAMJOINER_H
+#pragma once
 
 #include <inviwo/core/common/inviwocoredefine.h>
 
@@ -86,5 +85,3 @@ ostream_joiner<std::decay_t<DelimT>, charT, traits> make_ostream_joiner(
 }  // namespace util
 
 }  // namespace inviwo
-
-#endif  // IVW_OSTREAMJOINER_H

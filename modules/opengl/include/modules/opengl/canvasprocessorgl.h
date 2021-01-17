@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2012-2019 Inviwo Foundation
+ * Copyright (c) 2012-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -39,6 +39,8 @@
 
 namespace inviwo {
 
+class InviwoApplication;
+
 /** \docpage{org.inviwo.CanvasGL, Canvas}
  * ![](org.inviwo.CanvasGL.png?classIdentifier=org.inviwo.CanvasGL)
  *
@@ -62,8 +64,10 @@ public:
     virtual const ProcessorInfo getProcessorInfo() const override;
     static const ProcessorInfo processorInfo_;
 
-    CanvasProcessorGL();
-    virtual ~CanvasProcessorGL(){};
+    CanvasProcessorGL(InviwoApplication* app);
+    virtual ~CanvasProcessorGL() = default;
+
+    virtual void process() override;
 };
 
 }  // namespace inviwo

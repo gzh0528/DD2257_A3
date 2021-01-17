@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2014-2019 Inviwo Foundation
+ * Copyright (c) 2014-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -35,10 +35,7 @@ namespace inviwo {
 
 Tag::Tag(std::string tag) : tag_(std::move(tag)) {}
 
-Tag& Tag::operator=(const std::string& that) {
-    tag_ = that;
-    return *this;
-}
+Tags Tag::operator|(const Tag& rhs) const { return Tags{std::vector<Tag>{*this, rhs}}; }
 
 const std::string& Tag::getString() const { return tag_; }
 
@@ -46,6 +43,15 @@ std::ostream& operator<<(std::ostream& os, const Tag& obj) {
     os << obj.tag_;
     return os;
 }
+
+const Tag Tag::GL("GL");
+const Tag Tag::CL("CL");
+const Tag Tag::CPU("CPU");
+const Tag Tag::PY("PY");
+
+Tags::Tags(const Tag& tag) : tags_{tag} {}
+
+Tags::Tags(std::vector<Tag> tags) : tags_{std::move(tags)} {}
 
 Tags::Tags(const std::string& tags) {
     std::vector<std::string> strings = splitString(tags, ',');
@@ -65,16 +71,22 @@ Tags& Tags::operator=(const std::string& that) {
     return *this;
 }
 
-void Tags::addTag(Tag t) {
+Tags Tags::operator|(const Tag& rhs) const { return Tags{*this}.addTag(rhs); }
+
+Tags Tags::operator|(const Tags& rhs) const { return Tags{*this}.addTags(rhs); }
+
+Tags& Tags::addTag(Tag t) {
     if (!util::contains(tags_, t)) {
         tags_.push_back(t);
     }
+    return *this;
 }
 
-void Tags::addTags(const Tags& t) {
+Tags& Tags::addTags(const Tags& t) {
     for (auto& tag : t.tags_) {
         addTag(tag);
     }
+    return *this;
 }
 
 size_t Tags::size() const { return tags_.size(); }
@@ -109,11 +121,11 @@ std::ostream& operator<<(std::ostream& os, const Tags& obj) {
     return os;
 }
 
-const Tags Tags::None("");
-const Tags Tags::GL("GL");
-const Tags Tags::CL("CL");
-const Tags Tags::CPU("CPU");
-const Tags Tags::PY("PY");
+const Tags Tags::None{};
+const Tags Tags::GL{Tag::GL};
+const Tags Tags::CL{Tag::CL};
+const Tags Tags::CPU{Tag::CPU};
+const Tags Tags::PY{Tag::PY};
 
 namespace util {
 

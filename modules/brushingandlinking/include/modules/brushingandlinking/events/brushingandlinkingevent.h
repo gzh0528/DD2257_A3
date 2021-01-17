@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2016-2019 Inviwo Foundation
+ * Copyright (c) 2016-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,13 +27,13 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_BRUSHINGANDLINKINGEVENT_H
-#define IVW_BRUSHINGANDLINKINGEVENT_H
+#pragma once
 
 #include <modules/brushingandlinking/brushingandlinkingmoduledefine.h>
-#include <inviwo/core/common/inviwo.h>
 #include <inviwo/core/interaction/events/event.h>
 #include <inviwo/core/util/constexprhash.h>
+
+#include <unordered_set>
 
 namespace inviwo {
 
@@ -58,11 +58,14 @@ public:
         return util::constexpr_hash("org.inviwo.BrushingAndLinkingEvent");
     }
 
+    virtual void print(std::ostream& os) const override;
+
+protected:
+    virtual void printEvent(const std::string& eventType, std::ostream& os) const;
+
 private:
     const BrushingAndLinkingInport* source_;
     const std::unordered_set<size_t>& indices_;
 };
 
 }  // namespace inviwo
-
-#endif  // IVW_BRUSHINGANDLINKINGEVENT_H

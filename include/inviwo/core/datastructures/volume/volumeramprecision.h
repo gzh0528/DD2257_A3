@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2013-2019 Inviwo Foundation
+ * Copyright (c) 2013-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,14 +27,11 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_VOLUMERAMPRECISION_H
-#define IVW_VOLUMERAMPRECISION_H
+#pragma once
 
 #include <inviwo/core/datastructures/volume/volumeram.h>
-#include <inviwo/core/datastructures/volume/volumeramhistogram.h>
 #include <inviwo/core/util/glm.h>
 #include <inviwo/core/util/stdextensions.h>
-#include <inviwo/core/datastructures/volume/volume.h>
 
 namespace inviwo {
 
@@ -47,9 +44,13 @@ public:
     using type = T;
 
     explicit VolumeRAMPrecision(size3_t dimensions = size3_t(128, 128, 128),
-                                const SwizzleMask& swizzleMask = swizzlemasks::rgba);
+                                const SwizzleMask& swizzleMask = swizzlemasks::rgba,
+                                InterpolationType interpolation = InterpolationType::Linear,
+                                const Wrapping3D& wrapping = wrapping3d::clampAll);
     VolumeRAMPrecision(T* data, size3_t dimensions,
-                       const SwizzleMask& swizzleMask = swizzlemasks::rgba);
+                       const SwizzleMask& swizzleMask = swizzlemasks::rgba,
+                       InterpolationType interpolation = InterpolationType::Linear,
+                       const Wrapping3D& wrapping = wrapping3d::clampAll);
     VolumeRAMPrecision(const VolumeRAMPrecision<T>& rhs);
     VolumeRAMPrecision<T>& operator=(const VolumeRAMPrecision<T>& that);
     virtual VolumeRAMPrecision<T>* clone() const override;
@@ -71,13 +72,19 @@ public:
     virtual const size3_t& getDimensions() const override;
     virtual void setDimensions(size3_t dimensions) override;
 
-    virtual bool hasHistograms() const override;
-    virtual HistogramContainer* getHistograms(size_t bins = 2048u,
-                                              size3_t sampleRate = size3_t(1)) override;
-    virtual const HistogramContainer* getHistograms(size_t bins = 2048u,
-                                                    size3_t sampleRate = size3_t(1)) const override;
-    virtual void calculateHistograms(size_t bins, size3_t sampleRate,
-                                     const bool& stop) const override;
+    /**
+     * \brief update the swizzle mask of the color channels when sampling the volume
+     *
+     * @param mask new swizzle mask
+     */
+    virtual void setSwizzleMask(const SwizzleMask& mask) override;
+    virtual SwizzleMask getSwizzleMask() const override;
+
+    virtual void setInterpolation(InterpolationType interpolation) override;
+    virtual InterpolationType getInterpolation() const override;
+
+    virtual void setWrapping(const Wrapping3D& wrapping) override;
+    virtual Wrapping3D getWrapping() const override;
 
     virtual double getAsDouble(const size3_t& pos) const override;
     virtual dvec2 getAsDVec2(const size3_t& pos) const override;
@@ -99,25 +106,15 @@ public:
     virtual void setFromNormalizedDVec3(const size3_t& pos, dvec3 val) override;
     virtual void setFromNormalizedDVec4(const size3_t& pos, dvec4 val) override;
 
-    void setValuesFromVolume(const VolumeRAM* src, const size3_t& dstOffset, const size3_t& subSize,
-                             const size3_t& subOffset) override;
-
     virtual size_t getNumberOfBytes() const override;
-
-    /**
-     * \brief update the swizzle mask of the color channels when sampling the volume
-     *
-     * @param mask new swizzle mask
-     */
-    virtual void setSwizzleMask(const SwizzleMask& mask) override;
-    virtual SwizzleMask getSwizzleMask() const override;
 
 private:
     size3_t dimensions_;
     bool ownsDataPtr_;
     std::unique_ptr<T[]> data_;
-    mutable HistogramContainer histCont_;
     SwizzleMask swizzleMask_;
+    InterpolationType interpolation_;
+    Wrapping3D wrapping_;
 };
 
 /**
@@ -131,24 +128,34 @@ private:
  */
 IVW_CORE_API std::shared_ptr<VolumeRAM> createVolumeRAM(
     const size3_t& dimensions, const DataFormatBase* format, void* dataPtr = nullptr,
-    const SwizzleMask& swizzleMask = swizzlemasks::rgba);
+    const SwizzleMask& swizzleMask = swizzlemasks::rgba,
+    InterpolationType interpolation = InterpolationType::Linear,
+    const Wrapping3D& wrapping = wrapping3d::clampAll);
 
 template <typename T>
-VolumeRAMPrecision<T>::VolumeRAMPrecision(size3_t dimensions, const SwizzleMask& swizzleMask)
+VolumeRAMPrecision<T>::VolumeRAMPrecision(size3_t dimensions, const SwizzleMask& swizzleMask,
+                                          InterpolationType interpolation,
+                                          const Wrapping3D& wrapping)
     : VolumeRAM(DataFormat<T>::get())
     , dimensions_(dimensions)
     , ownsDataPtr_(true)
     , data_(new T[dimensions_.x * dimensions_.y * dimensions_.z]())
-    , swizzleMask_(swizzleMask) {}
+    , swizzleMask_(swizzleMask)
+    , interpolation_{interpolation}
+    , wrapping_{wrapping} {}
 
 template <typename T>
 VolumeRAMPrecision<T>::VolumeRAMPrecision(T* data, size3_t dimensions,
-                                          const SwizzleMask& swizzleMask)
+                                          const SwizzleMask& swizzleMask,
+                                          InterpolationType interpolation,
+                                          const Wrapping3D& wrapping)
     : VolumeRAM(DataFormat<T>::get())
     , dimensions_(dimensions)
     , ownsDataPtr_(true)
     , data_(data ? data : new T[dimensions_.x * dimensions_.y * dimensions_.z]())
-    , swizzleMask_(swizzleMask) {}
+    , swizzleMask_(swizzleMask)
+    , interpolation_{interpolation}
+    , wrapping_{wrapping} {}
 
 template <typename T>
 VolumeRAMPrecision<T>::VolumeRAMPrecision(const VolumeRAMPrecision<T>& rhs)
@@ -156,7 +163,9 @@ VolumeRAMPrecision<T>::VolumeRAMPrecision(const VolumeRAMPrecision<T>& rhs)
     , dimensions_(rhs.dimensions_)
     , ownsDataPtr_(true)
     , data_(new T[dimensions_.x * dimensions_.y * dimensions_.z])
-    , swizzleMask_(rhs.swizzleMask_) {
+    , swizzleMask_(rhs.swizzleMask_)
+    , interpolation_{rhs.interpolation_}
+    , wrapping_{rhs.wrapping_} {
     std::memcpy(data_.get(), rhs.data_.get(),
                 dimensions_.x * dimensions_.y * dimensions_.z * sizeof(T));
 }
@@ -172,6 +181,8 @@ VolumeRAMPrecision<T>& VolumeRAMPrecision<T>::operator=(const VolumeRAMPrecision
         std::swap(dim, dimensions_);
         ownsDataPtr_ = true;
         swizzleMask_ = that.swizzleMask_;
+        interpolation_ = that.interpolation_;
+        wrapping_ = that.wrapping_;
     }
     return *this;
 }
@@ -242,11 +253,13 @@ size_t VolumeRAMPrecision<T>::getNumberOfBytes() const {
 
 template <typename T>
 void VolumeRAMPrecision<T>::setDimensions(size3_t dimensions) {
-    auto data = std::make_unique<T[]>(dimensions.x * dimensions.y * dimensions.z);
-    data_.swap(data);
-    dimensions_ = dimensions;
-    if (!ownsDataPtr_) data.release();
-    ownsDataPtr_ = true;
+    if (dimensions_ != dimensions) {
+        auto data = std::make_unique<T[]>(dimensions.x * dimensions.y * dimensions.z);
+        data_.swap(data);
+        dimensions_ = dimensions;
+        if (!ownsDataPtr_) data.release();
+        ownsDataPtr_ = true;
+    }
 }
 
 template <typename T>
@@ -257,6 +270,26 @@ void VolumeRAMPrecision<T>::setSwizzleMask(const SwizzleMask& mask) {
 template <typename T>
 SwizzleMask VolumeRAMPrecision<T>::getSwizzleMask() const {
     return swizzleMask_;
+}
+
+template <typename T>
+void VolumeRAMPrecision<T>::setInterpolation(InterpolationType interpolation) {
+    interpolation_ = interpolation;
+}
+
+template <typename T>
+InterpolationType VolumeRAMPrecision<T>::getInterpolation() const {
+    return interpolation_;
+}
+
+template <typename T>
+void VolumeRAMPrecision<T>::setWrapping(const Wrapping3D& wrapping) {
+    wrapping_ = wrapping;
+}
+
+template <typename T>
+Wrapping3D VolumeRAMPrecision<T>::getWrapping() const {
+    return wrapping_;
 }
 
 template <typename T>
@@ -339,68 +372,4 @@ void VolumeRAMPrecision<T>::setFromNormalizedDVec4(const size3_t& pos, dvec4 val
     data_[posToIndex(pos, dimensions_)] = util::glm_convert_normalized<T>(val);
 }
 
-template <typename T>
-void VolumeRAMPrecision<T>::setValuesFromVolume(const VolumeRAM* src, const size3_t& dstOffset,
-                                                const size3_t& subSize, const size3_t& subOffset) {
-    const T* srcData = reinterpret_cast<const T*>(src->getData());
-
-    size_t initialStartPos = (dstOffset.z * (dimensions_.x * dimensions_.y)) +
-                             (dstOffset.y * dimensions_.x) + dstOffset.x;
-
-    size3_t srcDims = src->getDimensions();
-    size_t dataSize = subSize.x * getDataFormat()->getSize();
-
-    size_t volumePos;
-    size_t subVolumePos;
-    ivec3 subSizeI = ivec3(subSize);
-#pragma omp parallel for
-    for (int zy = 0; zy < subSizeI.z * subSizeI.y; ++zy) {
-        int z = zy / subSizeI.y;
-        int y = zy % subSizeI.y;
-        volumePos = (y * dimensions_.x) + (z * dimensions_.x * dimensions_.y);
-        subVolumePos = ((y + subOffset.y) * srcDims.x) +
-                       ((z + subOffset.z) * srcDims.x * srcDims.y) + subOffset.x;
-        std::memcpy((data_.get() + volumePos + initialStartPos), (srcData + subVolumePos),
-                    dataSize);
-    }
-}
-
-template <typename T>
-const HistogramContainer* VolumeRAMPrecision<T>::getHistograms(size_t bins,
-                                                               size3_t sampleRate) const {
-    if (!hasHistograms()) {
-        bool stop = false;
-        calculateHistograms(bins, sampleRate, stop);
-    }
-
-    return &histCont_;
-}
-
-template <typename T>
-HistogramContainer* VolumeRAMPrecision<T>::getHistograms(size_t bins, size3_t sampleRate) {
-    if (!hasHistograms()) {
-        bool stop = false;
-        calculateHistograms(bins, sampleRate, stop);
-    }
-
-    return &histCont_;
-}
-
-template <typename T>
-void VolumeRAMPrecision<T>::calculateHistograms(size_t bins, size3_t sampleRate,
-                                                const bool& stop) const {
-    if (const auto volume = getOwner()) {
-        dvec2 dataRange = volume->dataMap_.dataRange;
-        histCont_ = util::calculateVolumeHistogram(data_.get(), dimensions_, dataRange, stop, bins,
-                                                   sampleRate);
-    }
-}
-
-template <typename T>
-bool VolumeRAMPrecision<T>::hasHistograms() const {
-    return !histCont_.empty() && histCont_.isValid();
-}
-
 }  // namespace inviwo
-
-#endif  // IVW_VOLUMERAMPRECISION_H

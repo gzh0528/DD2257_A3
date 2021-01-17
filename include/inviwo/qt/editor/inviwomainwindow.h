@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2012-2019 Inviwo Foundation
+ * Copyright (c) 2012-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -152,6 +152,9 @@ public:
      * \brief query the Qt settings for recent workspaces
      */
     QStringList getRecentWorkspaceList() const;
+
+    bool hasRestoreWorkspace() const;
+    void restoreWorkspace();
 
 protected:
     virtual void dragEnterEvent(QDragEnterEvent* event) override;

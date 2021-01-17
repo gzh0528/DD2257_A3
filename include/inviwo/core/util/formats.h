@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2013-2019 Inviwo Foundation
+ * Copyright (c) 2013-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,11 +27,10 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_FORMATS_H
-#define IVW_FORMATS_H
+#pragma once
 
 #include <inviwo/core/common/inviwocoredefine.h>
-#include <inviwo/core/util/glm.h>
+#include <inviwo/core/util/glmvec.h>
 #include <inviwo/core/util/exception.h>
 #include <inviwo/core/util/defaultvalues.h>
 
@@ -52,7 +51,7 @@
 namespace inviwo {
 
 // Do not set enums specifically, as NumberOfFormats is used to count the number of enums
-enum class DataFormatId {
+enum class DataFormatId : char {
     NotSpecialized,
     Float16,
     Float32,
@@ -101,7 +100,7 @@ enum class DataFormatId {
     NumberOfFormats,
 };
 
-enum class NumericType { NotSpecialized, Float, UnsignedInteger, SignedInteger };
+enum class NumericType : char { NotSpecialized, Float, UnsignedInteger, SignedInteger };
 
 namespace util {
 
@@ -666,5 +665,3 @@ auto DataFormatBase::dispatch(T& obj, Args&&... args) const -> typename T::type 
 }
 
 }  // namespace inviwo
-
-#endif

@@ -33,11 +33,12 @@ StreamlineIntegrator::StreamlineIntegrator()
     , inData("volIn")
     , meshOut("meshOut")
     , meshBBoxOut("meshBBoxOut")
-    , propStartPoint("startPoint", "Start Point", vec2(0.5f, 0.5f), vec2(-1.f), vec2(1.f), vec2(0.1))
+    , propStartPoint("startPoint", "Start Point", vec2(0.5, 0.5), vec2(-1), vec2(1), vec2(0.1))
     , propSeedMode("seedMode", "Seeds")
     , propNumStepsTaken("numstepstaken", "Number of actual steps", 0, 0, 100000)
-    , mouseMoveStart("mouseMoveStart", "Move Start", [this](Event* e) { eventMoveStart(e); },
-                     MouseButton::Left, MouseState::Press | MouseState::Move)
+    , mouseMoveStart(
+          "mouseMoveStart", "Move Start", [this](Event* e) { eventMoveStart(e); },
+          MouseButton::Left, MouseState::Press | MouseState::Move)
 // TODO: Initialize additional properties
 // propertyName("propertyIdentifier", "Display Name of the Propery",
 // default value (optional), minimum value (optional), maximum value (optional),
@@ -128,7 +129,8 @@ void StreamlineIntegrator::process() {
         auto indexBufferPoints = mesh->addIndexBuffer(DrawType::Points, ConnectivityType::None);
         vec2 startPoint = propStartPoint.get();
         // Draw start point
-        Integrator::drawPoint(startPoint, vec4(0, 0, 0, 1), indexBufferPoints.get(), vertices);
+        if (displayPoints_.get() != 0)
+            Integrator::drawPoint(startPoint, vec4(0, 0, 0, 1), indexBufferPoints.get(), vertices);
 
         // TODO: Create one stream line from the given start point
 
@@ -144,6 +146,6 @@ void StreamlineIntegrator::process() {
 
     mesh->addVertices(vertices);
     meshOut.setData(mesh);
-}  // namespace inviwo
+}
 
 }  // namespace inviwo

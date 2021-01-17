@@ -3,7 +3,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2014-2019 Inviwo Foundation
+ * Copyright (c) 2014-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -240,10 +240,10 @@ void LinkDialogPropertyGraphicsItem::showToolTip(QGraphicsSceneHelpEvent* e) {
     showToolTipHelper(e, utilqt::toLocalQString(item_->getDescription()));
 }
 
-void LinkDialogPropertyGraphicsItem::paint(QPainter* p, const QStyleOptionGraphicsItem* options,
-                                           QWidget* widget) {
-    IVW_UNUSED_PARAM(options);
-    IVW_UNUSED_PARAM(widget);
+void LinkDialogPropertyGraphicsItem::paint(QPainter* p,
+                                           [[maybe_unused]] const QStyleOptionGraphicsItem* options,
+                                           [[maybe_unused]] QWidget* widget) {
+
     p->setPen(Qt::black);
     p->setRenderHint(QPainter::Antialiasing, true);
     p->save();

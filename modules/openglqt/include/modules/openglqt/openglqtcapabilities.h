@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2013-2019 Inviwo Foundation
+ * Copyright (c) 2013-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,8 +27,7 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_OPENGLQTCAPABILITIES_H
-#define IVW_OPENGLQTCAPABILITIES_H
+#pragma once
 
 #include <modules/openglqt/openglqtmoduledefine.h>
 #include <inviwo/core/util/capabilities.h>
@@ -47,5 +46,3 @@ public:
 };
 
 }  // namespace inviwo
-
-#endif  // IVW_OPENGLQTCAPABILITIES_H

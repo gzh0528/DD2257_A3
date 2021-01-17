@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2014-2019 Inviwo Foundation
+ * Copyright (c) 2014-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -72,6 +72,9 @@ IVW_MODULE_OPENGL_API void activateAndClearTarget(ImageOutport& targetOutport,
                                                   ImageType type = ImageType::AllLayers);
 
 IVW_MODULE_OPENGL_API void activateTargetAndCopySource(Image& targetImage, const Image& sourceImage,
+                                                       ImageType type = ImageType::AllLayers);
+IVW_MODULE_OPENGL_API void activateTargetAndCopySource(ImageOutport& targetOutport,
+                                                       const Image& sourceImage,
                                                        ImageType type = ImageType::AllLayers);
 
 IVW_MODULE_OPENGL_API void activateTargetAndCopySource(Image& targetImage,
@@ -223,9 +226,9 @@ IVW_MODULE_OPENGL_API void bindAndSetUniforms(Shader& shader, TextureUnitContain
                                               const Image& image, const std::string& id,
                                               ImageType type);
 IVW_MODULE_OPENGL_API void bindAndSetUniforms(Shader& shader, TextureUnitContainer& cont,
-                                              ImageInport& image, ImageType type);
+                                              const ImageInport& image, ImageType type);
 IVW_MODULE_OPENGL_API void bindAndSetUniforms(Shader& shader, TextureUnitContainer& cont,
-                                              ImageOutport& image, ImageType type);
+                                              const ImageOutport& image, ImageType type);
 }  // namespace utilgl
 }  // namespace inviwo
 

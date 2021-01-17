@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2016-2019 Inviwo Foundation
+ * Copyright (c) 2016-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -35,6 +35,8 @@
 
 #include <inviwo/core/properties/property.h>
 #include <inviwo/core/properties/templateproperty.h>
+#include <inviwo/core/properties/ordinalproperty.h>
+#include <inviwo/core/properties/ordinalrefproperty.h>
 #include <inviwo/core/properties/optionproperty.h>
 
 #include <modules/animation/datastructures/valuekeyframe.h>
@@ -64,6 +66,24 @@ void setOtherPropertyHelper(TemplateProperty<T>* property, ValueKeyframe<T>* key
  * @see inviwo::animation::BasePropertyTrack::setOtherProperty
  */
 template <typename T>
+void setOtherPropertyHelper(OrdinalProperty<T>* property, ValueKeyframe<T>* keyframe) {
+    property->set(keyframe->getValue());
+}
+
+/**
+ * Helper function for inviwo::animation::PropertyTrack::setOtherProperty
+ * @see inviwo::animation::BasePropertyTrack::setOtherProperty
+ */
+template <typename T>
+void setOtherPropertyHelper(OrdinalRefProperty<T>* property, ValueKeyframe<T>* keyframe) {
+    property->set(keyframe->getValue());
+}
+
+/**
+ * Helper function for inviwo::animation::PropertyTrack::setOtherProperty
+ * @see inviwo::animation::BasePropertyTrack::setOtherProperty
+ */
+template <typename T>
 void setOtherPropertyHelper(TemplateOptionProperty<T>* property, ValueKeyframe<T>* keyframe) {
     property->setSelectedValue(keyframe->getValue());
 }
@@ -74,6 +94,24 @@ void setOtherPropertyHelper(TemplateOptionProperty<T>* property, ValueKeyframe<T
  */
 template <typename T>
 void updateKeyframeFromPropertyHelper(TemplateProperty<T>* property, ValueKeyframe<T>* keyframe) {
+    keyframe->setValue(property->get());
+}
+
+/**
+ * Helper function for inviwo::animation::PropertyTrack::updateKeyframeFromProperty
+ * @see inviwo::animation::BasePropertyTrack::updateKeyframeFromProperty
+ */
+template <typename T>
+void updateKeyframeFromPropertyHelper(OrdinalProperty<T>* property, ValueKeyframe<T>* keyframe) {
+    keyframe->setValue(property->get());
+}
+
+/**
+ * Helper function for inviwo::animation::PropertyTrack::updateKeyframeFromProperty
+ * @see inviwo::animation::BasePropertyTrack::updateKeyframeFromProperty
+ */
+template <typename T>
+void updateKeyframeFromPropertyHelper(OrdinalRefProperty<T>* property, ValueKeyframe<T>* keyframe) {
     keyframe->setValue(property->get());
 }
 
@@ -349,7 +387,9 @@ void PropertyTrack<Prop, Key>::addKeyFrameUsingPropertyValue(
     auto prop = dynamic_cast<const Prop*>(property);
     if (!prop) {
         throw Exception("Cannot add key frame from property type " +
-                        property->getClassIdentifier() + " for " + property_->getClassIdentifier());
+                            property->getClassIdentifier() + " for " +
+                            property_->getClassIdentifier(),
+                        IVW_CONTEXT);
     }
     if (this->empty()) {
         // Use provided interpolation if we can
@@ -363,7 +403,8 @@ void PropertyTrack<Prop, Key>::addKeyFrameUsingPropertyValue(
             this->add(std::move(sequence));
         } else {
             throw Exception("Invalid interpolation " + interpolation->getClassIdentifier() +
-                            " for " + getClassIdentifier());
+                                " for " + getClassIdentifier(),
+                            IVW_CONTEXT);
         }
 
     } else {
@@ -391,7 +432,8 @@ void PropertyTrack<Prop, Key>::addSequenceUsingPropertyValue(
 
     } else {
         throw Exception("Invalid interpolation " + interpolation->getClassIdentifier() + " for " +
-                        getClassIdentifier());
+                            getClassIdentifier(),
+                        IVW_CONTEXT);
     }
 }
 

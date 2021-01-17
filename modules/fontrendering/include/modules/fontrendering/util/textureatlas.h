@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2017-2019 Inviwo Foundation
+ * Copyright (c) 2017-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -50,9 +50,6 @@ namespace util {
  */
 class IVW_MODULE_FONTRENDERING_API TextureAtlas {
 public:
-    TextureAtlas() = default;
-    virtual ~TextureAtlas() = default;
-
     bool valid() const;
 
     void clear();

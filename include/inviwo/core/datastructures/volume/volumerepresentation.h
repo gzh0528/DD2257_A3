@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2012-2019 Inviwo Foundation
+ * Copyright (c) 2012-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,14 +27,12 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_VOLUMEREPRESENTATION_H
-#define IVW_VOLUMEREPRESENTATION_H
+#pragma once
 
 #include <inviwo/core/common/inviwocoredefine.h>
 #include <inviwo/core/datastructures/datarepresentation.h>
 #include <inviwo/core/datastructures/representationtraits.h>
 #include <inviwo/core/datastructures/image/imagetypes.h>
-#include <inviwo/core/common/inviwo.h>
 
 namespace inviwo {
 
@@ -61,6 +59,12 @@ public:
     virtual void setSwizzleMask(const SwizzleMask& mask) = 0;
     virtual SwizzleMask getSwizzleMask() const = 0;
 
+    virtual void setInterpolation(InterpolationType interpolation) = 0;
+    virtual InterpolationType getInterpolation() const = 0;
+
+    virtual void setWrapping(const Wrapping3D& wrapping) = 0;
+    virtual Wrapping3D getWrapping() const = 0;
+
 protected:
     VolumeRepresentation() = default;
     VolumeRepresentation(const DataFormatBase* format);
@@ -74,5 +78,3 @@ struct representation_traits<Volume, kind::Base> {
 };
 
 }  // namespace inviwo
-
-#endif  // IVW_VOLUMEREPRESENTATION_H

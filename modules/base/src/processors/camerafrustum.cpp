@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2017-2019 Inviwo Foundation
+ * Copyright (c) 2017-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -29,6 +29,7 @@
 
 #include <modules/base/processors/camerafrustum.h>
 #include <modules/base/algorithm/meshutils.h>
+#include <inviwo/core/algorithm/boundingbox.h>
 
 namespace inviwo {
 
@@ -45,7 +46,7 @@ const ProcessorInfo CameraFrustum::getProcessorInfo() const { return processorIn
 CameraFrustum::CameraFrustum()
     : Processor()
     , mesh_("mesh")
-    , camera_("camera", "Camera")
+    , camera_("camera", "Camera", util::boundingBox(mesh_))
     , color_("color", "Color", vec4(1.f), vec4(0.f), vec4(1.f), vec4(.01f),
              InvalidationLevel::InvalidOutput, PropertySemantics::Color) {
 

@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2013-2019 Inviwo Foundation
+ * Copyright (c) 2013-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,8 +27,7 @@
  *
  *********************************************************************************/
 
-#ifndef _IVW_CORE_DEFINE_H_
-#define _IVW_CORE_DEFINE_H_
+#pragma once
 
 #ifdef INVIWO_ALL_DYN_LINK  // DYNAMIC
 // If we are building DLL files we must declare dllexport/dllimport
@@ -63,5 +62,3 @@
 #define IVW_CORE_TMPL_EXP
 #define IVW_CORE_TMPL_INST
 #endif
-
-#endif /* _IVW_CORE_DEFINE_H_ */

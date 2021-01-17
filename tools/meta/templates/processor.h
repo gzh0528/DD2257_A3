@@ -30,7 +30,6 @@
 #pragma once
 
 #include <{{ module/define_include }}>
-#include <inviwo/core/common/inviwo.h>
 #include <inviwo/core/processors/processor.h>
 #include <inviwo/core/properties/ordinalproperty.h>
 #include <inviwo/core/ports/imageport.h>
@@ -50,11 +49,6 @@ namespace inviwo {
  * ### Properties
  *   * __<Prop1>__ <description>.
  *   * __<Prop2>__ <description>
- */
-
-/**
- * \brief VERY_BRIEFLY_DESCRIBE_THE_PROCESSOR
- * DESCRIBE_THE_PROCESSOR_FROM_A_DEVELOPER_PERSPECTIVE
  */
 class {{ module/api }} {{ file/name }} : public Processor {
 public:

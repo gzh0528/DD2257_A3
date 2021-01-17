@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2015-2019 Inviwo Foundation
+ * Copyright (c) 2015-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -50,11 +50,11 @@ struct IndexMapper<2, IndexType> {
         return pos.x + pos.y * dimx;
     }
     constexpr Vector<2, IndexType> operator()(const IndexType index) const noexcept {
-        return Vector<2, IndexType>(index / dimx, index % dimx);
+        return Vector<2, IndexType>(index % dimx, index / dimx);
     }
 
 private:
-    const IndexType dimx;
+    IndexType dimx;
 };
 
 template <typename IndexType>
@@ -73,8 +73,8 @@ struct IndexMapper<3, IndexType> {
     }
 
 private:
-    const IndexType dimx;
-    const IndexType dimxy;
+    IndexType dimx;
+    IndexType dimxy;
 };
 
 using IndexMapper2D = IndexMapper<2, size_t>;

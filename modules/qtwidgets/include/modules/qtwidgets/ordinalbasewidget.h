@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2018-2019 Inviwo Foundation
+ * Copyright (c) 2018-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,10 +27,10 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_ORDINALBASEWIDGET_H
-#define IVW_ORDINALBASEWIDGET_H
+#pragma once
 
 #include <modules/qtwidgets/qtwidgetsmoduledefine.h>
+#include <inviwo/core/properties/constraintbehavior.h>
 
 namespace inviwo {
 
@@ -39,15 +39,12 @@ class OrdinalBaseWidget {
 public:
     virtual ~OrdinalBaseWidget() = default;
 
-    virtual T getValue() = 0;
+    virtual T getValue() const = 0;
     virtual void setValue(T value) = 0;
     virtual void initValue(T value) = 0;
-    virtual void setMinValue(T minValue) = 0;
-    virtual void setMaxValue(T maxValue) = 0;
-    virtual void setRange(T minValue, T maxValue) = 0;
+    virtual void setMinValue(T minValue, ConstraintBehavior cb) = 0;
+    virtual void setMaxValue(T maxValue, ConstraintBehavior cb) = 0;
     virtual void setIncrement(T increment) = 0;
 };
 
 }  // namespace inviwo
-
-#endif  // IVW_ORDINALBASEWIDGET_H

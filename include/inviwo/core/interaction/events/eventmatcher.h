@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2016-2019 Inviwo Foundation
+ * Copyright (c) 2016-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,11 +27,9 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_EVENTMATCHER_H
-#define IVW_EVENTMATCHER_H
+#pragma once
 
 #include <inviwo/core/common/inviwocoredefine.h>
-#include <inviwo/core/common/inviwo.h>
 #include <inviwo/core/properties/valuewrapper.h>
 #include <inviwo/core/interaction/events/event.h>
 #include <inviwo/core/io/serialization/serializable.h>
@@ -203,6 +201,9 @@ public:
 
     virtual bool operator()(Event*) override;
 
+    template <typename EventType>
+    static std::unique_ptr<GeneralEventMatcher> create();
+
 protected:
     GeneralEventMatcher(const GeneralEventMatcher&) = default;
     GeneralEventMatcher& operator=(const GeneralEventMatcher&) = default;
@@ -211,6 +212,10 @@ private:
     std::function<bool(Event*)> matcher_;
 };
 
-}  // namespace inviwo
+template <typename EventType>
+std::unique_ptr<GeneralEventMatcher> GeneralEventMatcher::create() {
+    return std::make_unique<GeneralEventMatcher>(
+        [](Event* e) -> bool { return e->hash() == EventType::chash(); });
+}
 
-#endif  // IVW_EVENTMATCHER_H
+}  // namespace inviwo

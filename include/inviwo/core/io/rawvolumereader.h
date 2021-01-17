@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2014-2019 Inviwo Foundation
+ * Copyright (c) 2014-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,17 +27,18 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_RAWVOLUMEREADER_H
-#define IVW_RAWVOLUMEREADER_H
+#pragma once
 
 #include <inviwo/core/common/inviwocoredefine.h>
-#include <inviwo/core/common/inviwo.h>
 #include <inviwo/core/datastructures/datamapper.h>
 #include <inviwo/core/datastructures/volume/volume.h>
 #include <inviwo/core/datastructures/volume/volumedisk.h>
 #include <inviwo/core/datastructures/volume/volumeramprecision.h>
 #include <inviwo/core/io/datareader.h>
 #include <inviwo/core/io/volumedatareaderdialog.h>
+
+#include <memory>
+#include <string>
 
 namespace inviwo {
 class MetaDataOwner;
@@ -54,7 +55,7 @@ public:
     virtual ~RawVolumeReader() = default;
 
     virtual void setParameters(const DataFormatBase* format, ivec3 dimensions, bool littleEndian,
-                               DataMapper dataMapper, size_t dataOffset = 0u);
+                               DataMapper dataMapper, size_t byteOffset = 0u);
 
     virtual std::shared_ptr<Volume> readData(const std::string& filePath) override;
     virtual std::shared_ptr<Volume> readData(const std::string& filePath,
@@ -70,10 +71,8 @@ private:
     vec3 spacing_;
     const DataFormatBase* format_;
     DataMapper dataMapper_;
-    size_t dataOffset_;
+    size_t byteOffset_;
     bool parametersSet_;
 };
 
 }  // namespace inviwo
-
-#endif  // IVW_RAWVOLUMEREADER_H

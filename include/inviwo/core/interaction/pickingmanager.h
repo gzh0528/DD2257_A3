@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2013-2019 Inviwo Foundation
+ * Copyright (c) 2013-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,8 +27,7 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_PICKINGMANAGER_H
-#define IVW_PICKINGMANAGER_H
+#pragma once
 
 #include <inviwo/core/common/inviwocoredefine.h>
 #include <inviwo/core/util/singleton.h>
@@ -102,6 +101,5 @@ PickingAction* PickingManager::registerPickingAction(Processor* processor, T* o,
     return registerPickingAction(processor, std::bind(m, o, _1), size);
 }
 // clang-format on
-}  // namespace inviwo
 
-#endif  // IVW_PICKINGMANAGER_H
+}  // namespace inviwo

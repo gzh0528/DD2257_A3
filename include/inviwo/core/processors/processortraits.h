@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2015-2019 Inviwo Foundation
+ * Copyright (c) 2015-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,8 +27,7 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_PROCESSORTRAITS_H
-#define IVW_PROCESSORTRAITS_H
+#pragma once
 
 #include <inviwo/core/common/inviwocoredefine.h>
 #include <inviwo/core/processors/processorinfo.h>
@@ -81,5 +80,3 @@ struct ProcessorTraits {
     static ProcessorInfo getProcessorInfo() { return detail::processorInfo<T>(); }
 };
 }  // namespace inviwo
-
-#endif  // IVW_PROCESSORTRAITS_H

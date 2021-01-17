@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2015-2019 Inviwo Foundation
+ * Copyright (c) 2015-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,10 +31,13 @@
 #include <modules/cimg/cimgsavebuffer.h>
 #include <inviwo/core/datastructures/image/layerramprecision.h>
 #include <inviwo/core/util/filesystem.h>
+#include <inviwo/core/util/raiiutils.h>
 #include <inviwo/core/io/datawriterexception.h>
 #include <inviwo/core/io/datareaderexception.h>
 #include <algorithm>
 #include <limits>
+
+#include <inviwo/core/util/glm.h>
 
 #include <warn/push>
 #include <warn/ignore/all>
@@ -61,7 +64,11 @@
 #endif
 
 #ifdef cimg_use_tiff
-#include <tiff/libtiff/tiffio.h>
+#include <tiffio.h>
+#endif
+
+#ifdef cimg_use_openexr
+#include <OpenEXRConfig.h>
 #endif
 
 // add CImg type specialization for half_float::half
@@ -419,7 +426,7 @@ struct CImgLoadVolumeDispatcher {
         if (loadedDataFormat) {
             formatId = loadedDataFormat->getId();
         } else {
-            throw Exception("CImgLoadVolumeDispatcher, could not find proper data type");
+            throw Exception("Could not find proper data type", IVW_CONTEXT);
         }
 
         // Image is up-side-down
@@ -575,7 +582,11 @@ bool rescaleLayerRamToLayerRam(const LayerRAM* source, LayerRAM* target) {
 std::string getLibJPGVersion() {
 #ifdef cimg_use_jpeg
     std::ostringstream oss;
+#if defined(JPEG_LIB_VERSION_MAJOR) && defined(JPEG_LIB_VERSION_MINOR)
     oss << JPEG_LIB_VERSION_MAJOR << "." << JPEG_LIB_VERSION_MINOR;
+#else
+    oss << JPEG_LIB_VERSION;
+#endif
     return oss.str();
 #else
     return "LibJPG not available";

@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2013-2019 Inviwo Foundation
+ * Copyright (c) 2013-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,8 +27,7 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_SYSTEMSETTINGS_H
-#define IVW_SYSTEMSETTINGS_H
+#pragma once
 
 #include <inviwo/core/util/settings/settings.h>
 #include <inviwo/core/properties/optionproperty.h>
@@ -39,6 +38,7 @@
 namespace inviwo {
 
 class InviwoApplication;
+class LogStream;
 
 /**
  * System settings, owned by the application, loaded before all the factories so we can't use any
@@ -47,6 +47,7 @@ class InviwoApplication;
 class IVW_CORE_API SystemSettings : public Settings {
 public:
     SystemSettings(InviwoApplication* app);
+    virtual ~SystemSettings();
     StringProperty workspaceAuthor_;
     TemplateOptionProperty<UsageMode> applicationUsageMode_;
     IntSizeTProperty poolSize_;
@@ -62,9 +63,13 @@ public:
     BoolProperty breakOnException_;
     BoolProperty stackTraceInException_;
 
+    BoolProperty redirectCout_;
+    BoolProperty redirectCerr_;
+
     static size_t defaultPoolSize();
+
+    std::unique_ptr<LogStream> cout_;
+    std::unique_ptr<LogStream> cerr_;
 };
 
 }  // namespace inviwo
-
-#endif  // IVW_SYSTEMSETTINGS_H

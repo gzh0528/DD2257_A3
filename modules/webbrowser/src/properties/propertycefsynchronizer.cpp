@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2018-2019 Inviwo Foundation
+ * Copyright (c) 2018-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -63,8 +63,9 @@ bool PropertyCefSynchronizer::OnQuery(CefRefPtr<CefBrowser> browser, CefRefPtr<C
 
     try {
         auto command = j.at("command").get<std::string>();
-        auto propCommand = std::string("property");
-        if (command == "subscribe") {
+        constexpr std::string_view subscribeCommand = "subscribe";
+        constexpr std::string_view propCommand = "property";
+        if (command == subscribeCommand) {
             auto network = InviwoApplication::getPtr()->getProcessorNetwork();
             auto p = j.at("path").get<std::string>();
             auto path = splitString(p, '.');
@@ -80,6 +81,8 @@ bool PropertyCefSynchronizer::OnQuery(CefRefPtr<CefBrowser> browser, CefRefPtr<C
                     startSynchronize(prop, onChange, propertyObserver);
                     widget = --(widgets_.end());
                     (*widget)->setFrame(frame);
+                    callback->Success("");
+                    return true;
                 }
             } else {
                 callback->Failure(0, "Could not find property: " + p);

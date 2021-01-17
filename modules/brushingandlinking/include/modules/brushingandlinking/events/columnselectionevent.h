@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2016-2019 Inviwo Foundation
+ * Copyright (c) 2016-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -44,6 +44,8 @@ public:
     ColumnSelectionEvent(const BrushingAndLinkingInport* src,
                          const std::unordered_set<size_t>& indices);
     virtual ~ColumnSelectionEvent() = default;
+
+    virtual void print(std::ostream& os) const override;
 };
 
 }  // namespace inviwo

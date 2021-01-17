@@ -2,7 +2,7 @@
 #
 # Inviwo - Interactive Visualization Workshop
 #
-# Copyright (c) 2013-2019 Inviwo Foundation
+# Copyright (c) 2013-2020 Inviwo Foundation
 # All rights reserved.
 # 
 # Redistribution and use in source and binary forms, with or without
@@ -877,6 +877,21 @@ function(ivw_move_targets_in_dir_to_folder directory folder)
     endforeach()
 endfunction()
 
+function(ivw_suppress_warnings_for_targets_in_dir directory)
+    get_property(targets DIRECTORY ${directory} PROPERTY BUILDSYSTEM_TARGETS)
+    foreach(target IN LISTS targets)
+        get_target_property(type ${target} TYPE)
+        if(NOT ${type} STREQUAL INTERFACE_LIBRARY)
+            ivw_suppress_compiler_warnings(${target})
+        endif()
+    endforeach()
+
+    get_property(dirs DIRECTORY ${directory} PROPERTY SUBDIRECTORIES)
+    foreach(dir IN LISTS dirs) 
+        ivw_suppress_warnings_for_targets_in_dir(${dir} ${folder})
+    endforeach()
+endfunction()
+
 function(ivw_print_targets_in_dir_recursive directory)
     get_property(targets DIRECTORY ${directory} PROPERTY BUILDSYSTEM_TARGETS)
     message(STATUS "${directory}: ${targets}")
@@ -953,3 +968,31 @@ function(ivw_copy_if retval)
     set(${retval} ${res} PARENT_SCOPE)
 endfunction()
 
+#-----------------------------------------------------------------------
+# Uses QT's windeployqt.exe to copy necessary QT-dependencies (dlls etc) 
+# for the given target to the build folder. 
+# Does nothing on platforms other than Windows. 
+function(ivw_deploy_qt target)
+    if(WIN32)
+        get_target_property(target_type ${target} TYPE)
+        # For dll-builds (ie BUILD_SHARED_LIBS == true) we need to run it for both .dll and .exe
+        # For lib-builds (ie BUILD_SHARED_LIBS == false) we need to run it for only .exe (there are no .dll)
+        if (BUILD_SHARED_LIBS OR (target_type STREQUAL "EXECUTABLE")) 
+            find_program(WINDEPLOYQT_EXECUTABLE NAMES windeployqt HINTS ${QTDIR} ENV QTDIR PATH_SUFFIXES bin)
+
+            get_filename_component(qt_bin_dir ${WINDEPLOYQT_EXECUTABLE} DIRECTORY  )
+
+            # in case of environment variable QTDIR not set
+            if(NOT EXISTS ${WINDEPLOYQT_EXECUTABLE})
+                get_target_property(qmake_executable Qt5::qmake IMPORTED_LOCATION)
+                get_filename_component(qt_bin_dir "${qmake_executable}" DIRECTORY)
+                find_program(WINDEPLOYQT_EXECUTABLE NAMES windeployqt HINTS ${qt_bin_dir} )
+            endif()
+
+            add_custom_command(TARGET ${target} POST_BUILD 
+                                COMMAND ${qt_bin_dir}/qtenv2.bat
+                                COMMAND ${WINDEPLOYQT_EXECUTABLE} --no-compiler-runtime --verbose 1 $<TARGET_FILE:${target}>
+                )
+        endif()
+    endif()
+endfunction()

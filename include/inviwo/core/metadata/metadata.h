@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2012-2019 Inviwo Foundation
+ * Copyright (c) 2012-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,12 +27,14 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_METADATA_H
-#define IVW_METADATA_H
+#pragma once
 
 #include <inviwo/core/common/inviwocoredefine.h>
-#include <inviwo/core/common/inviwo.h>
-#include <inviwo/core/util/formats.h>
+#include <inviwo/core/io/serialization/serialization.h>
+#include <inviwo/core/util/defaultvalues.h>
+#include <inviwo/core/util/glm.h>
+
+#include <string>
 
 namespace inviwo {
 
@@ -48,10 +50,8 @@ public:
     virtual void deserialize(Deserializer& d) = 0;
     virtual bool equal(const MetaData& rhs) const = 0;
     friend bool IVW_CORE_API operator==(const MetaData& lhs, const MetaData& rhs);
+    friend bool IVW_CORE_API operator!=(const MetaData& lhs, const MetaData& rhs);
 };
-
-bool IVW_CORE_API operator==(const MetaData& lhs, const MetaData& rhs);
-bool IVW_CORE_API operator!=(const MetaData& lhs, const MetaData& rhs);
 
 template <typename T, int N, int M>
 class MetaDataPrimitiveType : public MetaData {};
@@ -410,5 +410,3 @@ public:
 };
 
 }  // namespace inviwo
-
-#endif  // IVW_PROCESSOR_H

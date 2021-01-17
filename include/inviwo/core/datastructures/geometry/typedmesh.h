@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2013-2019 Inviwo Foundation
+ * Copyright (c) 2013-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,8 +27,7 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_TYPEDMESH_H
-#define IVW_TYPEDMESH_H
+#pragma once
 
 #include <inviwo/core/common/inviwocoredefine.h>
 #include <inviwo/core/common/inviwo.h>
@@ -200,7 +199,19 @@ public:
  * \ingroup typedmesh
  * BufferTrait for Uint32 buffers
  */
-using IndexBuffer = TypedMeshBufferBase<uint32_t, 1, static_cast<int>(BufferType::IndexAttrib)>;
+class IndexBuffer
+    : public TypedMeshBufferBase<uint32_t, 1, static_cast<int>(BufferType::IndexAttrib)> {
+public:
+    using Base = TypedMeshBufferBase<uint32_t, 1, static_cast<int>(BufferType::IndexAttrib)>;
+    using Base::Base;
+
+    std::shared_ptr<const Buffer<Base::type>> getIndex() const { return Base::buffer_; }
+    std::shared_ptr<Buffer<Base::type>> getEditableIndex() { return Base::buffer_; }
+
+    void setVertexIndex(size_t index, uint32_t ind) {
+        getEditableIndex()->getEditableRAMRepresentation()->set(index, ind);
+    }
+};
 
 /**
  * \ingroup typedmesh
@@ -587,7 +598,7 @@ template <typename... BufferTraits>
 template <typename... Args>
 uint32_t TypedMesh<BufferTraits...>::addVertex(Args &&... args) {
     detail::helper<TypedMesh<BufferTraits...>, sizeof...(BufferTraits)>::addVertexImplVertex(
-        *this, TypedMesh<BufferTraits...>::Vertex{args...});
+        *this, typename TypedMesh<BufferTraits...>::Vertex{args...});
 
     using BT = typename std::tuple_element<0, Traits>::type;
     return static_cast<uint32_t>(getTypedBuffer<BT>()->getSize() - 1);
@@ -597,7 +608,7 @@ template <typename... BufferTraits>
 template <typename... Args>
 void TypedMesh<BufferTraits...>::setVertex(size_t index, Args &&... args) {
     detail::helper<TypedMesh<BufferTraits...>, sizeof...(BufferTraits)>::setVertexImplVertex(
-        *this, index, TypedMesh<BufferTraits...>::Vertex{args...});
+        *this, index, typename TypedMesh<BufferTraits...>::Vertex{args...});
 }
 
 /**
@@ -634,5 +645,3 @@ using PosTexColorMesh = TypedMesh<buffertraits::PositionsBuffer, buffertraits::T
                                   buffertraits::ColorsBuffer>;
 
 }  // namespace inviwo
-
-#endif  // IVW_TYPEDMESH_H

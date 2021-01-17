@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2012-2019 Inviwo Foundation
+ * Copyright (c) 2012-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -70,8 +70,7 @@ IVW_MODULE_HDF5_API Path operator+(const Path &lhs, const Path &rhs);
 IVW_MODULE_HDF5_API Path operator+(const Path &lhs, const std::string &rhs);
 
 template <typename CTy, typename CTr>
-IVW_MODULE_HDF5_API std::basic_ostream<CTy, CTr> &operator<<(std::basic_ostream<CTy, CTr> &os,
-                                                             const Path &path) {
+std::basic_ostream<CTy, CTr> &operator<<(std::basic_ostream<CTy, CTr> &os, const Path &path) {
     return os << path.toString();
 }
 

@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2015-2019 Inviwo Foundation
+ * Copyright (c) 2015-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -123,11 +123,10 @@ void VolumeInformationProperty::updateForNewVolume(const Volume& volume, bool de
     }
 }
 
-void inviwo::VolumeInformationProperty::updateVolume(Volume& volume) {
-    if (volume.dataMap_.dataRange != dataRange_.get() && volume.hasRepresentation<VolumeRAM>()) {
-        auto volumeRAM = volume.getEditableRepresentation<VolumeRAM>();
-        if (volumeRAM->hasHistograms()) {
-            volumeRAM->getHistograms()->setValid(false);
+void VolumeInformationProperty::updateVolume(Volume& volume) {
+    if (volume.dataMap_.dataRange != dataRange_.get()) {
+        if (volume.hasHistograms()) {
+            volume.getHistograms().clear();
         }
     }
 

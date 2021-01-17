@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2014-2019 Inviwo Foundation
+ * Copyright (c) 2014-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,9 +27,17 @@
  *
  *********************************************************************************/
 
-#include <inviwo/core/datastructures/geometry/mesh.h>
-
 #include <modules/opengl/texture/textureutils.h>
+
+#include <inviwo/core/datastructures/geometry/mesh.h>
+#include <inviwo/core/datastructures/geometry/mesh.h>
+#include <inviwo/core/datastructures/image/image.h>
+#include <inviwo/core/datastructures/volume/volume.h>
+#include <inviwo/core/properties/isotfproperty.h>
+#include <inviwo/core/properties/transferfunctionproperty.h>
+#include <inviwo/core/ports/imageport.h>
+#include <inviwo/core/ports/volumeport.h>
+
 #include <modules/opengl/canvasgl.h>
 #include <modules/opengl/volume/volumegl.h>
 #include <modules/opengl/geometry/meshgl.h>
@@ -40,12 +48,6 @@
 #include <modules/opengl/buffer/bufferobjectarray.h>
 #include <modules/opengl/sharedopenglresources.h>
 #include <modules/opengl/openglutils.h>
-#include <inviwo/core/properties/transferfunctionproperty.h>
-#include <inviwo/core/properties/isotfproperty.h>
-#include <inviwo/core/datastructures/image/image.h>
-#include <inviwo/core/datastructures/volume/volume.h>
-#include <inviwo/core/ports/imageport.h>
-#include <inviwo/core/ports/volumeport.h>
 #include <modules/opengl/inviwoopengl.h>
 #include <modules/opengl/shader/shader.h>
 #include <modules/opengl/texture/texture.h>
@@ -83,6 +85,16 @@ void activateTargetAndCopySource(Image& targetImage, const Image& sourceImage, I
     auto outImageGL = targetImage.getEditableRepresentation<ImageGL>();
     sourceImage.getRepresentation<ImageGL>()->copyRepresentationsTo(outImageGL);
     outImageGL->activateBuffer(type);
+}
+
+void activateTargetAndCopySource(ImageOutport& targetOutport, const Image& sourceImage,
+                                 ImageType type) {
+    if (!targetOutport.hasEditableData()) {
+        targetOutport.setData(
+            std::make_shared<Image>(targetOutport.getDimensions(), targetOutport.getDataFormat()));
+    }
+    auto outImage = targetOutport.getEditableData();
+    activateTargetAndCopySource(*outImage, sourceImage, type);
 }
 
 void activateTargetAndCopySource(Image& targetImage, const ImageInport& sourceInport,
@@ -383,7 +395,7 @@ std::unique_ptr<Mesh> planeRect() {
     auto m = std::make_unique<Mesh>();
     m->addBuffer(BufferType::PositionAttrib, verticesBuffer);
     m->addBuffer(BufferType::TexcoordAttrib, texCoordsBuffer);
-    m->addIndicies(Mesh::MeshInfo(DrawType::Triangles, ConnectivityType::Strip), indices_);
+    m->addIndices(Mesh::MeshInfo(DrawType::Triangles, ConnectivityType::Strip), indices_);
 
     return m;
 }
@@ -510,12 +522,12 @@ void bindAndSetUniforms(Shader& shader, TextureUnitContainer& cont, const Image&
     }
 }
 
-void bindAndSetUniforms(Shader& shader, TextureUnitContainer& cont, ImageInport& port,
+void bindAndSetUniforms(Shader& shader, TextureUnitContainer& cont, const ImageInport& port,
                         ImageType type) {
     bindAndSetUniforms(shader, cont, *port.getData(), port.getIdentifier(), type);
 }
 
-void bindAndSetUniforms(Shader& shader, TextureUnitContainer& cont, ImageOutport& port,
+void bindAndSetUniforms(Shader& shader, TextureUnitContainer& cont, const ImageOutport& port,
                         ImageType type) {
     bindAndSetUniforms(shader, cont, *port.getData(), port.getIdentifier(), type);
 }

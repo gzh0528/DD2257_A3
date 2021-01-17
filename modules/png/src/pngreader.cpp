@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2018-2019 Inviwo Foundation
+ * Copyright (c) 2018-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -55,7 +55,7 @@ PNGLayerReader* PNGLayerReader::clone() const { return new PNGLayerReader(*this)
 std::shared_ptr<inviwo::Layer> PNGLayerReader::readData(const std::string& filePath) {
     if (!filesystem::fileExists(filePath)) throw PNGLayerReaderException(filePath);
 
-    auto* fp = fopen(filePath.c_str(), "rb");
+    auto* fp = filesystem::fopen(filePath, "rb");
     if (!fp) throw PNGLayerReaderException("Failed to open file for reading, " + filePath);
     util::OnScopeExit closeFile([fp]() { fclose(fp); });
 

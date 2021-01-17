@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2014-2019 Inviwo Foundation
+ * Copyright (c) 2014-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,63 +30,99 @@
 #include <modules/glfw/glfwmodule.h>
 #include <inviwo/core/common/inviwoapplication.h>
 #include <inviwo/core/network/processornetworkevaluator.h>
-#include <inviwo/core/util/rendercontext.h>
 #include <modules/opengl/canvasprocessorgl.h>
 #include <modules/glfw/canvasprocessorwidgetglfw.h>
+#include <modules/glfw/canvasglfw.h>
 #include <modules/opengl/openglcapabilities.h>
 #include <modules/glfw/glfwexception.h>
+#include <modules/opengl/sharedopenglresources.h>
+
+#include <memory>
+
+#define GLFW_INCLUDE_NONE
+#include <GLFW/glfw3.h>
 
 namespace inviwo {
+
+class GLFWContextHolder : public ContextHolder {
+public:
+    GLFWContextHolder(GLFWwindow* win) : win_{win} {}
+    virtual void activate() override { glfwMakeContextCurrent(win_); }
+    virtual std::unique_ptr<Canvas> createHiddenCanvas() override {
+        auto res =
+            dispatchFront([&]() { return std::make_unique<CanvasGLFW>("Background", uvec2(128)); });
+        return res.get();
+    }
+    virtual Canvas::ContextID activeContext() const override {
+        return static_cast<Canvas::ContextID>(glfwGetCurrentContext());
+    }
+    GLFWwindow* win_;
+};
 
 GLFWModule::GLFWModule(InviwoApplication* app) : InviwoModule(app, "GLFW") {
     if (!app->getModuleManager().getModulesByAlias("OpenGLSupplier").empty()) {
         throw ModuleInitException(
             "GLFW could not be initialized because an other OpenGLSupplier is already used for "
-            "OpenGL context.");
+            "OpenGL context.",
+            IVW_CONTEXT);
     }
-    if (!glfwInit()) throw GLFWInitException("GLFW could not be initialized.");
+    if (!glfwInit()) throw GLFWInitException("GLFW could not be initialized.", IVW_CONTEXT);
 
-    GLFWSharedCanvas_ = std::make_unique<CanvasGLFW>(app->getDisplayName());
-    GLFWSharedCanvas_->activate();
+    if (auto shared = CanvasGLFW::sharedContext()) {
+        holder_ = RenderContext::getPtr()->setDefaultRenderContext(
+            std::make_unique<GLFWContextHolder>(shared));
+        RenderContext::getPtr()->activateDefaultRenderContext();
+    } else {
+        GLFWSharedCanvas_ = std::make_unique<CanvasGLFW>(app->getDisplayName());
+        GLFWSharedCanvas_->activate();
+        holder_ = RenderContext::getPtr()->setDefaultRenderContext(GLFWSharedCanvas_.get());
+    }
     OpenGLCapabilities::initializeGLEW();
-    GLFWSharedCanvas_->defaultGLState();
+    if (!glFenceSync) {  // Make sure we have setup the opengl function pointers.
+        throw GLFWInitException("Unable to initiate OpenGL", IVW_CONTEXT);
+    }
+    CanvasGL::defaultGLState();
 
-    RenderContext::getPtr()->setDefaultRenderContext(GLFWSharedCanvas_.get());
     registerProcessorWidget<CanvasProcessorWidgetGLFW, CanvasProcessorGL>();
 
     app->getProcessorNetworkEvaluator()->addObserver(this);
 }
 
 GLFWModule::~GLFWModule() {
-    if (GLFWSharedCanvas_.get() == RenderContext::getPtr()->getDefaultRenderContext()) {
+    SharedOpenGLResources::getPtr()->reset();
+    if (holder_ == RenderContext::getPtr()->getDefaultRenderContext()) {
         RenderContext::getPtr()->setDefaultRenderContext(nullptr);
     }
 }
 
 void GLFWModule::onProcessorNetworkEvaluationBegin() {
-    // This is called before the network is evaluated, here we make sure that the default context is
-    // active
-
+    // This is called before the network is evaluated,
+    // here we make sure that the default context is active
     RenderContext::getPtr()->activateDefaultRenderContext();
 }
 void GLFWModule::onProcessorNetworkEvaluationEnd() {
     // This is called after the network is evaluated, here we make sure that the gpu is done with
     // its work before we continue. This is needed to make sure that we have textures that are upto
     // data when we render the canvases.
+
     auto syncObj = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
-    auto res = glClientWaitSync(syncObj, GL_SYNC_FLUSH_COMMANDS_BIT, 100000000);
+
+    const GLuint64 timeoutInNanoSec = 50'000'000;  // 50ms
+
+    auto res = glClientWaitSync(syncObj, GL_SYNC_FLUSH_COMMANDS_BIT, timeoutInNanoSec);
+    while (res == GL_TIMEOUT_EXPIRED) {
+        res = glClientWaitSync(syncObj, GL_SYNC_FLUSH_COMMANDS_BIT, timeoutInNanoSec);
+    }
 
     switch (res) {
-        case GL_ALREADY_SIGNALED:
-            LogWarn("GL_ALREADY_SIGNALED");
+        case GL_ALREADY_SIGNALED:  // No queue to wait for
             break;
-        case GL_TIMEOUT_EXPIRED:
-            LogWarn("GL_TIMEOUT_EXPIRED");
+        case GL_TIMEOUT_EXPIRED:  // Handled above
             break;
         case GL_WAIT_FAILED:
-            LogWarn("GL_WAIT_FAILED");
+            LogError("Error syncing with opengl 'GL_WAIT_FAILED'");
             break;
-        case GL_CONDITION_SATISFIED:
+        case GL_CONDITION_SATISFIED:  // Queue done.
             break;
     }
 

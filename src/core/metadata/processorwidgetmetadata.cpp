@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2013-2019 Inviwo Foundation
+ * Copyright (c) 2013-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -54,7 +54,7 @@ void ProcessorWidgetMetaData::setPosition(const ivec2& pos) {
 
 ivec2 ProcessorWidgetMetaData::getPosition() const { return position_; }
 
-void ProcessorWidgetMetaData::setDimensions(const ivec2& dim) {
+void ProcessorWidgetMetaData::setDimensions(const size2_t& dim) {
     if (dim != dimensions_) {
         dimensions_ = dim;
         forEachObserver(
@@ -62,7 +62,7 @@ void ProcessorWidgetMetaData::setDimensions(const ivec2& dim) {
     }
 }
 
-ivec2 ProcessorWidgetMetaData::getDimensions() const { return dimensions_; }
+size2_t ProcessorWidgetMetaData::getDimensions() const { return dimensions_; }
 
 void ProcessorWidgetMetaData::setVisibile(bool visibility) {
     if (visibility != visibility_) {
@@ -87,7 +87,7 @@ void ProcessorWidgetMetaData::deserialize(Deserializer& d) {
     d.deserialize("position", position);
     setPosition(position);
 
-    ivec2 dimensions{0, 0};
+    size2_t dimensions{0, 0};
     d.deserialize("dimensions", dimensions);
     setDimensions(dimensions);
 

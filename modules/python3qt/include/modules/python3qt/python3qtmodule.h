@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2014-2019 Inviwo Foundation
+ * Copyright (c) 2014-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -32,8 +32,19 @@
 
 #include <modules/python3qt/python3qtmoduledefine.h>
 #include <inviwo/core/common/inviwomodule.h>
+#include <inviwo/core/util/exception.h>
+
+#include <atomic>
 
 namespace inviwo {
+
+class IVW_MODULE_PYTHON3QT_API PythonAbortException : public Exception {
+public:
+    PythonAbortException(const std::string& message = "",
+                         ExceptionContext context = ExceptionContext());
+    virtual ~PythonAbortException() noexcept = default;
+};
+
 class PyModule;
 class PythonMenu;
 
@@ -42,7 +53,10 @@ public:
     Python3QtModule(InviwoApplication* app);
     virtual ~Python3QtModule();
 
+    void abortPythonEvaluation();
+
 private:
+    std::atomic<bool> abortPythonEvaluation_;
     std::unique_ptr<PythonMenu> menu_;
 };
 

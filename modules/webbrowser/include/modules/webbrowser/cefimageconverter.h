@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2018-2019 Inviwo Foundation
+ * Copyright (c) 2018-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,8 +27,7 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_CEFIMAGECONVERTER_H
-#define IVW_CEFIMAGECONVERTER_H
+#pragma once
 
 #include <modules/webbrowser/webbrowsermoduledefine.h>
 #include <modules/webbrowser/renderhandlergl.h>
@@ -56,5 +55,3 @@ protected:
 };
 
 }  // namespace inviwo
-
-#endif  // IVW_WEBBROWSERCLIENT_H

@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2014-2019 Inviwo Foundation
+ * Copyright (c) 2014-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -36,16 +36,20 @@
 #include <modules/opengl/texture/textureobserver.h>
 
 #include <inviwo/core/datastructures/image/imagetypes.h>
+#include <tcb/span.hpp>
+#include <array>
+#include <mutex>
 
 namespace inviwo {
 
 class IVW_MODULE_OPENGL_API Texture : public Observable<TextureObserver> {
 public:
-    Texture(GLenum, GLFormats::GLFormat glFormat, GLenum filtering, GLint level = 0);
-    Texture(GLenum, GLint format, GLint internalformat, GLenum dataType, GLenum filtering,
-            GLint level = 0);
+    Texture(GLenum target, GLFormat glFormat, GLenum filtering, const SwizzleMask& swizzleMask,
+            util::span<const GLenum> wrapping, GLint level);
+    Texture(GLenum target, GLint format, GLint internalformat, GLenum dataType, GLenum filtering,
+            const SwizzleMask& swizzleMask, util::span<const GLenum> wrapping, GLint level);
     Texture(const Texture& other);
-    Texture(Texture&& other);  // move constructor
+    Texture(Texture&& other);
     Texture& operator=(const Texture& other);
     Texture& operator=(Texture&& other);
 
@@ -63,19 +67,24 @@ public:
     GLenum getFormat() const;
     GLenum getInternalFormat() const;
     GLenum getDataType() const;
+    const DataFormatBase* getDataFormat() const;
     GLenum getFiltering() const;
     GLint getLevel() const;
 
     GLuint getNChannels() const;
     GLuint getSizeInBytes() const;
 
-    void setTextureParameters(std::function<void(Texture*)> fun);
-
     void bind() const;
     void unbind() const;
 
     void setSwizzleMask(SwizzleMask mask);
     SwizzleMask getSwizzleMask() const;
+
+    void setInterpolation(InterpolationType interpolation);
+    InterpolationType getInterpolation() const;
+
+    void setWrapping(util::span<const GLenum> wrapping);
+    void getWrapping(util::span<GLenum> wrapping) const;
 
     void download(void* data) const;
     void downloadToPBO() const;
@@ -90,22 +99,32 @@ protected:
     void setupAsyncReadBackPBO() const;
     void setPBOAsInvalid();
 
-    void setNChannels();
-    void setSizeInBytes();
-
     GLenum target_;
     GLenum format_;
     GLenum internalformat_;
     GLenum dataType_;
-    GLenum filtering_;
     GLint level_;
+
+    static constexpr std::array<GLenum, 3> wrapNames{GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T,
+                                                     GL_TEXTURE_WRAP_R};
+
+    static constexpr std::array<std::pair<GLenum, size_t>, 5> targetToDim{
+        {{GL_TEXTURE_1D, 1},
+         {GL_TEXTURE_2D, 2},
+         {GL_TEXTURE_3D, 3},
+         {GL_TEXTURE_1D_ARRAY, 1},
+         {GL_TEXTURE_2D_ARRAY, 2}}};
+
+    static size_t targetDims(GLenum target);
+    static GLuint channels(GLenum format);
+    static size_t dataTypeSize(GLenum dataType);
+
+    mutable std::mutex syncMutex;
+    mutable GLsync syncObj = 0;
 
 private:
     GLuint id_;
     GLuint pboBack_;  // For asynchronous readback to CPU
-
-    GLuint byteSize_;
-    GLuint numChannels_;
 
     mutable bool pboBackIsSetup_;
     mutable bool pboBackHasData_;

@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2012-2019 Inviwo Foundation
+ * Copyright (c) 2012-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -380,7 +380,7 @@ std::shared_ptr<Mesh> AssimpReader::readData(const std::string& filePath) {
         mesh->addBuffer(Mesh::BufferInfo(BufferType::TexcoordAttrib, location), tbuff[i]);
     }
 
-    mesh->addIndicies(Mesh::MeshInfo(dt, ConnectivityType::None), inds);
+    mesh->addIndices(Mesh::MeshInfo(dt, ConnectivityType::None), inds);
 
     std::clock_t now = std::clock();
     if (logging) {

@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2013-2019 Inviwo Foundation
+ * Copyright (c) 2013-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,8 +27,7 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_TRANSFERFUNCTIONPROPERTYDIALOG_H
-#define IVW_TRANSFERFUNCTIONPROPERTYDIALOG_H
+#pragma once
 
 #include <modules/qtwidgets/qtwidgetsmoduledefine.h>
 #include <inviwo/core/datastructures/tfprimitiveset.h>
@@ -38,7 +37,7 @@
 #include <modules/qtwidgets/properties/propertyeditorwidgetqt.h>
 #include <modules/qtwidgets/properties/optionpropertywidgetqt.h>
 #include <inviwo/core/properties/propertywidget.h>
-#include <inviwo/core/properties/tfpropertyconcept.h>
+#include <modules/qtwidgets/tf/tfpropertyconcept.h>
 #include <inviwo/core/util/observer.h>
 
 class QPushButton;
@@ -109,6 +108,7 @@ private:
     dvec2 getRelativeSceneOffset() const;
 
     const int sliderRange_;
+    static constexpr int verticalSliderRange_ = 1000;
     const int defaultOffset_ = 5;  //!< offset in pixel
 
     std::unique_ptr<util::TFPropertyConcept> propertyPtr_;
@@ -138,5 +138,3 @@ private:
 };
 
 }  // namespace inviwo
-
-#endif  // IVW_TRANSFERFUNCTIONPROPERTYDIALOG_H

@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2013-2019 Inviwo Foundation
+ * Copyright (c) 2013-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -43,7 +43,7 @@ namespace inviwo {
 
 const ProcessorInfo VolumeSlice::processorInfo_{
     "org.inviwo.VolumeSlice",  // Class identifier
-    "Volume Slice",            // Display name
+    "Volume Slice Extracter",  // Display name
     "Volume Operation",        // Category
     CodeState::Stable,         // Code state
     Tags::CPU,                 // Tags

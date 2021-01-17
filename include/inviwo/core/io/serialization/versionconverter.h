@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2014-2019 Inviwo Foundation
+ * Copyright (c) 2014-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,11 +27,10 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_VERSIONCONVERTER_H
-#define IVW_VERSIONCONVERTER_H
+#pragma once
 
 #include <inviwo/core/common/inviwocoredefine.h>
-#include <inviwo/core/common/inviwo.h>
+#include <inviwo/core/io/serialization/ticpp.h>
 #include <inviwo/core/properties/property.h>
 #include <inviwo/core/properties/compositeproperty.h>
 #include <inviwo/core/ports/port.h>
@@ -247,5 +246,3 @@ IVW_CORE_API bool changeIdentifiers(TxElement* root,
 }  // namespace xml
 
 }  // namespace inviwo
-
-#endif  // IVW_VERSIONCONVERTER_H

@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2014-2019 Inviwo Foundation
+ * Copyright (c) 2014-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -569,7 +569,7 @@ std::shared_ptr<Mesh> marchingCubesOpt(std::shared_ptr<const Volume> volume, dou
     auto mesh = std::make_shared<Mesh>();
     mesh->setModelMatrix(volume->getModelMatrix());
     mesh->setWorldMatrix(volume->getWorldMatrix());
-    mesh->addIndicies({DrawType::Triangles, ConnectivityType::None}, indexBuffer);
+    mesh->addIndices({DrawType::Triangles, ConnectivityType::None}, indexBuffer);
     mesh->addBuffer(BufferType::PositionAttrib, vertexBuffer);
     mesh->addBuffer(BufferType::TexcoordAttrib, textureBuffer);
     mesh->addBuffer(BufferType::ColorAttrib, colorBuffer);

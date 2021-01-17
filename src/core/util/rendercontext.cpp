@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2012-2019 Inviwo Foundation
+ * Copyright (c) 2012-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -32,11 +32,27 @@
 
 namespace inviwo {
 
+class DefaultContextHolder : public ContextHolder {
+public:
+    DefaultContextHolder(Canvas* canvas) : canvas_{canvas} {}
+    virtual void activate() override { return canvas_->activate(); }
+    virtual std::unique_ptr<Canvas> createHiddenCanvas() override {
+        return canvas_->createHiddenCanvas();
+    }
+    virtual Canvas::ContextID activeContext() const override { return canvas_->activeContext(); }
+    Canvas* canvas_;
+};
+
 RenderContext* RenderContext::instance_ = nullptr;
 
-void RenderContext::setDefaultRenderContext(Canvas* canvas) {
-    defaultContext_ = canvas;
+ContextHolder* RenderContext::setDefaultRenderContext(Canvas* canvas) {
+    return setDefaultRenderContext(std::make_unique<DefaultContextHolder>(canvas));
+}
+
+ContextHolder* RenderContext::setDefaultRenderContext(std::unique_ptr<ContextHolder> context) {
+    defaultContext_ = std::move(context);
     mainThread_ = std::this_thread::get_id();
+    return defaultContext_.get();
 }
 
 void RenderContext::activateDefaultRenderContext() const {
@@ -147,6 +163,8 @@ Canvas::ContextID RenderContext::activeContext() const {
     return defaultContext_ ? defaultContext_->activeContext() : nullptr;
 }
 
-Canvas* RenderContext::getDefaultRenderContext() { return defaultContext_; }
+ContextHolder* RenderContext::getDefaultRenderContext() { return defaultContext_.get(); }
+
+bool RenderContext::hasDefaultRenderContext() const { return defaultContext_ != nullptr; }
 
 }  // namespace inviwo

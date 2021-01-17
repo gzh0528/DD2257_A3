@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2013-2019 Inviwo Foundation
+ * Copyright (c) 2013-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,11 +27,11 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_STRINGCONVERSION_H
-#define IVW_STRINGCONVERSION_H
+#pragma once
 
 #include <inviwo/core/common/inviwocoredefine.h>
 #include <inviwo/core/util/ostreamjoiner.h>
+
 #include <algorithm>
 #include <string>
 #include <sstream>
@@ -69,7 +69,17 @@ namespace util {
  * @param str   multibyte character string
  * @return input converted to std::wstring
  */
-std::wstring toWstring(const std::string& str);
+IVW_CORE_API std::wstring toWstring(const std::string& str);
+
+/**
+ * \brief convert the given std::wstring to std::string.
+ * On Windows, WideCharToMultiByte is used for this conversion assuming utf8 encoding.
+ * Otherwise, std::wcsrtombs is used.
+ *
+ * @param str   std::wstring character string
+ * @return input converted to multibyte std::string
+ */
+IVW_CORE_API std::string fromWstring(const std::wstring& str);
 
 }  // namespace util
 
@@ -180,5 +190,3 @@ std::string durationToString(std::chrono::duration<Rep, Period> duration, bool i
 }
 
 }  // namespace inviwo
-
-#endif  // IVW_STRINGCONVERSION_H

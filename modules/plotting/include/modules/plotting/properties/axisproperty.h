@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2017-2019 Inviwo Foundation
+ * Copyright (c) 2017-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -36,7 +36,7 @@
 #include <inviwo/core/properties/ordinalproperty.h>
 #include <inviwo/core/properties/boolproperty.h>
 #include <inviwo/core/properties/optionproperty.h>
-#include <inviwo/core/properties/compositeproperty.h>
+#include <inviwo/core/properties/boolcompositeproperty.h>
 #include <inviwo/core/properties/stringproperty.h>
 #include <inviwo/core/properties/minmaxproperty.h>
 
@@ -49,7 +49,7 @@ namespace inviwo {
 
 namespace plot {
 
-class IVW_MODULE_PLOTTING_API AxisProperty : public AxisSettings, public CompositeProperty {
+class IVW_MODULE_PLOTTING_API AxisProperty : public AxisSettings, public BoolCompositeProperty {
 public:
     virtual std::string getClassIdentifier() const override;
     static const std::string classIdentifier;
@@ -98,7 +98,7 @@ public:
     virtual dvec2 getRange() const override;
     virtual bool getUseDataRange() const override;
 
-    virtual bool getVisible() const override;
+    virtual bool getAxisVisible() const override;
     virtual bool getFlipped() const override;
     virtual vec4 getColor() const override;
     virtual float getWidth() const override;
@@ -115,7 +115,6 @@ public:
     virtual const MinorTickSettings& getMinorTicks() const override;
 
     // general properties
-    BoolProperty visible_;
     FloatVec4Property color_;
     FloatProperty width_;
     BoolProperty useDataRange_;

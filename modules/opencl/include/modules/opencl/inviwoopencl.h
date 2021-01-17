@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2013-2019 Inviwo Foundation
+ * Copyright (c) 2013-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -33,10 +33,7 @@
 #include <inviwo/core/util/singleton.h>
 #include <inviwo/core/common/inviwoapplication.h>
 
-#include <warn/push>
-#include <warn/ignore/all>
 #include <modules/opencl/cl.hpp>
-#include <warn/pop>
 
 #include <modules/opencl/clockcl.h>
 #include <modules/opencl/glmcl.h>

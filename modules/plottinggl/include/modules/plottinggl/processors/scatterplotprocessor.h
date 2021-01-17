@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2016-2019 Inviwo Foundation
+ * Copyright (c) 2016-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -83,6 +83,12 @@ private:
     void onYAxisChange();
     void onColorChange();
     void onRadiusChange();
+
+    using CallbackHandle = std::shared_ptr<std::function<void(PickingEvent*, size_t)>>;
+    CallbackHandle tooltipCallBack_;
+
+    ScatterPlotGL::SelectionCallbackHandle selectionChangedCallBack_;
+    ScatterPlotGL::SelectionCallbackHandle filteringChangedCallBack_;
 };
 
 }  // namespace plot

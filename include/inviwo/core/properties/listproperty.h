@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2017-2019 Inviwo Foundation
+ * Copyright (c) 2017-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,17 +27,16 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_LISTPROPERTY_H
-#define IVW_LISTPROPERTY_H
+#pragma once
 
 #include <inviwo/core/common/inviwocoredefine.h>
-#include <inviwo/core/common/inviwo.h>
 #include <inviwo/core/properties/compositeproperty.h>
 #include <inviwo/core/properties/valuewrapper.h>
 
 #include <flags/flags.h>
 
 #include <set>
+#include <vector>
 
 namespace inviwo {
 
@@ -141,13 +140,14 @@ public:
     void clear();
 
     /**
-     * \brief add a list entry which is created from the respective prefab object.
+     * \brief construct a list entry which is created from the respective prefab object.
      * This function has no effect if the list size will exceed the maximum number of elements.
      *
      * @param prefabIndex   index of prefab object used for creating the new entry
+     * @return constructed property, or nullptr if the new property cannot be added to the list
      * @throw RangeException  in case prefabIndex is invalid
      */
-    void addProperty(size_t prefabIndex);
+    Property* constructProperty(size_t prefabIndex);
 
     /**
      * \brief add \p property as new list entry. The type of the property must match one of the
@@ -229,5 +229,3 @@ private:
 };
 
 }  // namespace inviwo
-
-#endif  // IVW_LISTPROPERTY_H

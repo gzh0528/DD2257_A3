@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2015-2019 Inviwo Foundation
+ * Copyright (c) 2015-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,11 +27,9 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_NETWORKUTILS_H
-#define IVW_NETWORKUTILS_H
+#pragma once
 
 #include <inviwo/core/common/inviwocoredefine.h>
-#include <inviwo/core/common/inviwo.h>
 #include <inviwo/core/processors/processor.h>
 #include <inviwo/core/network/processornetwork.h>
 #include <inviwo/core/util/stdextensions.h>
@@ -111,39 +109,45 @@ IVW_CORE_API std::unordered_set<Processor*> getSuccessors(Processor* processor);
 enum class TraversalDirection { Up, Down };
 enum class VisitPattern { Pre, Post };
 
-#include <warn/push>
-#include <warn/ignore/constant-conditional>
-template <TraversalDirection D, VisitPattern V, typename Func>
-void traverseNetwork(std::unordered_set<Processor*>& state, Processor* processor, Func f) {
+struct DefaultTraversalFilter {
+    bool operator()(Processor*, Inport*, Outport*) { return true; }
+    bool operator()(Processor*, Outport*, Inport*) { return true; }
+};
+
+template <TraversalDirection D, VisitPattern V, typename Func,
+          typename Filter = DefaultTraversalFilter>
+void traverseNetwork(std::unordered_set<Processor*>& state, Processor* processor, Func f,
+                     Filter connectionFilter = DefaultTraversalFilter{}) {
     if (state.count(processor) == 0) {
         state.insert(processor);
 
-        if (V == VisitPattern::Pre) f(processor);
+        if constexpr (V == VisitPattern::Pre) f(processor);
 
-        switch (D) {
-            case TraversalDirection::Up: {
-                for (auto port : processor->getInports()) {
-                    for (auto connectedPort : port->getConnectedOutports()) {
-                        traverseNetwork<D, V, Func>(state, connectedPort->getProcessor(), f);
+        if constexpr (D == TraversalDirection::Up) {
+            for (auto port : processor->getInports()) {
+                for (auto connectedPort : port->getConnectedOutports()) {
+                    if (connectionFilter(processor, port, connectedPort)) {
+                        traverseNetwork<D, V, Func>(state, connectedPort->getProcessor(), f,
+                                                    connectionFilter);
                     }
                 }
-                break;
             }
-
-            case TraversalDirection::Down: {
-                for (auto port : processor->getOutports()) {
-                    for (auto connectedPort : port->getConnectedInports()) {
-                        traverseNetwork<D, V, Func>(state, connectedPort->getProcessor(), f);
+        } else {
+            for (auto port : processor->getOutports()) {
+                for (auto connectedPort : port->getConnectedInports()) {
+                    if (connectionFilter(processor, port, connectedPort)) {
+                        traverseNetwork<D, V, Func>(state, connectedPort->getProcessor(), f,
+                                                    connectionFilter);
                     }
                 }
-                break;
             }
         }
 
-        if (V == VisitPattern::Post) f(processor);
+        if constexpr (V == VisitPattern::Post) f(processor);
     }
 }
-#include <warn/pop>
+
+IVW_CORE_API std::vector<Processor*> topologicalSortFiltered(ProcessorNetwork* network);
 
 IVW_CORE_API std::vector<Processor*> topologicalSort(ProcessorNetwork* network);
 
@@ -222,5 +226,3 @@ IVW_CORE_API void replaceProcessor(ProcessorNetwork* network,
 }  // namespace util
 
 }  // namespace inviwo
-
-#endif  // IVW_NETWORKUTILS_H

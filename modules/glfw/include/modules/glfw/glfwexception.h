@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2016-2019 Inviwo Foundation
+ * Copyright (c) 2016-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,8 +27,7 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_GLFWEXCEPTION_H
-#define IVW_GLFWEXCEPTION_H
+#pragma once
 
 #include <modules/glfw/glfwmoduledefine.h>
 #include <inviwo/core/common/inviwo.h>
@@ -53,5 +52,3 @@ public:
 };
 
 }  // namespace inviwo
-
-#endif  // IVW_GLFWEXCEPTION_H

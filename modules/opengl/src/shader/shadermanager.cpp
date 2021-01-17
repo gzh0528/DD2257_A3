@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2013-2019 Inviwo Foundation
+ * Copyright (c) 2013-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -101,10 +101,15 @@ void ShaderManager::addShaderResource(std::string key, std::string src) {
     shaderResources_[key] = std::weak_ptr<ShaderResource>(resource);
 }
 
-void ShaderManager::addShaderResource(std::string key, std::unique_ptr<ShaderResource> resource) {
+void ShaderManager::addShaderResource(std::unique_ptr<ShaderResource> resource) {
     std::shared_ptr<ShaderResource> res(std::move(resource));
     ownedResources_.push_back(res);
-    shaderResources_[key] = std::weak_ptr<ShaderResource>(res);
+    shaderResources_[res->key()] = std::weak_ptr<ShaderResource>(res);
+}
+
+void ShaderManager::addShaderResource(std::shared_ptr<ShaderResource> resource) {
+    ownedResources_.push_back(resource);
+    shaderResources_[resource->key()] = std::weak_ptr<ShaderResource>(resource);
 }
 
 std::shared_ptr<ShaderResource> ShaderManager::getShaderResource(std::string key) {

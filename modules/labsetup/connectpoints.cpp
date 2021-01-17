@@ -119,7 +119,7 @@ void ConnectPoints::process() {
             // Draw the bounding box!
             auto OutIndexBuffer = std::make_shared<IndexBuffer>();
             auto OutIndices = OutIndexBuffer->getEditableRAMRepresentation();
-            OutLines->addIndicies(Mesh::MeshInfo(DrawType::Lines, ConnectivityType::Strip),
+            OutLines->addIndices(Mesh::MeshInfo(DrawType::Lines, ConnectivityType::Strip),
                                   OutIndexBuffer);
             BoundingBox(LineVertices, OutIndices, OutVertices);
         }

@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2016-2019 Inviwo Foundation
+ * Copyright (c) 2016-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -32,6 +32,8 @@
 #include <inviwo/core/network/workspacemanager.h>
 #include <inviwo/core/common/runtimemoduleregistration.h>
 #include <inviwo/core/util/filesystem.h>
+#include <inviwo/core/io/serialization/serializationexception.h>
+
 #include <sstream>
 
 namespace inviwo {

@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2015-2019 Inviwo Foundation
+ * Copyright (c) 2015-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,13 +27,14 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_PROCESSORWIDGETFACTORYOBJECT_H
-#define IVW_PROCESSORWIDGETFACTORYOBJECT_H
+#pragma once
 
 #include <inviwo/core/common/inviwocoredefine.h>
-#include <inviwo/core/common/inviwo.h>
 #include <inviwo/core/processors/processor.h>
 #include <inviwo/core/processors/processortraits.h>
+
+#include <string>
+#include <memory>
 
 namespace inviwo {
 
@@ -65,5 +66,3 @@ public:
 };
 
 }  // namespace inviwo
-
-#endif  // IVW_PROCESSORWIDGETFACTORYOBJECT_H

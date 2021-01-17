@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2017-2019 Inviwo Foundation
+ * Copyright (c) 2017-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -42,6 +42,7 @@
 #include <inviwo/core/util/settings/systemsettings.h>
 #include <inviwo/core/network/networklock.h>
 #include <inviwo/core/network/autolinker.h>
+#include <inviwo/core/common/inviwoapplication.h>
 
 namespace inviwo {
 

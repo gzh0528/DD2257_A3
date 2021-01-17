@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2018-2019 Inviwo Foundation
+ * Copyright (c) 2018-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -33,6 +33,7 @@
 #include <inviwo/core/datastructures/image/layerram.h>
 #include <inviwo/core/datastructures/image/layerramprecision.h>
 #include <inviwo/core/util/filesystem.h>
+#include <inviwo/core/util/raiiutils.h>
 
 #include <png.h>
 #include <algorithm>
@@ -102,7 +103,8 @@ void write(const LayerRAMPrecision<T>* ram, png_voidp ioPtr, png_rw_ptr writeFun
     if (!info_ptr) {
         throw PNGLayerWriterException("Internal PNG Error: Failed to create info struct");
     }
-    cleanup.setAction([&]() { png_destroy_write_struct(&png_ptr, &info_ptr); });
+    util::OnScopeExit cleanup2 = std::move(cleanup);
+    cleanup2.setAction([&]() { png_destroy_write_struct(&png_ptr, &info_ptr); });
 
     png_set_write_fn(png_ptr, ioPtr, writeFunc, flushFunc);
 

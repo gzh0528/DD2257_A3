@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2014-2019 Inviwo Foundation
+ * Copyright (c) 2014-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,13 +27,14 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_LAYERRAM_H
-#define IVW_LAYERRAM_H
+#pragma once
 
 #include <inviwo/core/common/inviwocoredefine.h>
 #include <inviwo/core/datastructures/image/layerrepresentation.h>
 #include <inviwo/core/util/formats.h>
+#include <inviwo/core/util/assertion.h>
 #include <inviwo/core/util/formatdispatching.h>
+#include <inviwo/core/util/glm.h>
 
 namespace inviwo {
 
@@ -99,7 +100,7 @@ public:
      *     using LayerType = util::PrecisionType<decltype(lrprecision)>;
      *     using ValueType = util::PrecisionValueType<decltype(lrprecision)>;
      *
-     *     T* data = lrprecision->getDataTyped();
+     *     ValueType* data = lrprecision->getDataTyped();
      *     auto dim = lrprecision->getDimensions();
      *     return std::count_if(data, data + dim.x * dim.y,
      *                          [](auto x){return x > ValueType{0};});
@@ -142,8 +143,8 @@ public:
 };
 
 size_t inline LayerRAM::posToIndex(const size2_t& pos, const size2_t& dim) {
-    ivwAssert((pos.x < dim.x) && (pos.y < dim.y),
-              "posToIndex: position out of bounds (pos: " << pos << ", dim: " << dim << ")");
+    IVW_ASSERT((pos.x < dim.x) && (pos.y < dim.y),
+               "posToIndex: position out of bounds (pos: " << pos << ", dim: " << dim << ")");
     return pos.x + (pos.y * dim.x);
 }
 
@@ -184,5 +185,3 @@ auto LayerRAM::dispatch(Callable&& callable, Args&&... args) const -> Result {
 }
 
 }  // namespace inviwo
-
-#endif  // IVW_LAYERRAM_H

@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2013-2019 Inviwo Foundation
+ * Copyright (c) 2013-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -40,6 +40,7 @@
 #include <inviwo/core/network/processornetwork.h>
 #include <inviwo/core/util/zip.h>
 #include <inviwo/core/util/raiiutils.h>
+#include <inviwo/core/util/rendercontext.h>
 #include <inviwo/core/network/networklock.h>
 #include <modules/qtwidgets/editablelabelqt.h>
 #include <inviwo/core/properties/propertypresetmanager.h>
@@ -498,11 +499,9 @@ std::unique_ptr<QWidget> CollapsibleGroupBoxWidgetQt::createPropertyLayoutWidget
 }
 
 void CollapsibleGroupBoxWidgetQt::addButtonLayout(QGridLayout* layout, int row, Property* prop) {
-    auto createButton = [this](const std::string& objectName, const QIcon& icon,
-                               const std::string& tooltip = "") {
+    auto createButton = [this](const std::string& objectName, const std::string& tooltip = "") {
         auto button = new QToolButton(this);
         button->setObjectName(utilqt::toQString(objectName));
-        button->setIcon(icon);
         if (!tooltip.empty()) {
             button->setToolTip(utilqt::toQString(tooltip));
         }
@@ -514,12 +513,12 @@ void CollapsibleGroupBoxWidgetQt::addButtonLayout(QGridLayout* layout, int row, 
 
     const std::string str = "Remove property '" + prop->getDisplayName() + "'";
 
-    auto removePropertyBtn =
-        createButton("removeProperty", QIcon(":/stylesheets/images/removelistitem.png"), str);
-    removePropertyBtn->setFixedSize(QSize(12, 11));
-    removePropertyBtn->setIconSize(QSize(10, 9));
+    auto removePropertyBtn = createButton("removeListItemButton", str);
 
     connect(removePropertyBtn, &QToolButton::clicked, this, [layout, prop, buttonWidget]() {
+        // need to activate the default render context in case the property contains member
+        // depending on OpenGL
+        RenderContext::getPtr()->activateDefaultRenderContext();
         if (prop->getOwner()) {
             prop->getOwner()->removeProperty(prop);
         } else {
@@ -531,11 +530,9 @@ void CollapsibleGroupBoxWidgetQt::addButtonLayout(QGridLayout* layout, int row, 
     /*
     // TODO: future functionality for reordering properties, see issue #178
     auto moveUpBtn = createButton(
-        "removeProperty", QIcon(":/stylesheets/images/arrow_up-small.png"), "Move up");
+        "moveListItemUpButton", "Move up");
     auto moveDownBtn = createButton(
-        "removeProperty", QIcon(":/stylesheets/images/arrow_down-small.png"), "Move down");
-    moveUpBtn->setIconSize(QSize(10, 7));
-    moveDownBtn->setIconSize(QSize(10, 7));
+        "moveListItemDownButton", "Move down");
 
     connect(moveUpBtn, &QToolButton::clicked, this,
             [this, prop]() { LogInfo("move up Property: " << prop->getDisplayName()); });

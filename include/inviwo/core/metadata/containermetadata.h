@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2016-2019 Inviwo Foundation
+ * Copyright (c) 2016-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,12 +27,14 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_CONTAINERMETADATA_H
-#define IVW_CONTAINERMETADATA_H
+#pragma once
 
 #include <inviwo/core/common/inviwocoredefine.h>
-#include <inviwo/core/common/inviwo.h>
 #include <inviwo/core/metadata/metadata.h>
+
+#include <string>
+#include <vector>
+#include <map>
 
 namespace inviwo {
 
@@ -108,5 +110,3 @@ private:
 };
 
 }  // namespace inviwo
-
-#endif  // IVW_CONTAINERMETADATA_H

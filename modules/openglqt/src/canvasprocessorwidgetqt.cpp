@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2013-2019 Inviwo Foundation
+ * Copyright (c) 2013-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -54,7 +54,7 @@ CanvasProcessorWidgetQt::CanvasProcessorWidgetQt(Processor* p)
 
     setWindowTitle(QString::fromStdString(processor_->getDisplayName()));
 
-    canvas_ = canvas_ptr(new CanvasQt(uvec2(dim.x, dim.y), processor_->getDisplayName()),
+    canvas_ = canvas_ptr(new CanvasQt(nullptr, uvec2(dim.x, dim.y), processor_->getDisplayName()),
                          [&](CanvasQt* c) {
                              c->activate();
                              layout()->removeWidget(c);
@@ -114,6 +114,8 @@ CanvasProcessorWidgetQt::CanvasProcessorWidgetQt(Processor* p)
         QWidget::setVisible(ProcessorWidget::isVisible());
     }
     RenderContext::getPtr()->activateDefaultRenderContext();
+
+    installEventFilter(new utilqt::WidgetCloseEventFilter(this));
 }
 
 CanvasProcessorWidgetQt::~CanvasProcessorWidgetQt() {}

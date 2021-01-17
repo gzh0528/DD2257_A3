@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2012-2019 Inviwo Foundation
+ * Copyright (c) 2012-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -41,6 +41,7 @@
 #include <inviwo/core/datastructures/image/image.h>
 #include <modules/opengl/geometry/meshgl.h>
 #include <modules/opengl/shader/shader.h>
+#include <modules/opengl/shader/shadermanager.h>
 #include <inviwo/core/util/rendercontext.h>
 
 namespace inviwo {

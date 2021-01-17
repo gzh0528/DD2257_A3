@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2014-2019 Inviwo Foundation
+ * Copyright (c) 2014-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -33,6 +33,7 @@
 #include <modules/opencl/image/imageclgl.h>
 #include <modules/opencl/settings/openclsettings.h>
 #include <modules/opencl/syncclgl.h>
+#include <inviwo/core/algorithm/boundingbox.h>
 
 namespace inviwo {
 
@@ -53,11 +54,11 @@ EntryExitPointsCLProcessor::EntryExitPointsCLProcessor()
           "entry-points",
           DataVec4Float32::get())  // Using 8-bits will create artifacts when entering the volume
     , exitPort_("exit-points", DataVec4Float32::get())
-    , camera_("camera", "Camera", vec3(0.0f, 0.0f, -2.0f), vec3(0.0f, 0.0f, 0.0f),
-              vec3(0.0f, 1.0f, 0.0f), &geometryPort_)
+    , camera_("camera", "Camera", util::boundingBox(geometryPort_))
     , workGroupSize_("wgsize", "Work group size", ivec2(8, 8), ivec2(0), ivec2(256))
     , useGLSharing_("glsharing", "Use OpenGL sharing", true)
-    , trackball_(&camera_) {
+    , trackball_(&camera_)
+    , entryExitPoints_(workGroupSize_.get()) {
     addPort(geometryPort_);
     addPort(entryPort_, "ImagePortGroup1");
     addPort(exitPort_, "ImagePortGroup1");
@@ -65,7 +66,9 @@ EntryExitPointsCLProcessor::EntryExitPointsCLProcessor()
     addProperty(workGroupSize_);
     addProperty(useGLSharing_);
     addProperty(trackball_);
-    entryPort_.addResizeEventListener(&camera_);
+
+    workGroupSize_.onChange([this]() { entryExitPoints_.setWorkGroupSize(workGroupSize_.get()); });
+
     // Will enable the processor to invalidate when the kernel has recompiled
     entryExitPoints_.addObserver(this);
 

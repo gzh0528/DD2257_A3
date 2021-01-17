@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2015-2019 Inviwo Foundation
+ * Copyright (c) 2015-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,11 +27,12 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_VOLUMESEQUENCEUTILS_H
-#define IVW_VOLUMESEQUENCEUTILS_H
+#pragma once
 
 #include <inviwo/core/common/inviwocoredefine.h>
-#include <inviwo/core/common/inviwo.h>
+
+#include <vector>
+#include <memory>
 
 namespace inviwo {
 
@@ -58,5 +59,3 @@ double IVW_CORE_API getTimestamp(SharedVolume vol);
 }  // namespace util
 
 }  // namespace inviwo
-
-#endif  // IVW_VOLUMESEQUENCEUTILS_H

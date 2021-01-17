@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2013-2019 Inviwo Foundation
+ * Copyright (c) 2013-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,18 +27,19 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_CANVASQT_H
-#define IVW_CANVASQT_H
+#pragma once
 
 #include <modules/openglqt/openglqtmoduledefine.h>
 #include <inviwo/core/common/inviwo.h>
 #include <inviwo/core/util/rendercontext.h>
+#include <inviwo/core/common/inviwoapplication.h>
 #include <modules/openglqt/hiddencanvasqt.h>
 #include <inviwo/core/interaction/events/mouseevent.h>
 #include <inviwo/core/interaction/events/wheelevent.h>
 #include <inviwo/core/interaction/events/keyboardevent.h>
 #include <inviwo/core/interaction/events/touchevent.h>
 #include <inviwo/core/interaction/events/gestureevent.h>
+#include <inviwo/core/interaction/events/viewevent.h>
 #include <inviwo/core/processors/canvasprocessor.h>
 #include <inviwo/core/metadata/processormetadata.h>
 #include <modules/qtwidgets/eventconverterqt.h>
@@ -46,7 +47,7 @@
 
 #include <modules/opengl/canvasgl.h>
 #include <modules/opengl/debugmessages.h>
-#include <modules/openglqt/canvasqglwidget.h>
+#include <modules/openglqt/canvasqopenglwidget.h>
 
 #include <warn/push>
 #include <warn/ignore/all>
@@ -74,7 +75,8 @@ class CanvasQtBase : public T {
 public:
     using QtBase = typename T::QtBase;
 
-    explicit CanvasQtBase(size2_t dim = size2_t(256, 256), const std::string& name = "Canvas");
+    explicit CanvasQtBase(QWidget* parent, size2_t dim = size2_t(256, 256),
+                          const std::string& name = "Canvas");
     virtual ~CanvasQtBase();
 
     virtual void render(std::shared_ptr<const Image> image, LayerType layerType = LayerType::Color,
@@ -122,13 +124,13 @@ private:
     std::string toolTipText_;
 };
 
-using CanvasQt = CanvasQtBase<CanvasQGLWidget>;
+// using CanvasQt = CanvasQtBase<CanvasQGLWidget>;
 // using CanvasQt = CanvasQtBase<CanvasQWindow>;
-// using CanvasQt = CanvasQtBase<CanvasQOpenGLWidget>;
+using CanvasQt = CanvasQtBase<CanvasQOpenGLWidget>;
 
 template <typename T>
-CanvasQtBase<T>::CanvasQtBase(size2_t dim, const std::string& name)
-    : T(nullptr, dim), blockContextMenu_(false) {
+CanvasQtBase<T>::CanvasQtBase(QWidget* parent, size2_t dim, const std::string& name)
+    : T(parent, dim), blockContextMenu_(false) {
     QtBase::makeCurrent();
     RenderContext::getPtr()->registerContext(this, name);
     utilgl::handleOpenGLDebugMode(this->activeContext());
@@ -142,19 +144,7 @@ CanvasQtBase<T>::~CanvasQtBase() {
 
 template <typename T>
 std::unique_ptr<Canvas> CanvasQtBase<T>::createHiddenCanvas() {
-    auto thread = QThread::currentThread();
-    // The context has to be created on the main thread.
-    auto res = dispatchFront([&thread]() {
-        auto canvas = std::make_unique<HiddenCanvasQt<CanvasQtBase<T>>>();
-        canvas->doneCurrent();
-        canvas->context()->moveToThread(thread);
-        return canvas;
-    });
-
-    auto newContext = res.get();
-    RenderContext::getPtr()->setContextThreadId(newContext->contextId(),
-                                                std::this_thread::get_id());
-    return std::move(newContext);
+    return HiddenCanvasQt::createHiddenQtCanvas();
 }
 
 template <typename T>
@@ -189,17 +179,49 @@ void CanvasQtBase<T>::doContextMenu(QMouseEvent* event) {
 
         QMenu menu(this);
 
-        this->connect(menu.addAction("&Select Processor"), &QAction::triggered, this, [&]() {
-            canvasProcessor->getMetaData<ProcessorMetaData>(ProcessorMetaData::CLASS_IDENTIFIER)
-                ->setSelected(true);
-        });
-        this->connect(menu.addAction("&Hide Canvas"), &QAction::triggered, this,
-                      [&]() { this->ownerWidget_->setVisible(false); });
+        this->connect(menu.addAction(QIcon(":svgicons/edit-selectall.svg"), "&Select Processor"),
+                      &QAction::triggered, this, [&]() {
+                          canvasProcessor
+                              ->getMetaData<ProcessorMetaData>(ProcessorMetaData::CLASS_IDENTIFIER)
+                              ->setSelected(true);
+                      });
+        this->connect(menu.addAction(QIcon(":svgicons/canvas-hide.svg"), "&Hide Canvas"),
+                      &QAction::triggered, this, [&]() { this->ownerWidget_->setVisible(false); });
+
+        this->connect(menu.addAction(QIcon(":svgicons/fullscreen.svg"), "&Toggle Full Screen"),
+                      &QAction::triggered, this,
+                      [&]() { this->setFullScreen(!Canvas::isFullScreen()); });
 
         if (this->image_) {
             menu.addSeparator();
             utilqt::addImageActions(menu, *(this->image_), this->layerType_,
                                     this->activeRenderLayerIdx_);
+        }
+
+        {
+            menu.addSeparator();
+            auto prop = [this](auto action) {
+                return [this, action]() {
+                    ViewEvent e{action};
+                    this->propagateEvent(&e);
+                };
+            };
+            this->connect(menu.addAction(QIcon(":svgicons/view-fit-to-data.svg"), "Fit to data"),
+                          &QAction::triggered, this, prop(ViewEvent::FitData{}));
+            this->connect(menu.addAction(QIcon(":svgicons/view-x-p.svg"), "View from X+"),
+                          &QAction::triggered, this, prop(camerautil::Side::XPositive));
+            this->connect(menu.addAction(QIcon(":svgicons/view-x-m.svg"), "View from X-"),
+                          &QAction::triggered, this, prop(camerautil::Side::XNegative));
+            this->connect(menu.addAction(QIcon(":svgicons/view-y-p.svg"), "View from Y+"),
+                          &QAction::triggered, this, prop(camerautil::Side::YPositive));
+            this->connect(menu.addAction(QIcon(":svgicons/view-y-m.svg"), "View from Y-"),
+                          &QAction::triggered, this, prop(camerautil::Side::YNegative));
+            this->connect(menu.addAction(QIcon(":svgicons/view-z-p.svg"), "View from Z+"),
+                          &QAction::triggered, this, prop(camerautil::Side::ZPositive));
+            this->connect(menu.addAction(QIcon(":svgicons/view-z-m.svg"), "View from Z-"),
+                          &QAction::triggered, this, prop(camerautil::Side::ZNegative));
+            this->connect(menu.addAction(QIcon(":svgicons/view-flip.svg"), "Flip Up Vector"),
+                          &QAction::triggered, this, prop(ViewEvent::FlipUp{}));
         }
 
         menu.exec(event->globalPos());
@@ -333,9 +355,11 @@ bool CanvasQtBase<T>::mapWheelEvent(QWheelEvent* e) {
     } else if (!numDegrees.isNull()) {
         numSteps = utilqt::toGLM(numDegrees);
     }
-
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 15, 0))
+    const auto pos{normalPos(utilqt::toGLM(QPointF(e->position())))};
+#else
     const auto pos{normalPos(utilqt::toGLM(QPointF(e->pos())))};
-
+#endif
     WheelEvent wheelEvent(utilqt::getMouseWheelButtons(e), utilqt::getModifiers(e), numSteps, pos,
                           this->getImageDimensions(), this->getDepthValueAtNormalizedCoord(pos));
     e->accept();
@@ -455,7 +479,7 @@ bool CanvasQtBase<T>::mapTouchEvent(QTouchEvent* touch) {
         device = &(touchDevices_[touch->device()] =
                        TouchDevice(deviceType, (touch->device()->name().toStdString())));
     }
-    TouchEvent touchEvent(touchPoints, device);
+    TouchEvent touchEvent(touchPoints, device, utilqt::getModifiers(touch));
     touch->accept();
 
     lastNumFingers_ = static_cast<int>(touch->touchPoints().size());
@@ -554,5 +578,3 @@ bool CanvasQtBase<T>::showToolTip(QHelpEvent* e) {
 }
 
 }  // namespace inviwo
-
-#endif  // IVW_CANVASQT_H

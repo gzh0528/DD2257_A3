@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2015-2019 Inviwo Foundation
+ * Copyright (c) 2015-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -35,6 +35,9 @@
 #include <inviwo/core/util/fileobserver.h>
 #include <inviwo/core/util/dispatcher.h>
 
+#include <string>
+#include <string_view>
+
 namespace inviwo {
 
 /**
@@ -50,6 +53,8 @@ public:
 
     virtual std::string key() const = 0;
     virtual std::string source() const = 0;
+
+    virtual void setSource(const std::string& source) = 0;
 
     template <typename T>
     std::shared_ptr<Callback> onChange(T&& callback) const;
@@ -73,6 +78,8 @@ public:
     virtual std::string key() const override;
     virtual std::string source() const override;
 
+    virtual void setSource(const std::string& source) override;
+
     std::string file() const;
 
     virtual void fileChanged(const std::string& fileName) override;
@@ -86,7 +93,7 @@ private:
 
 class IVW_MODULE_OPENGL_API StringShaderResource : public ShaderResource {
 public:
-    StringShaderResource(const std::string& key, const std::string& source);
+    StringShaderResource(std::string_view key, std::string_view source);
     virtual ~StringShaderResource() = default;
 
     virtual std::unique_ptr<ShaderResource> clone() override;
@@ -94,7 +101,7 @@ public:
     virtual std::string key() const override;
     virtual std::string source() const override;
 
-    void setSource(const std::string& source);
+    virtual void setSource(const std::string& source) override;
 
 private:
     std::string key_;

@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2018-2019 Inviwo Foundation
+ * Copyright (c) 2018-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -38,12 +38,14 @@
 #include <modules/json/io/json/minmaxpropertyjsonconverter.h>
 #include <modules/json/io/json/optionpropertyjsonconverter.h>
 #include <modules/json/io/json/ordinalpropertyjsonconverter.h>
+#include <modules/json/io/json/ordinalrefpropertyjsonconverter.h>
 #include <modules/json/io/json/templatepropertyjsonconverter.h>
 
 #include <inviwo/dataframe/io/json/dataframepropertyjsonconverter.h>
 
 #include <inviwo/core/util/filesystem.h>
 #include <inviwo/core/util/settings/systemsettings.h>
+#include <inviwo/core/util/commandlineparser.h>
 
 #include <modules/opengl/shader/shadermanager.h>
 
@@ -63,6 +65,14 @@ struct OrdinalCEFWidgetReghelper {
     template <typename T>
     auto operator()(WebBrowserModule& m) {
         using PropertyType = OrdinalProperty<T>;
+        m.registerPropertyWidgetCEF<PropertyWidgetCEF, PropertyType>();
+    }
+};
+
+struct OrdinalRefCEFWidgetReghelper {
+    template <typename T>
+    auto operator()(WebBrowserModule& m) {
+        using PropertyType = OrdinalRefProperty<T>;
         m.registerPropertyWidgetCEF<PropertyWidgetCEF, PropertyType>();
     }
 };
@@ -103,10 +113,11 @@ WebBrowserModule::WebBrowserModule(InviwoApplication* app)
                    dmat3, dmat4, int, ivec2, ivec3, ivec4, glm::i64, unsigned int, uvec2, uvec3,
                    uvec4, size_t, size2_t, size3_t, size4_t, glm::fquat, glm::dquat>;
 
-    using ScalarTypes = std::tuple<float, double, int, glm::i64, size_t>;
     util::for_each_type<OrdinalTypes>{}(OrdinalCEFWidgetReghelper{}, *this);
+    util::for_each_type<OrdinalTypes>{}(OrdinalRefCEFWidgetReghelper{}, *this);
 
     // Register MinMaxProperty widgets
+    using ScalarTypes = std::tuple<float, double, int, glm::i64, size_t>;
     util::for_each_type<ScalarTypes>{}(MinMaxCEFWidgetReghelper{}, *this);
 
     // Register option property widgets
@@ -124,7 +135,7 @@ WebBrowserModule::WebBrowserModule(InviwoApplication* app)
     auto exeExtension = filesystem::getFileExtension(filesystem::getExecutablePath());
     // Assume that inviwo_web_helper is next to the main executable
     auto exeDirectory = filesystem::getFileDirectory(filesystem::getExecutablePath());
-    auto subProcessExecutable = exeDirectory + "/inviwo_helper." + exeExtension;
+
     auto locale = app->getUILocale().name();
     if (locale == "C") {
         // Crash when default locale "C" is used. Reproduce with GLFWMinimum application
@@ -133,7 +144,7 @@ WebBrowserModule::WebBrowserModule(InviwoApplication* app)
 
     void* sandbox_info = NULL;  // Windows specific
 
-#ifdef DARWIN  // Mac specific
+#ifdef __APPLE__  // Mac specific
 
     // Find CEF framework and helper app in
     // exe.app/Contents/Frameworks directory first
@@ -149,7 +160,7 @@ WebBrowserModule::WebBrowserModule(InviwoApplication* app)
 
     CefMainArgs args(app->getCommandLineParser().getARGC(), app->getCommandLineParser().getARGV());
     CefSettings settings;
-    CefString(&settings.framework_dir_path).FromASCII((frameworkDirectory).c_str());
+    // CefString(&settings.framework_dir_path).FromASCII((frameworkDirectory).c_str());
     // Crashes if not set and non-default locale is used
     CefString(&settings.locales_dir_path)
         .FromASCII((frameworkDirectory + std::string("/Resources")).c_str());
@@ -161,16 +172,20 @@ WebBrowserModule::WebBrowserModule(InviwoApplication* app)
         locale.erase(startErasePos, locale.find('.') - startErasePos);
     }
 
-    // Web helper executable should be located in Frameworks dir of bundle,
-    // see OS_MACOSX part in CMakeLists.txt
-    if (!filesystem::fileExists(subProcessExecutable)) {
-        subProcessExecutable =
-            cefParentDir +
-            std::string("/Frameworks/Inviwo Helper.app/Contents/MacOS/inviwo_helper");
-    }
 #else
     CefMainArgs args;
     CefSettings settings;
+    // Non-mac systems uses a single helper executable so here we can specify name
+    // Linux will have empty extension
+    auto subProcessExecutable = fmt::format("{}/{}{}{}", exeDirectory, "cef_web_helper",
+                                            exeExtension.empty() ? "" : ".", exeExtension);
+    if (!filesystem::fileExists(subProcessExecutable)) {
+        throw ModuleInitException("Could not find web helper executable:" + subProcessExecutable);
+    }
+
+    // Necessary to run helpers in separate sub-processes
+    // Needed since we do not want to edit the "main" function
+    CefString(&settings.browser_subprocess_path).FromASCII(subProcessExecutable.c_str());
 #endif
 
 #ifdef WIN32
@@ -204,11 +219,6 @@ WebBrowserModule::WebBrowserModule(InviwoApplication* app)
 
     CefString(&settings.locale).FromASCII(locale.c_str());
 
-    if (!filesystem::fileExists(subProcessExecutable)) {
-        throw ModuleInitException("Could not find web helper executable:" + subProcessExecutable);
-    }
-    CefString(&settings.browser_subprocess_path).FromASCII(subProcessExecutable.c_str());
-
     // Optional implementation of the CefApp interface.
     CefRefPtr<WebBrowserApp> browserApp(new WebBrowserApp);
 
@@ -228,6 +238,8 @@ WebBrowserModule::WebBrowserModule(InviwoApplication* app)
     registerProcessor<WebBrowserProcessor>();
 
     doChromiumWork_.start();
+
+    browserClient_ = new WebBrowserClient(app->getModuleManager(), getPropertyWidgetCEFFactory());
 }
 
 WebBrowserModule::~WebBrowserModule() {

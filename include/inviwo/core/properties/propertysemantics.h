@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2013-2019 Inviwo Foundation
+ * Copyright (c) 2013-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,11 +27,10 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_PROPERTYSEMANTICS_H
-#define IVW_PROPERTYSEMANTICS_H
+#pragma once
 
 #include <inviwo/core/common/inviwocoredefine.h>
-#include <inviwo/core/common/inviwo.h>
+#include <inviwo/core/io/serialization/serializable.h>
 #include <string>
 #include <ostream>
 
@@ -63,6 +62,25 @@ public:
     static const PropertySemantics ShaderEditor;
     static const PropertySemantics PythonEditor;
 
+    friend inline bool operator==(const PropertySemantics& lhs, const PropertySemantics& rhs) {
+        return lhs.getString() == rhs.getString();
+    }
+    friend inline bool operator<(const PropertySemantics& lhs, const PropertySemantics& rhs) {
+        return lhs.getString() < rhs.getString();
+    }
+    friend inline bool operator!=(const PropertySemantics& lhs, const PropertySemantics& rhs) {
+        return !operator==(lhs, rhs);
+    }
+    friend inline bool operator>(const PropertySemantics& lhs, const PropertySemantics& rhs) {
+        return operator<(rhs, lhs);
+    }
+    friend inline bool operator<=(const PropertySemantics& lhs, const PropertySemantics& rhs) {
+        return !operator>(lhs, rhs);
+    }
+    friend inline bool operator>=(const PropertySemantics& lhs, const PropertySemantics& rhs) {
+        return !operator<(lhs, rhs);
+    }
+
 private:
     std::string semantic_;
 };
@@ -74,25 +92,4 @@ std::basic_ostream<Elem, Traits>& operator<<(std::basic_ostream<Elem, Traits>& s
     return ss;
 }
 
-inline bool operator==(const PropertySemantics& lhs, const PropertySemantics& rhs) {
-    return lhs.getString() == rhs.getString();
-}
-inline bool operator<(const PropertySemantics& lhs, const PropertySemantics& rhs) {
-    return lhs.getString() < rhs.getString();
-}
-inline bool operator!=(const PropertySemantics& lhs, const PropertySemantics& rhs) {
-    return !operator==(lhs, rhs);
-}
-inline bool operator>(const PropertySemantics& lhs, const PropertySemantics& rhs) {
-    return operator<(rhs, lhs);
-}
-inline bool operator<=(const PropertySemantics& lhs, const PropertySemantics& rhs) {
-    return !operator>(lhs, rhs);
-}
-inline bool operator>=(const PropertySemantics& lhs, const PropertySemantics& rhs) {
-    return !operator<(lhs, rhs);
-}
-
 }  // namespace inviwo
-
-#endif  // IVW_PROPERTYSEMANTICS_H

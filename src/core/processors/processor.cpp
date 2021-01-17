@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2012-2019 Inviwo Foundation
+ * Copyright (c) 2012-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -39,6 +39,7 @@
 #include <inviwo/core/util/stdextensions.h>
 #include <inviwo/core/util/utilities.h>
 #include <inviwo/core/ports/imageport.h>
+#include <inviwo/core/network/networkvisitor.h>
 
 namespace inviwo {
 
@@ -103,9 +104,11 @@ void Processor::addPortInternal(Outport* port, const std::string& portGroup) {
 }
 
 Port* Processor::removePort(const std::string& identifier) {
-    if (auto port = getPort(identifier)) {
-        if (auto inport = dynamic_cast<Inport*>(port)) return removePort(inport);
-        if (auto outport = dynamic_cast<Outport*>(port)) return removePort(outport);
+    if (auto inport = getInport(identifier)) {
+        return removePort(inport);
+    }
+    if (auto outport = getOutport(identifier)) {
+        return removePort(outport);
     }
     return nullptr;
 }
@@ -150,6 +153,14 @@ Outport* Processor::removePort(Outport* port) {
     isSink_.update();
     isReady_.update();
     return port;
+}
+
+void Processor::accept(NetworkVisitor& visitor) {
+    if (visitor.visit(*this)) {
+        for (auto* elem : properties_) {
+            elem->accept(visitor);
+        }
+    }
 }
 
 void Processor::addPortToGroup(Port* port, const std::string& portGroup) {
@@ -405,21 +416,19 @@ void Processor::invokeEvent(Event* event) {
 }
 
 void Processor::propagateEvent(Event* event, Outport* source) {
-    if (event->hasVisitedProcessor(this)) return;
-    event->markAsVisited(this);
+    if (!event->markAsVisited(this)) return;
 
     invokeEvent(event);
-    if (event->hasBeenUsed()) return;
-
     bool used = event->hasBeenUsed();
+    if (used) return;
+
     for (auto inport : getInports()) {
         if (event->shouldPropagateTo(inport, this, source)) {
             inport->propagateEvent(event);
-            used |= event->hasBeenUsed();
-            event->markAsUnused();
+            used |= event->markAsUnused();
         }
     }
-    if (used) event->markAsUsed();
+    event->setUsed(used);
 }
 
 std::vector<std::string> Processor::getPath() const {

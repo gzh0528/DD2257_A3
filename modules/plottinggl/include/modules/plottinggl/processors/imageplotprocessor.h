@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2019 Inviwo Foundation
+ * Copyright (c) 2019-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -103,13 +103,13 @@ private:
 
     MarginProperty margins_;
     FloatProperty axisMargin_;
-    
+
     TemplateOptionProperty<AxisRangeMode> rangeMode_;
-    
+
     CompositeProperty customRanges_;
     DoubleMinMaxProperty rangeXaxis_;
     DoubleMinMaxProperty rangeYaxis_;
-    
+
     AxisStyleProperty axisStyle_;
     AxisProperty xAxis_;
     AxisProperty yAxis_;

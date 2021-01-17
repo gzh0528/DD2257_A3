@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2012-2019 Inviwo Foundation
+ * Copyright (c) 2012-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,8 +27,7 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_OPENGLQTMENU_H
-#define IVW_OPENGLQTMENU_H
+#pragma once
 
 #include <modules/openglqt/openglqtmoduledefine.h>
 #include <inviwo/core/common/inviwo.h>
@@ -57,7 +56,7 @@ public:
     virtual ~OpenGLQtMenu() = default;
 
 private:
-    void showShader(const ShaderObject* obj);
+    void showShader(ShaderObject* obj);
     void shadersReload();
 
     void addShaderObjects(Shader* shader, QMenu* menuItem);
@@ -71,5 +70,3 @@ private:
 };
 
 }  // namespace inviwo
-
-#endif  // IVW_OPENGLQTMENU_H

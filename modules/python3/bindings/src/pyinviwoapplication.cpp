@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2018-2019 Inviwo Foundation
+ * Copyright (c) 2018-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -33,6 +33,7 @@
 #include <inviwo/core/common/inviwomodule.h>
 #include <inviwo/core/network/processornetwork.h>
 #include <inviwopy/vectoridentifierwrapper.h>
+#include <inviwo/core/util/commandlineparser.h>
 
 namespace inviwo {
 
@@ -42,12 +43,6 @@ public:
 
     virtual void closeInviwoApplication() override {
         PYBIND11_OVERLOAD(void, InviwoApplication, closeInviwoApplication, );
-    };
-    virtual void startFileObservation(std::string fileName) override {
-        PYBIND11_OVERLOAD(void, InviwoApplication, startFileObservation, fileName);
-    };
-    virtual void stopFileObservation(std::string fileName) override {
-        PYBIND11_OVERLOAD(void, InviwoApplication, stopFileObservation, fileName);
     };
 };
 

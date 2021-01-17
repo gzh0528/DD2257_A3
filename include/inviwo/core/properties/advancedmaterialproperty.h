@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2014-2019 Inviwo Foundation
+ * Copyright (c) 2014-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,8 +27,7 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_ADVANCED_MATERIAL_PROPERTY_H
-#define IVW_ADVANCED_MATERIAL_PROPERTY_H
+#pragma once
 
 #include <inviwo/core/common/inviwocoredefine.h>
 #include <inviwo/core/properties/stringproperty.h>
@@ -67,7 +66,7 @@ public:
                              PropertySemantics semantics = PropertySemantics::Default);
 
     AdvancedMaterialProperty(const AdvancedMaterialProperty& rhs);
-    
+
     virtual AdvancedMaterialProperty* clone() const override;
     virtual ~AdvancedMaterialProperty();
 
@@ -104,5 +103,3 @@ protected:
 };
 
 }  // namespace inviwo
-
-#endif  // IVW_ADVANCED_MATERIAL_PROPERTY_H

@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2016-2019 Inviwo Foundation
+ * Copyright (c) 2016-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,12 +27,10 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_ANIMATIONEDITORQT_H
-#define IVW_ANIMATIONEDITORQT_H
+#pragma once
 
 #include <modules/animationqt/animationqtmoduledefine.h>
 #include <modules/animation/datastructures/animationobserver.h>
-#include <inviwo/core/common/inviwo.h>
 #include <modules/animationqt/widgets/editorconstants.h>
 
 #include <warn/push>
@@ -94,5 +92,3 @@ protected:
 }  // namespace animation
 
 }  // namespace inviwo
-
-#endif  // IVW_ANIMATIONEDITORQT_H

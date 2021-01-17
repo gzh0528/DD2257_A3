@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2012-2019 Inviwo Foundation
+ * Copyright (c) 2012-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -46,16 +46,16 @@
 
 namespace inviwo {
 
-CanvasProcessor::CanvasProcessor()
+CanvasProcessor::CanvasProcessor(InviwoApplication* app)
     : Processor()
     , inport_("inport")
     , inputSize_("inputSize", "Input Dimension Parameters")
-    , dimensions_("dimensions", "Canvas Size", ivec2(256, 256), ivec2(128, 128), ivec2(4096, 4096),
-                  ivec2(1, 1), InvalidationLevel::Valid)
+    , dimensions_("dimensions", "Canvas Size", size2_t(256, 256), size2_t(1, 1),
+                  size2_t(10000, 10000), size2_t(1, 1), InvalidationLevel::Valid)
     , enableCustomInputDimensions_("enableCustomInputDimensions", "Separate Image Size", false,
                                    InvalidationLevel::Valid)
-    , customInputDimensions_("customInputDimensions", "Image Size", ivec2(256, 256),
-                             ivec2(128, 128), ivec2(4096, 4096), ivec2(1, 1),
+    , customInputDimensions_("customInputDimensions", "Image Size", size2_t(256, 256),
+                             size2_t(1, 1), size2_t(10000, 10000), size2_t(1, 1),
                              InvalidationLevel::Valid)
     , keepAspectRatio_("keepAspectRatio", "Lock Aspect Ratio", true, InvalidationLevel::Valid)
     , aspectRatioScaling_("aspectRatioScaling", "Image Scale", 1.f, 0.1f, 4.f, 0.01f,
@@ -63,12 +63,39 @@ CanvasProcessor::CanvasProcessor()
     , position_("position", "Canvas Position", ivec2(128, 128),
                 ivec2(std::numeric_limits<int>::lowest()), ivec2(std::numeric_limits<int>::max()),
                 ivec2(1, 1), InvalidationLevel::Valid, PropertySemantics::Text)
-    , visibleLayer_("visibleLayer", "Visible Layer")
+    , visibleLayer_("visibleLayer", "Visible Layer",
+                    {{"color", "Color layer", LayerType::Color},
+                     {"depth", "Depth layer", LayerType::Depth},
+                     {"picking", "Picking layer", LayerType::Picking}},
+                    0)
     , colorLayer_("colorLayer_", "Color Layer ID", 0, 0, 0)
-    , imageTypeExt_("fileExt", "Image Type")
+    , imageTypeExt_(
+          "fileExt", "Image Type",
+          [app]() {
+              const auto exts = app->getDataWriterFactory()->getExtensionsForType<Layer>();
+              std::vector<OptionPropertyOption<FileExtension>> res;
+              std::transform(exts.begin(), exts.end(), std::back_inserter(res), [](auto& ext) {
+                  return OptionPropertyOption<FileExtension>{ext.toString(), ext.toString(), ext};
+              });
+              return res;
+          }(),
+          [app]() {
+              const auto exts = app->getDataWriterFactory()->getExtensionsForType<Layer>();
+              const auto it = std::find_if(exts.begin(), exts.end(),
+                                           [](auto& ext) { return ext.extension_ == "png"; });
+              return it == exts.end() ? 0 : std::distance(exts.begin(), it);
+          }())
     , saveLayerDirectory_("layerDir", "Output Directory", "", "image")
-    , saveLayerButton_("saveLayer", "Save Image Layer", InvalidationLevel::Valid)
+    , saveLayerButton_("saveLayer", "Save Image Layer", [this]() { saveImageLayer(); },
+                       InvalidationLevel::Valid)
     , saveLayerToFileButton_("saveLayerToFile", "Save Image Layer to File...",
+                             [this]() {
+                                 if (auto layer = getVisibleLayer()) {
+                                     util::saveLayer(*layer);
+                                 } else {
+                                     LogError("Could not find visible layer");
+                                 }
+                             },
                              InvalidationLevel::Valid)
     , fullScreen_("fullscreen", "Toggle Full Screen", false)
     , fullScreenEvent_("fullscreenEvent", "FullScreen",
@@ -77,6 +104,7 @@ CanvasProcessor::CanvasProcessor()
     , saveLayerEvent_("saveLayerEvent", "Save Image Layer", [this](Event*) { saveImageLayer(); },
                       IvwKey::Undefined, KeyState::Press)
     , allowContextMenu_("allowContextMenu", "Allow Context Menu", true)
+    , evaluateWhenHidden_("evaluateWhenHidden", "Evaluate When Hidden", false)
     , previousImageSize_(customInputDimensions_)
     , widgetMetaData_{
           createMetaData<ProcessorWidgetMetaData>(ProcessorWidgetMetaData::CLASS_IDENTIFIER)} {
@@ -85,65 +113,22 @@ CanvasProcessor::CanvasProcessor()
     setEvaluateWhenHidden(false);
 
     addPort(inport_);
-    addProperty(inputSize_);
 
     dimensions_.setSerializationMode(PropertySerializationMode::None);
     dimensions_.onChange([this]() { widgetMetaData_->setDimensions(dimensions_.get()); });
-    inputSize_.addProperty(dimensions_);
 
     enableCustomInputDimensions_.onChange([this]() { sizeChanged(); });
-    inputSize_.addProperty(enableCustomInputDimensions_);
 
     customInputDimensions_.onChange([this]() { sizeChanged(); });
     customInputDimensions_.setVisible(false);
-    inputSize_.addProperty(customInputDimensions_);
 
     keepAspectRatio_.onChange([this]() { sizeChanged(); });
     keepAspectRatio_.setVisible(false);
-    inputSize_.addProperty(keepAspectRatio_);
 
     aspectRatioScaling_.onChange([this]() { sizeChanged(); });
     aspectRatioScaling_.setVisible(false);
-    inputSize_.addProperty(aspectRatioScaling_);
 
     position_.onChange([this]() { widgetMetaData_->setPosition(position_.get()); });
-    addProperty(position_);
-
-    visibleLayer_.addOption("color", "Color layer", LayerType::Color);
-    visibleLayer_.addOption("depth", "Depth layer", LayerType::Depth);
-    visibleLayer_.addOption("picking", "Picking layer", LayerType::Picking);
-    visibleLayer_.set(LayerType::Color);
-
-    // add all supported image extensions to option property
-    auto wf = InviwoApplication::getPtr()->getDataWriterFactory();
-    // save first writer extension matching "png" to be used as default
-    std::string defaultExt;
-    for (auto ext : wf->getExtensionsForType<Layer>()) {
-        imageTypeExt_.addOption(ext.toString(), ext.toString());
-        if (defaultExt.empty() && ext.extension_ == "png") {
-            defaultExt = ext.toString();
-        }
-    }
-    if (!defaultExt.empty()) {
-        imageTypeExt_.setSelectedIdentifier(defaultExt);
-    }
-
-    addProperty(visibleLayer_);
-    addProperty(colorLayer_);
-    addProperty(saveLayerDirectory_);
-    addProperty(imageTypeExt_);
-
-    saveLayerButton_.onChange([this]() { saveImageLayer(); });
-    addProperty(saveLayerButton_);
-
-    saveLayerToFileButton_.onChange([this]() {
-        if (auto layer = getVisibleLayer()) {
-            util::saveLayer(*layer);
-        } else {
-            LogError("Could not find visible layer");
-        }
-    });
-    addProperty(saveLayerToFileButton_);
 
     colorLayer_.setSerializationMode(PropertySerializationMode::All);
     colorLayer_.setVisible(false);
@@ -155,15 +140,22 @@ CanvasProcessor::CanvasProcessor()
         }
     });
 
-    addProperty(fullScreen_);
     fullScreen_.onChange([this]() {
         if (auto c = getCanvas()) {
             c->setFullScreen(fullScreen_.get());
         }
     });
-    addProperty(fullScreenEvent_);
-    addProperty(saveLayerEvent_);
-    addProperty(allowContextMenu_);
+
+    evaluateWhenHidden_.onChange([this]() { setEvaluateWhenHidden(evaluateWhenHidden_.get()); });
+
+    imageTypeExt_.setSerializationMode(PropertySerializationMode::None);
+
+    inputSize_.addProperties(dimensions_, enableCustomInputDimensions_, customInputDimensions_,
+                             keepAspectRatio_, aspectRatioScaling_);
+
+    addProperties(inputSize_, position_, visibleLayer_, colorLayer_, saveLayerDirectory_,
+                  imageTypeExt_, saveLayerButton_, saveLayerToFileButton_, fullScreen_,
+                  fullScreenEvent_, saveLayerEvent_, allowContextMenu_, evaluateWhenHidden_);
 
     inport_.onChange([&]() {
         int layers = static_cast<int>(inport_.getData()->getNumberOfColorLayers());
@@ -185,7 +177,8 @@ CanvasProcessor::~CanvasProcessor() {
 
 void CanvasProcessor::setProcessorWidget(std::unique_ptr<ProcessorWidget> processorWidget) {
     if (processorWidget && !dynamic_cast<CanvasProcessorWidget*>(processorWidget.get())) {
-        throw Exception("Expected CanvasProcessorWidget in CanvasProcessor::setProcessorWidget");
+        throw Exception("Expected CanvasProcessorWidget in CanvasProcessor::setProcessorWidget",
+                        IVW_CONTEXT);
     }
     Processor::setProcessorWidget(std::move(processorWidget));
     // Widget may be set after deserialization
@@ -194,6 +187,14 @@ void CanvasProcessor::setProcessorWidget(std::unique_ptr<ProcessorWidget> proces
     }
     isSink_.update();
     isReady_.update();
+}
+
+void CanvasProcessor::accept(NetworkVisitor& visitor) {
+    if (visitor.visit(*this)) {
+        for (auto* elem : properties_) {
+            elem->accept(visitor);
+        }
+    }
 }
 
 void CanvasProcessor::onProcessorWidgetPositionChange(ProcessorWidgetMetaData*) {
@@ -216,16 +217,16 @@ void CanvasProcessor::onProcessorWidgetVisibilityChange(ProcessorWidgetMetaData*
     invalidate(InvalidationLevel::InvalidOutput);
 }
 
-void CanvasProcessor::setCanvasSize(ivec2 dim) {
+void CanvasProcessor::setCanvasSize(size2_t dim) {
     NetworkLock lock(this);
     dimensions_.set(dim);
     sizeChanged();
 }
 
-ivec2 CanvasProcessor::getCanvasSize() const { return dimensions_; }
+size2_t CanvasProcessor::getCanvasSize() const { return dimensions_; }
 
 bool CanvasProcessor::getUseCustomDimensions() const { return enableCustomInputDimensions_; }
-ivec2 CanvasProcessor::getCustomDimensions() const { return customInputDimensions_; }
+size2_t CanvasProcessor::getCustomDimensions() const { return customInputDimensions_; }
 
 void CanvasProcessor::sizeChanged() {
     NetworkLock lock(this);
@@ -235,24 +236,21 @@ void CanvasProcessor::sizeChanged() {
     keepAspectRatio_.setVisible(enableCustomInputDimensions_);
     aspectRatioScaling_.setVisible(enableCustomInputDimensions_ && keepAspectRatio_);
 
-    if (keepAspectRatio_) customInputDimensions_.get() = calcSize();  // avoid triggering on change
-    ResizeEvent resizeEvent(uvec2(0));
-    if (enableCustomInputDimensions_) {
-        resizeEvent.setSize(static_cast<uvec2>(customInputDimensions_.get()));
-        resizeEvent.setPreviousSize(static_cast<uvec2>(previousImageSize_));
-        previousImageSize_ = customInputDimensions_;
-    } else {
-        resizeEvent.setSize(static_cast<uvec2>(dimensions_.get()));
-        resizeEvent.setPreviousSize(static_cast<uvec2>(previousImageSize_));
-        previousImageSize_ = dimensions_;
+    if (keepAspectRatio_) {
+        Property::OnChangeBlocker block{customInputDimensions_};  // avoid recursive onChange
+        customInputDimensions_ = calcSize();
     }
+
+    ResizeEvent resizeEvent{enableCustomInputDimensions_ ? customInputDimensions_ : dimensions_,
+                            previousImageSize_};
+    previousImageSize_ = resizeEvent.size();
 
     inputSize_.invalidate(InvalidationLevel::Valid, &customInputDimensions_);
     inport_.propagateEvent(&resizeEvent);
 }
 
-ivec2 CanvasProcessor::calcSize() {
-    ivec2 size = dimensions_;
+size2_t CanvasProcessor::calcSize() {
+    size2_t size = dimensions_;
 
     int maxDim, minDim;
 
@@ -264,9 +262,9 @@ ivec2 CanvasProcessor::calcSize() {
         minDim = 0;
     }
 
-    float ratio = static_cast<float>(size[minDim]) / static_cast<float>(size[maxDim]);
-    size[maxDim] = static_cast<int>(static_cast<float>(size[maxDim]) * aspectRatioScaling_);
-    size[minDim] = static_cast<int>(static_cast<float>(size[maxDim]) * ratio);
+    double ratio = static_cast<double>(size[minDim]) / static_cast<double>(size[maxDim]);
+    size[maxDim] = static_cast<int>(static_cast<double>(size[maxDim]) * aspectRatioScaling_);
+    size[minDim] = static_cast<int>(static_cast<double>(size[maxDim]) * ratio);
 
     return size;
 }
@@ -274,10 +272,9 @@ ivec2 CanvasProcessor::calcSize() {
 void CanvasProcessor::saveImageLayer() {
     if (saveLayerDirectory_.get().empty()) saveLayerDirectory_.requestFile();
 
-    auto ext = FileExtension::createFileExtensionFromString(imageTypeExt_.get());
     std::string snapshotPath(saveLayerDirectory_.get() + "/" + toLower(getIdentifier()) + "-" +
-                             currentDateTime() + "." + ext.extension_);
-    saveImageLayer(snapshotPath, ext);
+                             currentDateTime() + "." + imageTypeExt_->extension_);
+    saveImageLayer(snapshotPath, imageTypeExt_);
 }
 
 void CanvasProcessor::saveImageLayer(std::string snapshotPath, const FileExtension& extension) {
@@ -307,14 +304,18 @@ Canvas* CanvasProcessor::getCanvas() const {
 }
 
 void CanvasProcessor::process() {
-    if (auto c = getCanvas()) {
-        c->render(inport_.getData(), visibleLayer_, colorLayer_);
+    if (processorWidget_->isVisible()) {
+        if (auto c = getCanvas()) {
+            c->render(inport_.getData(), visibleLayer_, colorLayer_);
+        }
     }
 }
 
 void CanvasProcessor::doIfNotReady() {
-    if (auto c = getCanvas()) {
-        c->render(nullptr, visibleLayer_, colorLayer_);
+    if (processorWidget_->isVisible()) {
+        if (auto c = getCanvas()) {
+            c->render(nullptr, visibleLayer_, colorLayer_);
+        }
     }
 }
 
@@ -325,9 +326,7 @@ void CanvasProcessor::propagateEvent(Event* event, Outport* source) {
     invokeEvent(event);
     if (event->hasBeenUsed()) return;
 
-    if (event->hash() == ResizeEvent::chash()) {
-        auto resizeEvent = static_cast<ResizeEvent*>(event);
-
+    if (auto resizeEvent = event->getAs<ResizeEvent>()) {
         // Avoid continues evaluation when port dimensions changes
         NetworkLock lock(this);
         dimensions_.set(resizeEvent->size());

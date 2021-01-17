@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2012-2019 Inviwo Foundation
+ * Copyright (c) 2012-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,8 +27,7 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_NODEDEBUGGER_H
-#define IVW_NODEDEBUGGER_H
+#pragma once
 
 #include <inviwo/core/common/inviwocoredefine.h>
 
@@ -38,8 +37,7 @@
 namespace ticpp {
 class Element;
 }
-
-typedef ticpp::Element TxElement;
+using TxElement = ticpp::Element;
 
 namespace inviwo {
 
@@ -64,5 +62,3 @@ struct IVW_CORE_API NodeDebugger {
 };
 
 }  // namespace inviwo
-
-#endif  // IVW_NODEDEBUGGER_H

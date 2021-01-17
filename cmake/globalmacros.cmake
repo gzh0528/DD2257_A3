@@ -2,7 +2,7 @@
 #
 # Inviwo - Interactive Visualization Workshop
 #
-# Copyright (c) 2013-2019 Inviwo Foundation
+# Copyright (c) 2013-2020 Inviwo Foundation
 # All rights reserved.
 # 
 # Redistribution and use in source and binary forms, with or without
@@ -48,7 +48,7 @@ endfunction()
 # Example: ivw_configure_application_module_dependencies(inviwo ${list_of_modules})
 # The list of modules is usually fetched from ivw_retrieve_all_modules
 function(ivw_configure_application_module_dependencies target)
-    if(IVW_RUNTIME_MODULE_LOADING)
+    if(IVW_CFG_RUNTIME_MODULE_LOADING)
         # Specify which modules to load at runtime (all will be loaded if the file does not exist)
         ivw_create_enabled_modules_file(${target} ${ARGN})
         target_compile_definitions(${target} PUBLIC IVW_RUNTIME_MODULE_LOADING)
@@ -158,7 +158,6 @@ function(ivw_private_setup_module_data)
     set("${mod}_modName"      "Inviwo${name}Module"   CACHE INTERNAL "Module mod name")
     set("${mod}_version"      "${version}"            CACHE INTERNAL "Module version")
     set("${mod}_header"       "${header}"             CACHE INTERNAL "Module header")
-    set("${mod}_licenses"     ""                      CACHE INTERNAL "License ids")
     set("${mod}_incPrefix"    "${includePrefix}"      CACHE INTERNAL "Module include Prefix")
     set("${mod}_incPath"      "${includePath}"        CACHE INTERNAL "Module include Path")
     set("${mod}_orgName"      "${orgName}"            CACHE INTERNAL "Module Org Name")
@@ -380,9 +379,16 @@ function(ivw_register_modules retval)
     # Add enabled modules in sorted order
     set(ivw_module_names "")
     foreach(mod IN LISTS enabled_sorted_modules)
+        message(STATUS "create module: ${${mod}_name}")
+        if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.16.0)
+            list(APPEND CMAKE_MESSAGE_INDENT "    ")
+        endif()
         add_subdirectory(${${mod}_path} ${IVW_BINARY_DIR}/modules/${${mod}_dir})
         list(APPEND ivw_module_names ${${mod}_modName})
         ivw_private_generate_module_registration_file(${mod})
+        if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.16.0)
+            list(POP_BACK CMAKE_MESSAGE_INDENT)
+        endif()
     endforeach()
 
     # Save list of modules
@@ -431,6 +437,7 @@ function(ivw_group group_name)
     set(oneValueArgs "BASE")
     set(multiValueArgs "")
     cmake_parse_arguments(ARG "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
+    
     ivw_dir_to_mod_dep(mod ${PROJECT_NAME})
     
     if(ARG_BASE AND IS_ABSOLUTE ${ARG_BASE})
@@ -451,21 +458,7 @@ function(ivw_group group_name)
         set(base "${CMAKE_CURRENT_SOURCE_DIR}")
     endif()
 
-    foreach(file ${ARG_UNPARSED_ARGUMENTS})
-        if(NOT IS_ABSOLUTE ${file})
-            set(file ${CMAKE_CURRENT_SOURCE_DIR}/${file})
-        endif()
-        file(RELATIVE_PATH folder ${base} ${file})
-        get_filename_component(folder ${folder} PATH)
-
-        if(NOT folder STREQUAL "")
-            string(REGEX REPLACE "/+$" "" folderlast ${folder})
-            string(REPLACE "/" "\\" folderlast ${folderlast})
-            source_group("${group_name}\\${folderlast}" FILES ${file})
-        else()
-            source_group("${group_name}" FILES ${file})
-        endif(NOT folder STREQUAL "")
-    endforeach(file ${ARGN})
+    source_group(TREE ${base} PREFIX ${group_name} FILES ${ARG_UNPARSED_ARGUMENTS})
 endfunction()
 
 #--------------------------------------------------------------------
@@ -491,7 +484,6 @@ function(ivw_create_module)
     endif()
 
     string(TOLOWER ${PROJECT_NAME} l_project_name)
-    ivw_debug_message(STATUS "create module: ${PROJECT_NAME}")
     ivw_dir_to_mod_dep(mod ${l_project_name})  # opengl -> INVIWOOPENGLMODULE
 
     set(cmake_files "${CMAKE_CURRENT_SOURCE_DIR}/CMakeLists.txt")
@@ -544,7 +536,7 @@ function(ivw_create_module)
     # Add stuff to the installer
     ivw_default_install_targets(${${mod}_target})
     ivw_private_install_module_dirs()
-    
+
     ivw_make_unittest_target("${${mod}_dir}" "${${mod}_target}")
 
     if(ARG_GROUP)
@@ -563,108 +555,4 @@ function(ivw_add_external_projects)
         get_filename_component(FOLDER_NAME ${project_root_path} NAME)
         add_subdirectory(${project_root_path} ${CMAKE_CURRENT_BINARY_DIR}/ext_${FOLDER_NAME})
     endforeach()
-endfunction()
-
-#-------------------------------------------------------------------#
-#                        Precompile headers                         #
-#-------------------------------------------------------------------#
-# Set header ignore paths for cotire
-
-function(ivw_get_header_path header retval)
-    file(WRITE "${IVW_BINARY_DIR}/cmake/findheader.cpp" "#include <${header}>")
-    string(TOLOWER "${header}" lheader)
-
-    set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
-    set(CMAKE_TRY_COMPILE_CONFIGURATION RELEASE)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /showIncludes")
-    try_compile(res ${CMAKE_BINARY_DIR}
-        SOURCES "${IVW_BINARY_DIR}/cmake/findheader.cpp"
-        OUTPUT_VARIABLE output
-    )
-    if(NOT ${res})
-        message(FATAL_ERROR "Header path not found")
-    endif()
-    string (REPLACE "\\" "/" output "${output}")
-    string (REPLACE "//" "/" output "${output}")
-    string (REPLACE ";" "\\;" output "${output}")
-    string (REGEX REPLACE "\n" ";" output "${output}")
-    string (REGEX REPLACE "\r" "" output "${output}")
-    foreach(line ${output})
-        if (line MATCHES ":( +)([^:]+:[^:]+)$")
-            string (LENGTH "${CMAKE_MATCH_1}" depth)
-            get_filename_component(file "${CMAKE_MATCH_2}" ABSOLUTE)
-            get_filename_component(name "${file}" NAME)
-            string(TOLOWER "${name}" lname)
-            if(${lname} STREQUAL ${lheader})
-                get_filename_component(path ${file} DIRECTORY)
-                set(${retval} ${path} PARENT_SCOPE)
-                return()
-            endif()
-        endif()
-    endforeach()
-    message(FATAL_ERROR "Header path not found")
-endfunction()
-
-function(ivw_get_drive file retval)
-    set(tmp1 ${file})
-    set(tmp2 "")
-    while(NOT "${tmp1}" STREQUAL "${tmp2}")
-        set(tmp2 ${tmp1})
-        get_filename_component(tmp1 ${tmp1} DIRECTORY)
-    endwhile()
-    set(${retval} ${tmp1} PARENT_SCOPE)
-endfunction()
-
-if(WIN32 AND MSVC)
-    ivw_get_header_path("windows.h" ivw_private_windows_path)
-endif()
-
-# Optimize compilation with pre-compilied headers from inviwo core
-function(ivw_compile_optimize_inviwo_core_on_target target)
-    message(DEPRECATION "Use ivw_compile_optimize_on_target")
-    ivw_compile_optimize_on_target(${target})
-endfunction()
-
-# Optimize compilation with pre-compilied headers
-# Custom target properties:
-#  * COTIRE_PREFIX_HEADER_PUBLIC_IGNORE_PATH  
-#  * COTIRE_PREFIX_HEADER_PUBLIC_INCLUDE_PATH 
-# We make sure that these properties are propagated to the 
-# depending targets.
-function(ivw_compile_optimize_on_target target)
-    if(PRECOMPILED_HEADERS)
-        ivw_get_target_property_recursive(publicIgnorePaths ${target} COTIRE_PREFIX_HEADER_PUBLIC_IGNORE_PATH False)
-        get_target_property(ignorePaths ${target} COTIRE_PREFIX_HEADER_IGNORE_PATH)
-        if(NOT ignorePaths)
-            set(ignorePaths "")
-        endif()
-        list(APPEND ignorePaths
-            ${publicIgnorePaths}
-            "${CMAKE_CURRENT_SOURCE_DIR}"
-            "${CMAKE_CURRENT_BINARY_DIR}"
-            "${IVW_EXTENSIONS_DIR}/warn"
-        )
-        if(WIN32 AND MSVC)
-            ivw_get_drive(${ivw_private_windows_path} windrive)
-            list(APPEND ignorePaths ${windrive})
-        endif()
-        list(REMOVE_DUPLICATES ignorePaths)
-
-        ivw_get_target_property_recursive(publicIncludePaths ${target} COTIRE_PREFIX_HEADER_PUBLIC_INCLUDE_PATH False)
-        get_target_property(includePaths ${target} COTIRE_PREFIX_HEADER_INCLUDE_PATH)
-        if(NOT includePaths)
-            set(includePaths "")
-        endif()
-        list(APPEND includePaths
-            "${IVW_ROOT_DIR}"
-            ${publicIncludePaths}
-        )
-        list(REMOVE_DUPLICATES includePaths)
-
-        set_target_properties(${target} PROPERTIES COTIRE_PREFIX_HEADER_IGNORE_PATH "${ignorePaths}")
-        set_target_properties(${target} PROPERTIES COTIRE_PREFIX_HEADER_INCLUDE_PATH "${includePaths}")
-        set_target_properties(${target} PROPERTIES COTIRE_ADD_UNITY_BUILD FALSE)
-
-        cotire(${target})
-    endif()
 endfunction()

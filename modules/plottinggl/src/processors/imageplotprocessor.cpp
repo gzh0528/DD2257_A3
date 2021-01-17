@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2019 Inviwo Foundation
+ * Copyright (c) 2019-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,6 +31,7 @@
 
 #include <modules/opengl/openglutils.h>
 #include <modules/opengl/texture/textureutils.h>
+#include <inviwo/core/util/raiiutils.h>
 
 namespace inviwo {
 
@@ -41,7 +42,7 @@ const ProcessorInfo ImagePlotProcessor::processorInfo_{
     "org.inviwo.ImagePlotProcessor",  // Class identifier
     "Image Plot",                     // Display name
     "Plotting",                       // Category
-    CodeState::Experimental,          // Code state
+    CodeState::Stable,                // Code state
     "GL, Plotting",                   // Tags
 };
 const ProcessorInfo ImagePlotProcessor::getProcessorInfo() const { return processorInfo_; }
@@ -140,7 +141,10 @@ void ImagePlotProcessor::process() {
                              size2_t(lowerLeft.x, upperRight.y - padding));
 
     const auto bounds = calcImageBounds(dims);
-    imgRenderer_.renderToRect(*imgInport_.getData(), bounds.pos, bounds.extent, dims);
+    // ensure that the image is rendered in the background with maximum depth
+    mat4 m = glm::translate(vec3(0.0f, 0.0f, 2.0f));
+    imgRenderer_.renderToRect(*imgInport_.getData(), bounds.pos, bounds.extent, dims,
+                              LayerType::Color, m);
 
     utilgl::deactivateCurrentTarget();
 }
@@ -210,11 +214,14 @@ void ImagePlotProcessor::onStatusChange() {
 ImagePlotProcessor::ImageBounds ImagePlotProcessor::calcImageBounds(const size2_t& dims) const {
     // adjust all margins by axis margin
     const auto padding = axisMargin_.get();
-    const size2_t lowerLeft(margins_.getLeft() + padding, margins_.getBottom() + padding);
-    const size2_t upperRight(dims.x - 1 - (margins_.getRight() + padding),
-                             dims.y - 1 - (margins_.getTop() + padding));
+    const ivec2 lowerLeft(margins_.getLeft() + padding, margins_.getBottom() + padding);
+    ivec2 upperRight(dims.x - 1 - (margins_.getRight() + padding),
+                     dims.y - 1 - (margins_.getTop() + padding));
 
-    return {lowerLeft, upperRight - lowerLeft};
+    // ensure positive extent
+    upperRight = glm::max(upperRight, lowerLeft);
+
+    return {lowerLeft, size2_t{upperRight - lowerLeft}};
 }
 
 void ImagePlotProcessor::adjustRanges() {

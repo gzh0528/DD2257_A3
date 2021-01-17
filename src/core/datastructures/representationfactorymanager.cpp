@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2019 Inviwo Foundation
+ * Copyright (c) 2019-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -28,6 +28,8 @@
  *********************************************************************************/
 
 #include <inviwo/core/datastructures/representationfactorymanager.h>
+
+#include <inviwo/core/common/inviwoapplication.h>
 
 namespace inviwo {
 
@@ -63,6 +65,15 @@ void RepresentationFactoryManager::registerRepresentationConverterFactory(
     if (localRepresentationConverterMetaFactory_->registerObject(converterFactory.get())) {
         representationConverterFactories_.push_back(std::move(converterFactory));
     }
+}
+
+RepresentationMetaFactory* RepresentationFactoryManager::getDefaultRepresentationMetaFactory() {
+    return InviwoApplication::getPtr()->getRepresentationMetaFactory();
+}
+
+RepresentationConverterMetaFactory*
+RepresentationFactoryManager::getDefaultRepresentationConverterMetaFactory() {
+    return InviwoApplication::getPtr()->getRepresentationConverterMetaFactory();
 }
 
 }  // namespace inviwo

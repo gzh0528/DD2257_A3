@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2016-2019 Inviwo Foundation
+ * Copyright (c) 2016-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,20 +27,18 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_DOCUMENT_H
-#define IVW_DOCUMENT_H
+#pragma once
 
-#include <inviwo/core/common/inviwo.h>
 #include <inviwo/core/common/inviwocoredefine.h>
+#include <inviwo/core/util/typetraits.h>
 
-#include <inviwo/core/properties/valuewrapper.h>
-#include <inviwo/core/util/stdextensions.h>
-
+#include <functional>
+#include <sstream>
+#include <type_traits>
+#include <string>
 #include <unordered_map>
 #include <memory>
-#include <functional>
-#include <string>
-#include <algorithm>
+#include <vector>
 
 namespace inviwo {
 
@@ -51,10 +49,7 @@ namespace inviwo {
 
 class IVW_CORE_API Document {
 public:
-    class Element;
     class DocumentHandle;
-
-    using ElemVec = std::vector<std::unique_ptr<Element>>;
 
     enum class ElementType { Node, Text };
 
@@ -65,7 +60,7 @@ public:
 
         Element(const Element&) = delete;
         Element& operator=(const Element&) = delete;
-        Element(Element&&) = default;
+        Element(Element&&) noexcept = default;
         Element& operator=(Element&&) = default;
 
         Element(ElementType type, const std::string& content);
@@ -95,6 +90,8 @@ public:
         static const std::vector<std::string> emptyTags_;
         static const std::vector<std::string> noIndentTags_;
     };
+
+    using ElemVec = std::vector<std::unique_ptr<Element>>;
 
     class IVW_CORE_API PathComponent {
     public:
@@ -145,6 +142,9 @@ public:
         DocumentHandle append(const std::string& name, const std::string content = "",
                               const std::unordered_map<std::string, std::string>& attributes = {});
 
+        DocumentHandle insert(PathComponent pos, Document doc);
+        DocumentHandle append(Document doc);
+
         const Element& element() const;
         Element& element();
 
@@ -173,6 +173,9 @@ public:
 
     DocumentHandle append(const std::string& name, const std::string content = "",
                           const std::unordered_map<std::string, std::string>& attributes = {});
+
+    DocumentHandle insert(PathComponent pos, Document doc);
+    DocumentHandle append(Document doc);
 
     template <typename BeforVisitor, typename AfterVisitor>
     void visit(BeforVisitor before, AfterVisitor after) const {
@@ -217,11 +220,7 @@ public:
         return ss;
     }
 
-    operator std::string() const {
-        std::stringstream ss;
-        ss << *this;
-        return ss.str();
-    }
+    operator std::string() const;
 
 private:
     std::unique_ptr<Element> root_;
@@ -318,5 +317,3 @@ private:
 }  // namespace utildoc
 
 }  // namespace inviwo
-
-#endif  // IVW_DOCUMENT_H

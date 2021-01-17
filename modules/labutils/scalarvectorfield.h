@@ -422,7 +422,7 @@ void Field<Dim, VecDim>::setValueAtVertex(const Field<Dim, VecDim>::IndexType& i
 
 template <int Dim, int VecDim>
 typename Field<Dim, VecDim>::PositionType Field<Dim, VecDim>::getCellSize() const {
-    typename Field<Dim, VecDim>::PositionType cellSize;
+    Field<Dim, VecDim>::PositionType cellSize;
     for (int d = 0; d < Dim; ++d) cellSize[d] = extent_[d] / (size_[d] - 1);
     return cellSize;
 }

@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2014-2019 Inviwo Foundation
+ * Copyright (c) 2014-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,13 +27,13 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_GLFWMODULE_H
-#define IVW_GLFWMODULE_H
+#pragma once
 
 #include <modules/glfw/glfwmoduledefine.h>
 #include <inviwo/core/common/inviwomodule.h>
 #include <modules/glfw/canvasglfw.h>
 #include <inviwo/core/network/processornetworkevaluationobserver.h>
+#include <inviwo/core/util/rendercontext.h>
 
 namespace inviwo {
 
@@ -47,9 +47,8 @@ public:
     virtual void onProcessorNetworkEvaluationEnd() override;
 
 private:
+    ContextHolder* holder_ = nullptr;
     std::unique_ptr<CanvasGLFW> GLFWSharedCanvas_;
 };
 
 }  // namespace inviwo
-
-#endif  // IVW_GLFWMODULE_H

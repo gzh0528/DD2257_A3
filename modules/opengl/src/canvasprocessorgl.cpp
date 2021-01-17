@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2012-2019 Inviwo Foundation
+ * Copyright (c) 2012-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -29,7 +29,10 @@
 
 #include <modules/opengl/canvasprocessorgl.h>
 #include <modules/opengl/canvasgl.h>
+#include <modules/opengl/image/imagegl.h>
 #include <inviwo/core/processors/processor.h>
+
+#include <inviwo/core/util/rendercontext.h>
 
 namespace inviwo {
 
@@ -42,6 +45,19 @@ const ProcessorInfo CanvasProcessorGL::processorInfo_{
 };
 const ProcessorInfo CanvasProcessorGL::getProcessorInfo() const { return processorInfo_; }
 
-CanvasProcessorGL::CanvasProcessorGL() : CanvasProcessor() {}
+CanvasProcessorGL::CanvasProcessorGL(InviwoApplication* app) : CanvasProcessor(app) {}
+
+void CanvasProcessorGL::process() {
+    // ensure that the image inport has a GL representation
+    // otherwise the canvas widget will request a new one which in turn creates an fbo within the
+    // context of the canvas, i.e. not the default canvas.
+    //
+    // FIXME: this is not ideal
+    if (!inport_.getData()->hasRepresentation<ImageGL>()) {
+        RenderContext::getPtr()->activateDefaultRenderContext();
+        inport_.getData()->getRepresentation<ImageGL>();
+    }
+    CanvasProcessor::process();
+}
 
 }  // namespace inviwo

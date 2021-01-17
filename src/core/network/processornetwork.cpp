@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2012-2019 Inviwo Foundation
+ * Copyright (c) 2012-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -39,6 +39,9 @@
 #include <inviwo/core/network/processornetworkconverter.h>
 #include <inviwo/core/network/networklock.h>
 #include <inviwo/core/metadata/processormetadata.h>
+#include <inviwo/core/network/networkvisitor.h>
+
+#include <fmt/format.h>
 
 #include <algorithm>
 
@@ -87,10 +90,7 @@ bool ProcessorNetwork::addProcessor(Processor* processor) {
     return true;
 }
 
-void ProcessorNetwork::removeProcessor(Processor* processor) {
-    if (!processor) return;
-    NetworkLock lock(this);
-
+void ProcessorNetwork::removeProcessorHelper(Processor* processor) {
     // Remove all connections for this processor
     for (auto outport : processor->getOutports()) {
         std::vector<Inport*> inports = outport->getConnectedInports();
@@ -111,6 +111,13 @@ void ProcessorNetwork::removeProcessor(Processor* processor) {
     for (auto& link : toDelete) {
         removeLink(link.getSource(), link.getDestination());
     }
+}
+
+void ProcessorNetwork::removeProcessor(Processor* processor) {
+    if (!processor) return;
+    NetworkLock lock(this);
+
+    removeProcessorHelper(processor);
 
     // remove processor itself
     notifyObserversProcessorNetworkWillRemoveProcessor(processor);
@@ -124,8 +131,19 @@ void ProcessorNetwork::removeProcessor(Processor* processor) {
 
 void ProcessorNetwork::removeAndDeleteProcessor(Processor* processor) {
     if (!processor) return;
+    NetworkLock lock(this);
+
     RenderContext::getPtr()->activateDefaultRenderContext();
-    removeProcessor(processor);
+    removeProcessorHelper(processor);
+
+    // remove processor itself
+    notifyObserversProcessorNetworkWillRemoveProcessor(processor);
+    processors_.erase(util::stripIdentifier(processor->getIdentifier()));
+    removePropertyOwnerObservation(processor);
+    processor->setNetwork(nullptr);
+    processor->setProcessorWidget(nullptr);
+    notifyObserversProcessorNetworkDidRemoveProcessor(processor);
+
     delete processor;
 }
 
@@ -142,8 +160,20 @@ void ProcessorNetwork::addConnection(const PortConnection& connection) {
     addConnection(connection.getOutport(), connection.getInport());
 }
 void ProcessorNetwork::addConnection(Outport* src, Inport* dst) {
-    if (!isPortInNetwork(src)) throw Exception("Outport not found in network");
-    if (!isPortInNetwork(dst)) throw Exception("Inport not found in network");
+    if (!isPortInNetwork(src)) {
+        throw Exception(
+            fmt::format(
+                "Unable to create connection, Outport '{}' of Processor '{}' not found in network",
+                src->getClassIdentifier(), src->getProcessor()->getIdentifier()),
+            IVW_CONTEXT);
+    }
+    if (!isPortInNetwork(dst)) {
+        throw Exception(
+            fmt::format(
+                "Unable to create connection, Inport '{}' of Processor '{}' not found in network",
+                src->getClassIdentifier(), src->getProcessor()->getIdentifier()),
+            IVW_CONTEXT);
+    }
 
     if (canConnect(src, dst) && !isConnected(src, dst)) {
         NetworkLock lock(this);
@@ -206,8 +236,10 @@ void ProcessorNetwork::addLink(const PropertyLink& link) {
     addLink(link.getSource(), link.getDestination());
 }
 void ProcessorNetwork::addLink(Property* src, Property* dst) {
-    if (!isPropertyInNetwork(src)) throw Exception("Source property not found in network");
-    if (!isPropertyInNetwork(dst)) throw Exception("Destination property not found in network");
+    if (!isPropertyInNetwork(src))
+        throw Exception("Source property not found in network", IVW_CONTEXT);
+    if (!isPropertyInNetwork(dst))
+        throw Exception("Destination property not found in network", IVW_CONTEXT);
 
     if (!isLinked(src, dst) && canLink(src, dst)) {
         NetworkLock lock(this);
@@ -283,18 +315,15 @@ void ProcessorNetwork::evaluateLinksFromProperty(Property* source) {
 void ProcessorNetwork::clear() {
     NetworkLock lock(this);
 
-    // make sure the pool is not doing any work.
-    application_->waitForPool();
-
-    std::vector<Processor*> processors = getProcessors();
-    // Invalidate inports to alert processors that they should stop their calculations.
-    for (auto processor : processors) {
-        for (auto inport : processor->getInports())
-            inport->invalidate(InvalidationLevel::InvalidOutput);
-    }
-
+    auto processors = getProcessors();
     for (auto processor : processors) {
         removeAndDeleteProcessor(processor);
+    }
+}
+
+void ProcessorNetwork::accept(NetworkVisitor& visitor) {
+    for (auto& p : processors_) {
+        p.second->accept(visitor);
     }
 }
 
@@ -329,6 +358,16 @@ void ProcessorNetwork::onProcessorPortRemoved(Processor*, Port* port) {
     for (auto& item : toDelete) {
         removeConnection(item.getOutport(), item.getInport());
     }
+}
+
+void ProcessorNetwork::onProcessorStartBackgroundWork(Processor* p, size_t jobs) {
+    backgoundJobs_ += static_cast<int>(jobs);
+    notifyObserversProcessorBackgroundJobsChanged(p, static_cast<int>(jobs), backgoundJobs_);
+}
+
+void ProcessorNetwork::onProcessorFinishBackgroundWork(Processor* p, size_t jobs) {
+    backgoundJobs_ -= static_cast<int>(jobs);
+    notifyObserversProcessorBackgroundJobsChanged(p, -static_cast<int>(jobs), backgoundJobs_);
 }
 
 void ProcessorNetwork::onAboutPropertyChange(Property* modifiedProperty) {
@@ -369,7 +408,7 @@ void ProcessorNetwork::removePropertyOwnerObservation(PropertyOwner* po) {
 
 int ProcessorNetwork::getVersion() const { return processorNetworkVersion_; }
 
-const int ProcessorNetwork::processorNetworkVersion_ = 16;
+const int ProcessorNetwork::processorNetworkVersion_ = 17;
 
 void ProcessorNetwork::deserialize(Deserializer& d) {
     NetworkLock lock(this);

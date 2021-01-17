@@ -24,6 +24,7 @@ namespace inviwo {
 //
 // }
 
+
 void Integrator::drawPoint(const dvec2& p, const vec4& color, IndexBufferRAM* indexBuffer,
                            std::vector<BasicMesh::Vertex>& vertices) {
     indexBuffer->add(static_cast<std::uint32_t>(vertices.size()));

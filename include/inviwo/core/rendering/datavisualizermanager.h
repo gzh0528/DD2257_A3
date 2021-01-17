@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2018-2019 Inviwo Foundation
+ * Copyright (c) 2018-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,14 +27,13 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_DATAVISUALIZERMANAGER_H
-#define IVW_DATAVISUALIZERMANAGER_H
+#pragma once
 
 #include <inviwo/core/common/inviwocoredefine.h>
-#include <inviwo/core/common/inviwo.h>
-
 #include <inviwo/core/rendering/datavisualizer.h>
+
 #include <memory>
+#include <vector>
 
 namespace inviwo {
 
@@ -87,5 +86,3 @@ private:
 };
 
 }  // namespace inviwo
-
-#endif  // IVW_DATAVISUALIZERMANAGER_H

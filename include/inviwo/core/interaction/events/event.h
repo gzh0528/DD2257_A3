@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2012-2019 Inviwo Foundation
+ * Copyright (c) 2012-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,8 +27,7 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_EVENT_H
-#define IVW_EVENT_H
+#pragma once
 
 #include <inviwo/core/common/inviwocoredefine.h>
 #include <inviwo/core/io/serialization/serializable.h>
@@ -57,11 +56,25 @@ public:
      */
     virtual bool shouldPropagateTo(Inport* inport, Processor* processor, Outport* source);
 
-    void markAsUsed();
+    bool markAsUsed();
+    /**
+     * Returns the previous used state, and sets it to used;
+     */
     bool hasBeenUsed() const;
-    void markAsUnused();
+    /**
+     * Returns the previous used state, and sets it to unused;
+     */
+    bool markAsUnused();
 
-    void markAsVisited(Processor*);
+    /**
+     * Returns the previous used state, and sets it to 'isUsed';
+     */
+    bool setUsed(bool isUsed);
+
+    /**
+     * Returns false if the processor was already visited;
+     */
+    bool markAsVisited(Processor*);
     void markAsVisited(Event&);
     bool hasVisitedProcessor(Processor*) const;
     // Can be used to figure out where an event came from.
@@ -108,6 +121,24 @@ const EventType* Event::getAs() const {
     return nullptr;
 }
 
-}  // namespace inviwo
+inline bool Event::markAsUsed() {
+    const auto curr = used_;
+    used_ = true;
+    return curr;
+}
 
-#endif  // IVW_EVENT_H
+inline bool Event::hasBeenUsed() const { return used_; }
+
+inline bool Event::markAsUnused() {
+    const auto curr = used_;
+    used_ = false;
+    return curr;
+}
+
+inline bool Event::setUsed(bool isUsed) {
+    const auto curr = used_;
+    used_ = isUsed;
+    return curr;
+}
+
+}  // namespace inviwo

@@ -2,7 +2,7 @@
  *
  * Inviwo - Interactive Visualization Workshop
  *
- * Copyright (c) 2016-2019 Inviwo Foundation
+ * Copyright (c) 2016-2020 Inviwo Foundation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,8 +27,7 @@
  *
  *********************************************************************************/
 
-#ifndef IVW_PARALLELCOORDINATES_H
-#define IVW_PARALLELCOORDINATES_H
+#pragma once
 
 #include <modules/plottinggl/plottingglmoduledefine.h>
 #include <inviwo/core/common/inviwo.h>
@@ -43,7 +42,6 @@
 #include <inviwo/core/properties/ordinalproperty.h>
 #include <inviwo/core/properties/stringproperty.h>
 #include <inviwo/core/properties/buttonproperty.h>
-#include <inviwo/core/properties/transferfunctionproperty.h>
 #include <modules/brushingandlinking/ports/brushingandlinkingports.h>
 #include <inviwo/dataframe/datastructures/dataframe.h>
 #include <modules/opengl/shader/shader.h>
@@ -54,6 +52,7 @@
 
 #include <modules/plotting/properties/categoricalaxisproperty.h>
 #include <inviwo/dataframe/properties/dataframeproperty.h>
+#include <inviwo/dataframe/properties/dataframecolormapproperty.h>
 #include <modules/plotting/properties/marginproperty.h>
 
 #include <modules/plottinggl/utils/axisrenderer.h>
@@ -92,7 +91,7 @@ public:
 
     virtual void process() override;
 
-    void autoAdjustMargins();
+    void adjustMargins();
 
     void updateBrushing(PCPAxisSettings& axis);
 
@@ -102,8 +101,7 @@ public:
 
     CompositeProperty axisProperties_;
 
-    DataFrameColumnProperty selectedColorAxis_;
-    TransferFunctionProperty tf_;
+    DataFrameColormapProperty colormap_;
 
     TemplateOptionProperty<AxisSelection> axisSelection_;
 
@@ -111,7 +109,10 @@ public:
     TemplateOptionProperty<BlendMode> blendMode_;
     FloatProperty falllofPower_;
     FloatProperty lineWidth_;
+    CompositeProperty selectedLine_;
     FloatProperty selectedLineWidth_;
+    BoolCompositeProperty selectedLineColorOverride_;
+    FloatVec4Property selectedLineColor_;
     BoolProperty showFiltered_;
     FloatVec3Property filterColor_;
     FloatProperty filterAlpha_;
@@ -139,7 +140,7 @@ public:
     FloatVec4Property handleFilteredColor_;
 
     MarginProperty margins_;
-    BoolProperty autoMargins_;
+    BoolProperty includeLabelsInMargin_;
     ButtonProperty resetHandlePositions_;
 
     int getHoveredAxis() const { return hoveredAxis_; }
@@ -172,6 +173,11 @@ private:
     void updateBrushing();
 
     std::pair<size2_t, size2_t> axisPos(size_t columnId) const;
+
+    /**
+     * Returns display area excluding margins as lower left and upper right point.
+     */
+    std::pair<vec2, vec2> getDisplayRect(vec2 size) const;
 
     glui::Renderer sliderWidgetRenderer_;
     std::vector<ColumnAxis> axes_;
@@ -211,6 +217,7 @@ private:
     };
     Lines lines_;
 
+    std::pair<vec2, vec2> marginsInternal_;  // Margins with/without considering labels
     int hoveredLine_ = -1;
     int hoveredAxis_ = -1;
 
@@ -221,5 +228,3 @@ private:
 }  // namespace plot
 
 }  // namespace inviwo
-
-#endif  // IVW_PARALLELCOORDINATES_H
