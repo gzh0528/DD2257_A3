@@ -78,7 +78,7 @@ option(IVW_APP_QTBASE       "Build base for Qt apps. Used by the Qt network edit
 option(IVW_APP_INVIWO       "Build Inviwo Qt network editor application" ON)
 option(IVW_APP_MINIMAL_GLFW "Build Inviwo Tiny GLFW Application" OFF)
 option(IVW_APP_MINIMAL_QT   "Build Inviwo Tiny QT Application" OFF)
-option(IVW_APP_PYTHON       "Build Inviwo Python Application" ON)
+option(IVW_APP_PYTHON       "Build Inviwo Python Application" OFF)
 
 if((IVW_APP_INVIWO OR IVW_APP_MINIMAL_QT OR IVW_APP_PYTHON) AND NOT IVW_APP_QTBASE)
     set(IVW_APP_QTBASE ON CACHE BOOL 
