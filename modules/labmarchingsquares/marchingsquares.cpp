@@ -34,6 +34,7 @@ MarchingSquares::MarchingSquares()
     , meshIsoOut("meshIsoOut")
     , meshGridOut("meshGridOut")
     , propShowGrid("showGrid", "Show Grid")
+    , propSmooth("smooth", "Smoothing")
     , propGridColor("gridColor", "Grid Lines Color", vec4(0.0f, 0.0f, 0.0f, 1.0f), vec4(0.0f),
                     vec4(1.0f), vec4(0.1f), InvalidationLevel::InvalidOutput,
                     PropertySemantics::Color)
@@ -52,6 +53,7 @@ MarchingSquares::MarchingSquares()
 
     // Register properties
     addProperty(propShowGrid);
+    addProperty(propSmooth);
     addProperty(propGridColor);
 
     addProperty(propDeciderType);
@@ -232,6 +234,44 @@ void MarchingSquares::process() {
     // smoothedField.setValueAtVertex({0, 0}, 4.2);
     // and read again in the same way as before
     // smoothedField.getValueAtVertex(ij);
+
+    if (propSmooth.get())
+    {
+        ScalarField2 smoothedField = ScalarField2(nVertPerDim, bBoxMin, bBoxMax - bBoxMin);
+
+        float G[5][5] = {
+            {2, 4, 5, 4, 2},
+            {4, 9, 12, 9, 4},
+            {5, 12, 15, 12, 5},
+            {4, 9, 12, 9, 4},
+            {2, 4, 5, 4, 2},
+        };
+        for (int i = 0; i < 5; i++)
+            for (int j = 0; j < 5; j++)
+                G[i][j] /= 115;
+
+        for (int x = 0; x < nVertPerDim[0]; x++) {
+            for (int y = 0; y < nVertPerDim[1]; y++) {
+                float v = 0;
+
+                for (int i = 0; i < 5; i++)
+                    for (int j = 0; j < 5; j++) {
+                        int xi = x+i-2;
+                        int yj = y+j-2;
+                        if (xi >= 0 && xi < nVertPerDim[0] && yj >= 0 && yj < nVertPerDim[1])
+                            v += G[i][j] * grid.getValueAtVertex({xi, yj});
+                        else
+                            ;
+                            //v += G[i][j] * grid.getValueAtVertex({x, y});
+                    }
+
+                smoothedField.setValueAtVertex({x,y}, v);
+            }
+        }
+
+        grid = smoothedField;
+    }
+
     // Initialize the output: mesh and vertices
     auto mesh = std::make_shared<BasicMesh>();
     std::vector<BasicMesh::Vertex> vertices;

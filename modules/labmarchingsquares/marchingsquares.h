@@ -92,6 +92,7 @@ public:
 public:
     // Basic settings
     BoolProperty propShowGrid;
+    BoolProperty propSmooth;
     FloatVec4Property propGridColor;
     TemplateOptionProperty<int> propDeciderType;
     Int64Property propRandomSeed;
