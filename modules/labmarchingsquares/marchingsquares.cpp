@@ -73,8 +73,9 @@ MarchingSquares::MarchingSquares()
 
     // The default transfer function has just two blue points
     propIsoTransferFunc.get().clear();
+    //propIsoTransferFunc.get().add(0.0f, vec4(0.0f, 0.0f, 1.0f, 1.0f));
     propIsoTransferFunc.get().add(0.0f, vec4(0.0f, 0.0f, 1.0f, 1.0f));
-    propIsoTransferFunc.get().add(1.0f, vec4(0.0f, 0.0f, 1.0f, 1.0f));
+    propIsoTransferFunc.get().add(1.0f, vec4(1.0f, 0.0f, 0.0f, 1.0f));
     propIsoTransferFunc.setCurrentStateAsDefault();
 
     util::hide(propGridColor, propRandomSeed, propNumContours, propIsoTransferFunc);
@@ -407,20 +408,9 @@ void MarchingSquares::process() {
                     else if (tp.size()==4)
                     {
                         //“Asymptotic Decider”
-                        float fij=grid.getValueAtVertex({i,j});
-                        float fij1=grid.getValueAtVertex({i,j+1});
-                        float fi1j=grid.getValueAtVertex({i+1,j});
-                        float fi1j1=grid.getValueAtVertex({i+1,j+1});
-                        float fab=(fij*fi1j1-fi1j*fij1)/(fi1j1+fij-fij1-fi1j);
-                        if(fab>=isoval)
-                        {
-                            drawLineSegment(tp[0], tp[1],  NColors[isn], indexBufferIsoline.get(), vertices);
-                            drawLineSegment(tp[2], tp[3],  NColors[isn], indexBufferIsoline.get(), vertices);
-                        }
-                        else{
-                            drawLineSegment(tp[0], tp[2],  NColors[isn], indexBufferIsoline.get(), vertices);
-                            drawLineSegment(tp[1], tp[3],  NColors[isn], indexBufferIsoline.get(), vertices);
-                        }
+                        std::sort(tp.begin(),tp.end(),next_x);
+                        drawLineSegment(tp[0], tp[1], NColors[isn], indexBufferIsoline.get(), vertices);
+                        drawLineSegment(tp[2], tp[3], NColors[isn], indexBufferIsoline.get(), vertices);
                     }
                     
                 }
