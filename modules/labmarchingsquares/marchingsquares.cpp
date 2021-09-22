@@ -215,8 +215,8 @@ void MarchingSquares::process() {
         auto indexBufferGrid = gridmesh->addIndexBuffer(DrawType::Lines, ConnectivityType::None);
 
         // Draw a line segment from v1 to v2 with a the given color for the grid
-        vec2 v1 = vec2(0.5, 0.5);
-        vec2 v2 = vec2(0.6, 0.7);
+        //vec2 v1 = vec2(0.5, 0.5);
+        //vec2 v2 = vec2(0.6, 0.7);
         //drawLineSegment(v1, v2, propGridColor.get(), indexBufferGrid.get(), gridvertices);
     }
 
@@ -291,9 +291,30 @@ void MarchingSquares::process() {
                 else if (tp.size()==4)
                 {
                     //“Asymptotic Decider”
-                    std::sort(tp.begin(),tp.end(),next_x);
-                    drawLineSegment(tp[0], tp[1], propIsoColor.get(), indexBufferIsoline.get(), vertices);
-                    drawLineSegment(tp[2], tp[3], propIsoColor.get(), indexBufferIsoline.get(), vertices);
+                    if(propDeciderType.get()==0)
+                    {
+                        std::sort(tp.begin(),tp.end(),next_x);
+                        drawLineSegment(tp[0], tp[1], propIsoColor.get(), indexBufferIsoline.get(), vertices);
+                        drawLineSegment(tp[2], tp[3], propIsoColor.get(), indexBufferIsoline.get(), vertices);
+                    }
+                    else
+                    {
+                        float rdecider = randomValue(0,1);
+                        std::cout<<"random"<<rdecider<<std::endl;
+                        if(rdecider>=0.5)
+                        {
+                            drawLineSegment(tp[0], tp[1], propIsoColor.get(), indexBufferIsoline.get(), vertices);
+                            drawLineSegment(tp[2], tp[3], propIsoColor.get(), indexBufferIsoline.get(), vertices);
+                            
+                        }
+                        else
+                        {
+                            drawLineSegment(tp[0], tp[2], propIsoColor.get(), indexBufferIsoline.get(), vertices);
+                            drawLineSegment(tp[1], tp[3], propIsoColor.get(), indexBufferIsoline.get(), vertices);
+                            
+                        }
+                    }
+                    
                     /*float fij=grid.getValueAtVertex({i,j});
                     float fij1=grid.getValueAtVertex({i,j+1});
                     float fi1j=grid.getValueAtVertex({i+1,j});
