@@ -177,8 +177,16 @@ bool CanvasQt::event(QEvent* e) {
     }
 }
 
+/*
 dvec2 CanvasQt::normalPos(dvec2 pos) const {
     return util::invertY(pos, getCanvasDimensions()) / dvec2(getCanvasDimensions() - size2_t(1));
+}
+*/
+// Fix for high dpi https://canvas.kth.se/courses/26945/discussion_topics/186221
+dvec2 CanvasQt::normalPos(dvec2 pos) const {
+    auto scale = this->devicePixelRatio();
+    return util::invertY(pos * dvec2(scale), this->getCanvasDimensions()) /
+        dvec2(this->getCanvasDimensions() - size2_t(1));
 }
 
 bool CanvasQt::mapMousePressEvent(QMouseEvent* e) {

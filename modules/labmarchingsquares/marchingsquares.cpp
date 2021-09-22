@@ -217,7 +217,7 @@ void MarchingSquares::process() {
         // Draw a line segment from v1 to v2 with a the given color for the grid
         vec2 v1 = vec2(0.5, 0.5);
         vec2 v2 = vec2(0.6, 0.7);
-        drawLineSegment(v1, v2, propGridColor.get(), indexBufferGrid.get(), gridvertices);
+        //drawLineSegment(v1, v2, propGridColor.get(), indexBufferGrid.get(), gridvertices);
     }
 
     // Set the created grid mesh as output
