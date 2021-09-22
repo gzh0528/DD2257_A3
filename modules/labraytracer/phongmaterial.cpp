@@ -31,7 +31,9 @@ vec4 PhongMaterial::shade(const RayIntersection& intersection, const Light& ligh
     vec3 L = Util::normalize(light.getPosition() - intersection.getPosition());
 
     double cosNL = std::max(double(dot(N, L)), double(0));
-
+    //diffuse part
+    
+    //specular part
     // Programming Task 2: Extend this method.
     // This method currently implements a Lambert's material with ideal
     // diffuse reflection.
@@ -49,6 +51,7 @@ vec4 PhongMaterial::shade(const RayIntersection& intersection, const Light& ligh
     //    light, view, reflection and normal vector.
     //    
     //
+    
     return vec4(Util::scalarMult(cosNL, this->color()), 1.0);
 
 }

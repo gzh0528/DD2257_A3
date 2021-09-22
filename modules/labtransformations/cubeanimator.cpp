@@ -37,7 +37,8 @@ CubeAnimator::CubeAnimator()
     // Properties 
     // For a FloatProperty 
     // variablename(identifier, display name, init value, minvalue, maxvalue)
-    , radius_("radius", "Radius", 6, 1, 8)
+    , radius_("radius", "Radius", 0, 0, 6.28) 
+    , rotation_("rotate_angle", "Angle", 0, 0, 6.28) 
 {
     // Add ports
     addPort(meshIn_);
@@ -45,6 +46,7 @@ CubeAnimator::CubeAnimator()
     
     // Add properties
     addProperty(radius_);
+    addProperty(rotation_);
 
 }
 
@@ -59,7 +61,13 @@ void CubeAnimator::process()
     auto matrix = mesh->getWorldMatrix();
 
     // Transform the mesh (TODO)
-    matrix = glm::translate(vec3(radius_.get(), 0, 0)) * matrix;
+
+    // Move the cube to a proper place to start the rotate
+    matrix = glm::translate(vec3(4, 0, 3)) * matrix;
+
+    // Change the radius while rotating
+    matrix = glm::translate(vec3(sin(radius_.get()), 0, 0)) * matrix;
+    matrix = glm::rotate(rotation_.get(), vec3(0, 0, 1)) * matrix;
 
     // Update
     mesh->setWorldMatrix(matrix);

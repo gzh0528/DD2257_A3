@@ -21,6 +21,10 @@ const ProcessorInfo MarchingSquares::processorInfo_{
     CodeState::Experimental,       // Code state
     Tags::None,                    // Tags
 };
+bool next_x(vec2 a,vec2 b)
+{
+    return a[0]<b[0];
+}
 
 const ProcessorInfo MarchingSquares::getProcessorInfo() const { return processorInfo_; }
 
@@ -183,7 +187,27 @@ void MarchingSquares::process() {
     // Properties are accessed with propertyName.get()
     if (propShowGrid.get()) {
         // TODO: Add grid lines of the given color
-
+        //draw row lines
+        auto indexBufferGridline = gridmesh->addIndexBuffer(DrawType::Lines, ConnectivityType::None);
+        for(int i=0;i<nVertPerDim[0]-1;i++)
+        {
+            for(int k=0;k<nVertPerDim[1];k++)
+            {
+            vec2 rv1=vec2(bBoxMin[0]+i*(cellSize[0]),bBoxMin[1]+k*(cellSize[1]));
+            vec2 rv2=vec2(bBoxMin[0]+(i+1)*(cellSize[0]),bBoxMin[1]+(k)*(cellSize[1]));
+            drawLineSegment(rv1, rv2, propGridColor.get(), indexBufferGridline.get(), gridvertices);
+            }
+        }
+        for(int j=0;j<nVertPerDim[1]-1;j++)
+        {
+            for(int k=0;k<nVertPerDim[0];k++)
+            {
+                vec2 rv3=vec2(bBoxMin[0]+k*(cellSize[0]),bBoxMin[1]+j*(cellSize[1]));
+                vec2 rv4=vec2(bBoxMin[0]+(k)*(cellSize[0]),bBoxMin[1]+(j+1)*(cellSize[1]));
+                drawLineSegment(rv3, rv4, propGridColor.get(), indexBufferGridline.get(), gridvertices);
+            }
+            
+        }
         // The function drawLineSegments creates two vertices at the specified positions,
         // that are placed into the Vertex vector defining our mesh.
         // An index buffer specifies which of those vertices should be grouped into to make up
@@ -192,7 +216,7 @@ void MarchingSquares::process() {
 
         // Draw a line segment from v1 to v2 with a the given color for the grid
         vec2 v1 = vec2(0.5, 0.5);
-        vec2 v2 = vec2(0.7, 0.7);
+        vec2 v2 = vec2(0.6, 0.7);
         drawLineSegment(v1, v2, propGridColor.get(), indexBufferGrid.get(), gridvertices);
     }
 
@@ -211,17 +235,176 @@ void MarchingSquares::process() {
     // Initialize the output: mesh and vertices
     auto mesh = std::make_shared<BasicMesh>();
     std::vector<BasicMesh::Vertex> vertices;
-
+    std::cout<<propMultiple.get();
     if (propMultiple.get() == 0) {
         // TODO: Draw a single isoline at the specified isovalue (propIsoValue)
+        auto indexBufferIsoline = mesh->addIndexBuffer(DrawType::Lines, ConnectivityType::None);
         // and color it with the specified color (propIsoColor)
+        for(int i=0;i<nVertPerDim[0]-1;i++)
+        {
+            for(int j=0;j<nVertPerDim[1]-1;j++)
+            {
+                vec2 v1=vec2(bBoxMin[0]+i*(cellSize[0]),bBoxMin[1]+j*(cellSize[1]));
+                vec2 v3=vec2(bBoxMin[0]+i*(cellSize[0]),bBoxMin[1]+(j+1)*(cellSize[1]));
+                vec2 v2=vec2(bBoxMin[0]+(i+1)*(cellSize[0]),bBoxMin[1]+j*(cellSize[1]));
+                vec2 v4=vec2(bBoxMin[0]+(i+1)*(cellSize[0]),bBoxMin[1]+(j+1)*(cellSize[1]));
+                
+                vec2 a,b,c,d;
+                //down
+                std::vector<vec2> tp;
+                std::cout<<v1[0]<<v1[1]<<std::endl;
+                std::cout<<v2[0]<<v2[1]<<std::endl;
+                float isoval=propIsoValue.get();
+                if((grid.getValueAtVertex({i,j})-isoval)*((grid.getValueAtVertex({i+1,j})-isoval))<0)
+                {
+                    float y=v1[0]+(isoval-grid.getValueAtVertex({i,j}))*(v2[0]-v1[0])/(grid.getValueAtVertex({i+1,j})-grid.getValueAtVertex({i,j}));
+                    a=vec2(y,v1[1]);
+                    tp.push_back(a);
+                }
+                //left
+                if((grid.getValueAtVertex({i,j})-isoval)*((grid.getValueAtVertex({i,j+1})-isoval))<0)
+                {
+                    float x=v1[1]+(isoval-grid.getValueAtVertex({i,j}))*(v3[1]-v1[1])/(grid.getValueAtVertex({i,j+1})-grid.getValueAtVertex({i,j}));
+                    b=vec2(v1[0],x);
+                    tp.push_back(b);
+                }
+                //right
+                if((grid.getValueAtVertex({i+1,j})-isoval)*((grid.getValueAtVertex({i+1,j+1})-isoval))<0)
+                {
+                    float xx=v2[1]+(isoval-grid.getValueAtVertex({i+1,j}))*(v4[1]-v2[1])/(grid.getValueAtVertex({i+1,j+1})-grid.getValueAtVertex({i+1,j}));
+                    c=vec2(v2[0],xx);
+                    tp.push_back(c);
+                }
+                if((grid.getValueAtVertex({i,j+1})-isoval)*((grid.getValueAtVertex({i+1,j+1})-isoval))<0)
+                {
+                    float yy=v3[0]+(isoval-grid.getValueAtVertex({i,j+1}))*(v4[0]-v3[0])/(grid.getValueAtVertex({i+1,j+1})-grid.getValueAtVertex({i,j+1}));
+                    d=vec2(yy,v3[1]);
+                    tp.push_back(d);
+                }
+                if(tp.size()==2)
+                {
+                    std::cout<<"hahahha";
+                    std::cout<<tp[0][0]<<tp[0][1];
 
+                    drawLineSegment(tp[0], tp[1], propIsoColor.get(), indexBufferIsoline.get(), vertices);
+                }
+                else if (tp.size()==4)
+                {
+                    //“Asymptotic Decider”
+                    std::sort(tp.begin(),tp.end(),next_x);
+                    drawLineSegment(tp[0], tp[1], propIsoColor.get(), indexBufferIsoline.get(), vertices);
+                    drawLineSegment(tp[2], tp[3], propIsoColor.get(), indexBufferIsoline.get(), vertices);
+                    /*float fij=grid.getValueAtVertex({i,j});
+                    float fij1=grid.getValueAtVertex({i,j+1});
+                    float fi1j=grid.getValueAtVertex({i+1,j});
+                    float fi1j1=grid.getValueAtVertex({i+1,j+1});
+                    float fab=(fij*fi1j1-fi1j*fij1)/(fi1j1+fij-fij1-fi1j);
+                    std::cout<<fab<<"heyI";
+                    std::cout<<propIsoValue.get();
+                    if(fab>=isoval)
+                    {
+                        drawLineSegment(tp[0], tp[1], propIsoColor.get(), indexBufferIsoline.get(), vertices);
+                        drawLineSegment(tp[2], tp[3], propIsoColor.get(), indexBufferIsoline.get(), vertices);
+                    }
+                    else{
+                        drawLineSegment(tp[0], tp[2], propIsoColor.get(), indexBufferIsoline.get(), vertices);
+                        drawLineSegment(tp[1], tp[3], propIsoColor.get(), indexBufferIsoline.get(), vertices);
+                    }*/
+                }
+                
+            }
+        }
     }
 
     else {
         // TODO: Draw the given number (propNumContours) of isolines between
         // the minimum and maximum value
-
+        //First interpolate between minimum and maximum value
+        //Bonus transfer function
+        vec4 mincolor = propIsoTransferFunc.get().sample(0.0f);
+        vec4 maxcolor = propIsoTransferFunc.get().sample(1.0f);
+        std::vector<float> Nisovals;
+        std::vector<vec4> NColors;
+        std::cout<<mincolor[0]<<mincolor[1]<<mincolor[2]<<mincolor[3]<<std::endl;
+        std::cout<<maxcolor[0]<<maxcolor[1]<<maxcolor[2]<<maxcolor[3]<<std::endl;
+        for(int i=1;i<=propNumContours.get();i++)
+        {
+            Nisovals.push_back(minValue+(maxValue-minValue)*i/(propNumContours.get()+1));
+            NColors.push_back(propIsoTransferFunc.get().sample(((maxValue-minValue)*i/(propNumContours.get()+1))/(maxValue-minValue)));
+            std::cout<<((maxValue-minValue)*i/(propNumContours.get()+1))/(maxValue-minValue)<<std::endl;
+        }
+        
+        for(int isn=0;isn<Nisovals.size();isn++)
+        {
+            std::cout<<NColors[isn][0]<<NColors[isn][1]<<NColors[isn][2]<<NColors[isn][3]<<std::endl;
+            auto indexBufferIsoline = mesh->addIndexBuffer(DrawType::Lines, ConnectivityType::None);
+            // and color it with the specified color (propIsoColor)
+            for(int i=0;i<nVertPerDim[0]-1;i++)
+            {
+                for(int j=0;j<nVertPerDim[1]-1;j++)
+                {
+                    vec2 v1=vec2(bBoxMin[0]+i*(cellSize[0]),bBoxMin[1]+j*(cellSize[1]));
+                    vec2 v3=vec2(bBoxMin[0]+i*(cellSize[0]),bBoxMin[1]+(j+1)*(cellSize[1]));
+                    vec2 v2=vec2(bBoxMin[0]+(i+1)*(cellSize[0]),bBoxMin[1]+j*(cellSize[1]));
+                    vec2 v4=vec2(bBoxMin[0]+(i+1)*(cellSize[0]),bBoxMin[1]+(j+1)*(cellSize[1]));
+                    
+                    vec2 a,b,c,d;
+                    //down
+                    std::vector<vec2> tp;
+                    float isoval=Nisovals[isn];
+                    if((grid.getValueAtVertex({i,j})-isoval)*((grid.getValueAtVertex({i+1,j})-isoval))<0)
+                    {
+                        float y=v1[0]+(isoval-grid.getValueAtVertex({i,j}))*(v2[0]-v1[0])/(grid.getValueAtVertex({i+1,j})-grid.getValueAtVertex({i,j}));
+                        a=vec2(y,v1[1]);
+                        tp.push_back(a);
+                    }
+                    //left
+                    if((grid.getValueAtVertex({i,j})-isoval)*((grid.getValueAtVertex({i,j+1})-isoval))<0)
+                    {
+                        float x=v1[1]+(isoval-grid.getValueAtVertex({i,j}))*(v3[1]-v1[1])/(grid.getValueAtVertex({i,j+1})-grid.getValueAtVertex({i,j}));
+                        b=vec2(v1[0],x);
+                        tp.push_back(b);
+                    }
+                    //right
+                    if((grid.getValueAtVertex({i+1,j})-isoval)*((grid.getValueAtVertex({i+1,j+1})-isoval))<0)
+                    {
+                        float xx=v2[1]+(isoval-grid.getValueAtVertex({i+1,j}))*(v4[1]-v2[1])/(grid.getValueAtVertex({i+1,j+1})-grid.getValueAtVertex({i+1,j}));
+                        c=vec2(v2[0],xx);
+                        tp.push_back(c);
+                    }
+                    if((grid.getValueAtVertex({i,j+1})-isoval)*((grid.getValueAtVertex({i+1,j+1})-isoval))<0)
+                    {
+                        float yy=v3[0]+(isoval-grid.getValueAtVertex({i,j+1}))*(v4[0]-v3[0])/(grid.getValueAtVertex({i+1,j+1})-grid.getValueAtVertex({i,j+1}));
+                        d=vec2(yy,v3[1]);
+                        tp.push_back(d);
+                    }
+                    if(tp.size()==2)
+                    {
+                        //propIsoColor.get()
+                        drawLineSegment(tp[0], tp[1], NColors[isn], indexBufferIsoline.get(), vertices);
+                    }
+                    else if (tp.size()==4)
+                    {
+                        //“Asymptotic Decider”
+                        float fij=grid.getValueAtVertex({i,j});
+                        float fij1=grid.getValueAtVertex({i,j+1});
+                        float fi1j=grid.getValueAtVertex({i+1,j});
+                        float fi1j1=grid.getValueAtVertex({i+1,j+1});
+                        float fab=(fij*fi1j1-fi1j*fij1)/(fi1j1+fij-fij1-fi1j);
+                        if(fab>=isoval)
+                        {
+                            drawLineSegment(tp[0], tp[1],  NColors[isn], indexBufferIsoline.get(), vertices);
+                            drawLineSegment(tp[2], tp[3],  NColors[isn], indexBufferIsoline.get(), vertices);
+                        }
+                        else{
+                            drawLineSegment(tp[0], tp[2],  NColors[isn], indexBufferIsoline.get(), vertices);
+                            drawLineSegment(tp[1], tp[3],  NColors[isn], indexBufferIsoline.get(), vertices);
+                        }
+                    }
+                    
+                }
+            }
+        }
         // TODO (Bonus): Use the transfer function property to assign a color
         // The transfer function normalizes the input data and sampling colors
         // from the transfer function assumes normalized input, that means

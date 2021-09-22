@@ -54,21 +54,58 @@ void Chaikin::CornerCutting(const std::vector<vec3>& ControlPolygon,
 {
     //TODO: Extend and edit this code
     Curve.clear();
+    std::vector<vec3> cp=ControlPolygon;
+    std::vector<vec3> output;
+    const size_t NumPointsPerPolygonLeg = 1 + MinNumDesiredPoints / cp.size();
+    output.reserve(NumPointsPerPolygonLeg * cp.size());
+        std::vector<vec3> TmpCurve;
+        while (cp.size() < MinNumDesiredPoints) {
+            for (int i = 0; i < cp.size() - 1; i++) {
+                TmpCurve.push_back(0.75 * cp[i] + 0.25 * cp[i + 1]);
+                TmpCurve.push_back(0.25 * cp[i] + 0.75 * cp[i + 1]);
+            }
+            TmpCurve.push_back(0.75 * cp.back() + 0.25 * cp.front());
+            TmpCurve.push_back(0.25 * cp.back() + 0.75 * cp.front());
 
-    const size_t NumPointsPerPolygonLeg = 1 + MinNumDesiredPoints / ControlPolygon.size();
-    Curve.reserve(NumPointsPerPolygonLeg * ControlPolygon.size());
-    for(size_t i(0);i<ControlPolygon.size();i++)
-    {
-        const vec3& LeftPoint = ControlPolygon[i];
-        const vec3& RightPoint = ControlPolygon[(i+1) % ControlPolygon.size()];
-
-        //Linearly interpolate between left and right point in the t-interval [0,1)
-        for(size_t j(0);j<NumPointsPerPolygonLeg;j++)
-        {
-            const float t = float(j) / float(NumPointsPerPolygonLeg); //Gives values from 0 to almost 1
-            Curve.push_back((1-t) * LeftPoint + t * RightPoint);
+            cp = TmpCurve;
+            TmpCurve.clear();
         }
+    output=cp;
+    std::cout<<output.size()<<1;
+    //Extra part
+    std::vector<vec3> real_output;
+    real_output.reserve(output.size());
+    for(size_t i(0);i<output.size();i++)
+    {
+        const vec3& P = output[i];
+        //const vec3& RightP = output[(i+1) % output.size()];
+        if(i==0)
+            real_output.push_back(output[0]);
+        if(i==cp.size()-1)
+            real_output.push_back(output[i]);
+        if((i>0)&&(i<cp.size()-1))
+        {
+            vec3& LLPoint = output[i-1];
+            vec3& RRPoint = output[(i+1) % output.size()];
+            float LLX = LLPoint[0];
+            float LLY = LLPoint[1];
+            float pX = P[0];
+            float pY = P[1];
+            float RRX = RRPoint[0];
+            float RRY = RRPoint[1];
+            if(abs(((pY-LLY)/(pX-LLX))-((pY-RRY)/(pX-RRX)))<0.01)
+            {
+                continue;
+            }
+            else
+            {
+                real_output.push_back(output[i]);
+            }
+        }
+        
     }
+    std::cout<<real_output.size();
+    Curve=real_output;
 }
 
 void Chaikin::process()

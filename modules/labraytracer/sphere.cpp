@@ -36,8 +36,34 @@ bool Sphere::closestIntersection(const Ray& ray, double maxLambda,
     // Ray direction t_r : ray.getDirection()
     // If you need the intersection point, use ray.pointOnRay(lambda)
     // You can ignore the uvw (texture coordinates)
-
-    return false;
+    //𝜆2𝐭𝑟2+𝜆2𝐭𝑟⋅𝐩𝑟−𝐜+𝐩𝑟−𝐜2−𝑟2=0
+    const vec3 p_r =ray.getOrigin();
+    const vec3 t_r =ray.getDirection();
+    const double a=dot(t_r,t_r);
+    const double b= 2*dot(t_r,(p_r-center_));
+    const double c= dot((p_r-center_),(p_r-center_))-(radius_*radius_);
+    const double delta=b*b-4*a*c;
+    if(delta<0.0)
+        return false;
+    double lambda1=(-b-sqrt(delta))/(2*a);
+    double lambda2=(-b+sqrt(delta))/(2*a);
+    if(lambda1<0)
+    {
+        if((lambda2<0)||(lambda2>maxLambda))
+            return false;
+    }
+    else
+    {
+        if((lambda1<0)||(lambda1>maxLambda))
+            return false;
+    }
+    double lambda=lambda1;
+    if(lambda1<0)
+        lambda=lambda2;
+    const vec3 uvw(0,0,0);
+    const vec3 normalVec= Util::normalize((ray.pointOnRay(lambda)-center_));
+    intersection = RayIntersection(ray,shared_from_this(),lambda,normalVec,uvw);
+    return true;
 }
 
 bool Sphere::anyIntersection(const Ray& ray, double maxLambda) const {
