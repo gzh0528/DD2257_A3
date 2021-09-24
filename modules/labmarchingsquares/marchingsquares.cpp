@@ -105,13 +105,13 @@ MarchingSquares::MarchingSquares()
             util::show(propIsoValue, propIsoColor);
             util::hide(propNumContours, propIsoTransferFunc);
         } else {
-            util::hide(propIsoValue);
-            util::show(propIsoColor, propNumContours);
+            //util::hide(propIsoValue);
+            //util::show(propIsoColor, propNumContours);
 
             // TODO (Bonus): Comment out above if you are using the transfer function
             // and comment in below instead
-            // util::hide(propIsoValue, propIsoColor);
-            // util::show(propNumContours, propIsoTransferFunc);
+            util::hide(propIsoValue, propIsoColor);
+            util::show(propNumContours, propIsoTransferFunc);
         }
     });
 }
