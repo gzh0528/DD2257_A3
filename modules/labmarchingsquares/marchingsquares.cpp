@@ -447,6 +447,7 @@ void MarchingSquares::process() {
                     }
                     else if (tp.size()==4)
                     {
+                        /*
                         //“Asymptotic Decider”
                         std::sort(tp.begin(),tp.end(),next_x);
 
@@ -454,6 +455,30 @@ void MarchingSquares::process() {
                         drawLineSegment(tp[2], tp[3], NColors[isn], indexBufferIsoline.get(), vertices);
                         //drawLineSegment(tp[0], tp[1], propIsoColor.get(), indexBufferIsoline.get(), vertices);
                         //drawLineSegment(tp[2], tp[3], propIsoColor.get(), indexBufferIsoline.get(), vertices);
+                        */
+
+                        //“Asymptotic Decider”
+                        if(propDeciderType.get()==0)
+                        {
+                            std::sort(tp.begin(),tp.end(),next_x);
+                            drawLineSegment(tp[0], tp[1], NColors[isn], indexBufferIsoline.get(), vertices);
+                            drawLineSegment(tp[2], tp[3], NColors[isn], indexBufferIsoline.get(), vertices);
+                        }
+                        else
+                        {
+                            float rdecider = randomValue(0,1);
+                            std::cout<<"random"<<rdecider<<std::endl;
+                            if(rdecider>=0.5)
+                            {
+                                drawLineSegment(tp[0], tp[1], NColors[isn], indexBufferIsoline.get(), vertices);
+                                drawLineSegment(tp[2], tp[3], NColors[isn], indexBufferIsoline.get(), vertices);
+                            }
+                            else
+                            {
+                                drawLineSegment(tp[0], tp[2], NColors[isn], indexBufferIsoline.get(), vertices);
+                                drawLineSegment(tp[1], tp[3], NColors[isn], indexBufferIsoline.get(), vertices);
+                            }
+                        }
                     }
                     
                 }
