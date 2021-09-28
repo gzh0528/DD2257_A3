@@ -24,6 +24,8 @@
 #include <labstreamlines/labstreamlinesmoduledefine.h>
 #include <labutils/scalarvectorfield.h>
 
+#include <random>
+
 namespace inviwo {
 
 /** \docpage{org.inviwo.StreamlineIntegrator, Streamline Integrator}
@@ -73,6 +75,14 @@ protected:
 
     // (TODO: You could define some helper functions here,
     // e.g. a function creating a single streamline from one seed point)
+    int drawStreamline(
+            const VectorField2& vectorField,
+            vec2 startPoint,
+            std::shared_ptr<IndexBufferRAM> indexBufferPoints,
+            std::shared_ptr<BasicMesh> mesh,
+            std::vector<BasicMesh::Vertex>& vertices);
+
+    dvec2 randomPoint(const VectorField2&);
 
 // Ports
 public:
@@ -89,6 +99,8 @@ public:
 public:
     FloatVec2Property propStartPoint;
     TemplateOptionProperty<int> propSeedMode;
+    IntProperty propRandomCount;
+    IntVec2Property propGridPoints;
     BoolProperty propDisplayPoints;
     IntProperty propNumStepsTaken;
     EventProperty mouseMoveStart;
@@ -100,11 +112,22 @@ public:
     // IntVec2Property propertyName3;
     // TemplateOptionProperty<int> propertyName4;
     // BoolProperty propertyName5;
+    BoolProperty propBackwards;
+    FloatProperty propStepSize;
+    BoolProperty propNormalize;
+    IntProperty propMaxSteps;
+    FloatProperty propMaxArc;
+    FloatProperty propMinVelocity;
 
 // Attributes
 private:
     dvec2 BBoxMin_{0, 0};
     dvec2 BBoxMax_{0, 0};
+
+    mutable std::mt19937 randGenerator;
+    mutable std::uniform_real_distribution<double> xdistr;
+    mutable std::uniform_real_distribution<double> ydistr;
+    mutable std::uniform_real_distribution<double> magdistr;
 };
 
 }  // namespace inviwo

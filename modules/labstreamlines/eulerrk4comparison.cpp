@@ -36,10 +36,13 @@ EulerRK4Comparison::EulerRK4Comparison()
     , mouseMoveStart(
           "mouseMoveStart", "Move Start", [this](Event* e) { eventMoveStart(e); },
           MouseButton::Left, MouseState::Press | MouseState::Move)
-// TODO: Initialize additional properties
 // propertyName("propertyIdentifier", "Display Name of the Propery",
 // default value (optional), minimum value (optional), maximum value (optional), increment
 // (optional)); propertyIdentifier cannot have spaces
+    , propStepCountEuler("stepCountEuler", "Euler: Step count", 10, 0)
+    , propStepCountRK("stepCountRK", "RK4: Step count", 10, 0)
+    , propStepSizeEuler("stepSizeEuler", "Euler: Step size", 1.0, 0.001, 10)
+    , propStepSizeRK("stepSizeRK", "RK4: Step size", 1.0, 0.001, 10)
 {
     // Register Ports
     addPort(meshOut);
@@ -50,8 +53,10 @@ EulerRK4Comparison::EulerRK4Comparison()
     addProperty(propStartPoint);
     addProperty(mouseMoveStart);
 
-    // TODO: Register additional properties
-    // addProperty(propertyName);
+    addProperty(propStepCountEuler);
+    addProperty(propStepSizeEuler);
+    addProperty(propStepCountRK);
+    addProperty(propStepSizeRK);
 
 }
 
@@ -122,8 +127,23 @@ void EulerRK4Comparison::process() {
     // and then integrate forward for a specified number of integration steps and a given stepsize
     // (these should be additional properties of the processor)
 
-    // Integrator::Euler(vectorField, startPoint, ...);
-    // Integrator::Rk4(vectorField, dims, startPoint, ...);
+    vec4 eulerColor(1, 0, 0, 1);
+    Integrator::drawNextPointInPolyline(startPoint, eulerColor, indexBufferEuler.get(), vertices);
+
+    dvec2 x = startPoint;
+    for (int i = 0; i < propStepCountEuler.get(); i++) {
+        x = Integrator::Euler(vectorField, x, propStepSizeEuler.get());
+        Integrator::drawNextPointInPolyline(x, eulerColor, indexBufferEuler.get(), vertices);
+    }
+
+    vec4 rk4Color(0, 0, 1, 1);
+    Integrator::drawNextPointInPolyline(startPoint, rk4Color, indexBufferRK.get(), vertices);
+
+    x = startPoint;
+    for (int i = 0; i < propStepCountRK.get(); i++) {
+        x = Integrator::RK4(vectorField, x, propStepSizeRK.get());
+        Integrator::drawNextPointInPolyline(x, rk4Color, indexBufferRK.get(), vertices);
+    }
 
     mesh->addVertices(vertices);
     meshOut.setData(mesh);

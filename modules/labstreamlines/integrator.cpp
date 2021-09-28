@@ -12,17 +12,22 @@
 
 namespace inviwo {
 
-// TODO: Implement a single integration step here
+dvec2 Integrator::Euler(const VectorField2& vectorField, const dvec2& position, double stepSize)
+{
+    dvec2 v = vectorField.interpolate(position);
+    return position + stepSize * v;
+}
 
-// dvec2 Integrator::Euler(const VectorField2& vectorField, const dvec2& position, ...)
-// {
-//     Access the vector field with vectorField.interpolate(...)
-// }
+dvec2 Integrator::RK4(const VectorField2& vectorField, const dvec2& position, double stepSize)
+{
+    dvec2 v1 = vectorField.interpolate(position);
+    dvec2 v2 = vectorField.interpolate(position + stepSize/2 * v1);
+    dvec2 v3 = vectorField.interpolate(position + stepSize/2 * v2);
+    dvec2 v4 = vectorField.interpolate(position + stepSize * v3);
+    dvec2 v = (v1/6 + v2/3 + v3/3 + v4/6);
 
-// dvec2 Integrator::RK4(const VectorField2& vectorField, const dvec2& position, ...)
-// {
-//
-// }
+    return position + stepSize * v;
+}
 
 
 void Integrator::drawPoint(const dvec2& p, const vec4& color, IndexBufferRAM* indexBuffer,
