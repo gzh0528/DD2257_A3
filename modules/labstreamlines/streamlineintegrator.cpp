@@ -51,7 +51,7 @@ StreamlineIntegrator::StreamlineIntegrator()
     , propNormalize("propNormalize", "Normalize")
     , propMaxSteps("propMaxSteps", "Max steps", 100, 0, 10000)
     , propMaxArc("propMaxArc", "Max arc length", 1, 0.1, 100)
-    , propMinVelocity("propMinVelocity", "Min velocity", 0.01, 0, 10)
+    , propMinVelocity("propMinVelocity", "Min velocity", 0, 0, 10)
 {
     // Register Ports
     addPort(inData);
@@ -148,13 +148,22 @@ int StreamlineIntegrator::drawStreamline(
             LogProcessorInfo("Stop: zero");
             break;
         }
+
+        /*
         auto jacobian = vectorField.derive(x1);
+        LogProcessorInfo("det: " << glm::abs(glm::determinant(jacobian)));
         if (glm::abs(glm::determinant(jacobian)) < propMinVelocity.get()) {
             LogProcessorInfo("Stop: min velocity");
             break;
         }
+        */
+        double dist = glm::distance(x0, x1);
+        if (dist < propMinVelocity.get()) {
+            LogProcessorInfo("Stop: min velocity");
+            break;
+        }
 
-        arcLength += glm::distance(x0, x1);
+        arcLength += dist;
         if (arcLength >= propMaxArc.get()) {
             LogProcessorInfo("Stop: max arc length");
             break;
