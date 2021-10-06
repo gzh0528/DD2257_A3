@@ -78,9 +78,8 @@ public:
 
     // Properties
 public:
-    // TODO: Declare properties
-    // IntProperty prop1;
-    // BoolProperty prop2;
+    IntProperty propKernelSize;
+    BoolProperty propFastLIC;
 
     // Attributes
 private:
