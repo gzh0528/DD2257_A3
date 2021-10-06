@@ -17,6 +17,8 @@
 #include <inviwo/core/properties/ordinalproperty.h>
 #include <lablic/lablicmoduledefine.h>
 
+#include <random>
+
 namespace inviwo {
 
 /** \docpage{org.inviwo.NoiseTextureGenerator, Noise Texture Generator}
@@ -62,6 +64,8 @@ public:
 
     // Attributes
 private:
+    mutable std::mt19937 randGenerator;
+    std::uniform_int_distribution<int> pixelDistr;
 };
 
 }  // namespace inviwo

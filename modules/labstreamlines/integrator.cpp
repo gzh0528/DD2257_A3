@@ -29,6 +29,19 @@ dvec2 Integrator::RK4(const VectorField2& vectorField, const dvec2& position, do
     return position + stepSize * v;
 }
 
+dvec2 Integrator::RK4_norm(const VectorField2& vectorField, const dvec2& position, double stepSize)
+{
+    dvec2 v1 = vectorField.interpolate(position);
+    dvec2 v2 = vectorField.interpolate(position + stepSize/2 * v1);
+    dvec2 v3 = vectorField.interpolate(position + stepSize/2 * v2);
+    dvec2 v4 = vectorField.interpolate(position + stepSize * v3);
+    dvec2 v = (v1/6 + v2/3 + v3/3 + v4/6);
+
+    if (v == dvec2(0))
+        return position;
+    else
+        return position + stepSize * glm::normalize(v);
+}
 
 void Integrator::drawPoint(const dvec2& p, const vec4& color, IndexBufferRAM* indexBuffer,
                            std::vector<BasicMesh::Vertex>& vertices) {

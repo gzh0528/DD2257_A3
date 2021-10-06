@@ -61,6 +61,10 @@ protected:
     // (TODO: Helper functions can be defined here and then implemented in the .cpp)
     // e.g. something like a function for standardLIC, fastLIC, autoContrast, ...
 
+private:
+    dvec2 pixelToField(dvec2 pixel);
+    dvec2 fieldToPixel(dvec2 vec);
+
     // Ports
 public:
     // Input vector field
@@ -82,6 +86,8 @@ public:
 private:
     size3_t vectorFieldDims_;
     size2_t texDims_;
+    dvec2 vectorFieldMin_;
+    dvec2 vectorFieldMax_;
 };
 
 }  // namespace inviwo

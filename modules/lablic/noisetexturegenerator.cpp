@@ -28,6 +28,7 @@ NoiseTextureGenerator::NoiseTextureGenerator()
     : Processor()
     , texOut_("texOut")
     , texSize_("texSize", "Texture Size", vec2(512, 512), vec2(1, 1), vec2(2048, 2048), vec2(1, 1))
+    , pixelDistr(0, 255)
 // TODO: Register additional properties
 {
     // Register ports
@@ -64,23 +65,22 @@ void NoiseTextureGenerator::process() {
     double value = noiseTexture.readPixelGrayScale(size2_t(0, 0));
     // readPixel returns all color components (red,green,blue,alpha) at the pixel with indices (i,j)
     dvec4 color = noiseTexture.readPixel(size2_t(0, 0));
-    LogProcessorInfo("The color at index (0,0) is " << color << " with grayscale value " << value
-                                                    << ".");
+    //LogProcessorInfo("The color at index (0,0) is " << color << " with grayscale value " << value
+    //                                                << ".");
     // sample peforms bilinear interpolation. For (0.5,0.5) this would involve the values at pixels
     // (0,0), (1,0), (0,1), and (1,1)
     color = noiseTexture.sample(dvec2(0.5, 0.5));
     // The grayscale version again does the same but returns an average of the three color values
     value = noiseTexture.sampleGrayScale(dvec2(0.5, 0.5));
-    LogProcessorInfo("The interpolated color at (0.5,0.5) is " << color << " with grayscale value "
-                                                               << value << ".");
+    //LogProcessorInfo("The interpolated color at (0.5,0.5) is " << color << " with grayscale value "
+    //                                                           << value << ".");
+
+    randGenerator = std::mt19937();
 
     for (int j = 0; j < texSize_.get().y; j++) {
         for (int i = 0; i < texSize_.get().x; i++) {
-
-            val = 256 / 2;
-            // TODO: Randomly sample values for the texture, this produces the same gray value for
-            // all pixels
-            // A value within the ouput image is set by specifying pixel position and color
+            //val = 256 / 2;
+            val = pixelDistr(randGenerator);
             noiseTexture.setPixelGrayScale(size2_t(i, j), val);
             // Alternatively, the entire color can be specified
             // noiseTexture.setPixel(size2_t(i, j), vec4(val, val, val, 255));

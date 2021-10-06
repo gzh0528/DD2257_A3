@@ -41,6 +41,45 @@ LICProcessor::LICProcessor()
     // TODO: Register additional properties
 }
 
+void streamline(const VectorField2& vectorField, const dvec2& seed, double stepSize, int numSteps, std::vector<dvec2>& points)
+{
+    points.clear();
+
+    dvec2 x0 = seed;
+    for (int i = 0; i < numSteps; i++) {
+        dvec2 x1 = Integrator::RK4_norm(vectorField, x0, stepSize);
+        //LogInfoCustom("", x1);
+
+        if (!vectorField.isInside(x1)) {
+            //LogInfoCustom("", "Not inside");
+            break;
+        }
+
+        if (vectorField.interpolate(x1) == dvec2(0)) {
+            //LogInfoCustom("", "Zero");
+            break;
+        }
+
+        points.push_back(x1);
+
+        x0 = x1;
+    }
+}
+
+dvec2 LICProcessor::pixelToField(dvec2 pixel)
+{
+    return vectorFieldMin_ + dvec2(
+        (pixel.x / texDims_.x) * (vectorFieldMax_.x - vectorFieldMin_.x),
+        (pixel.y / texDims_.y) * (vectorFieldMax_.y - vectorFieldMin_.y));
+}
+
+dvec2 LICProcessor::fieldToPixel(dvec2 vec)
+{
+    return {
+        (vec.x - vectorFieldMin_.x) / (vectorFieldMax_.x - vectorFieldMin_.x) * texDims_.x,
+        (vec.y - vectorFieldMin_.y) / (vectorFieldMax_.y - vectorFieldMin_.y) * texDims_.y};
+}
+
 void LICProcessor::process() {
     // Get input
     if (!volumeIn_.hasData()) {
@@ -54,14 +93,17 @@ void LICProcessor::process() {
     auto vol = volumeIn_.getData();
     const VectorField2 vectorField = VectorField2::createFieldFromVolume(vol);
     vectorFieldDims_ = vol->getDimensions();
+    LogProcessorInfo("vectorFieldDims_: " << vectorFieldDims_);
+
+    vectorFieldMin_ = vectorField.getBBoxMin();
+    vectorFieldMax_ = vectorField.getBBoxMax();
+
+    LogProcessorInfo("vectorField bbox: " << vectorFieldMin_ << " " << vectorFieldMax_);
 
     auto tex = noiseTexIn_.getData();
     const RGBAImage texture = RGBAImage::createFromImage(tex);
     texDims_ = tex->getDimensions();
-
-    double value = texture.readPixelGrayScale(size2_t(0, 0));
-
-    LogProcessorInfo(value);
+    LogProcessorInfo("texDims_: " << texDims_);
 
     // Prepare the output, it has the same dimensions as the texture and rgba values in [0,255]
     auto outImage = std::make_shared<Image>(texDims_, DataVec4UInt8::get());
@@ -73,14 +115,45 @@ void LICProcessor::process() {
     std::vector<std::vector<int>> visited(texDims_.x, std::vector<int>(texDims_.y, 0));
 
     // TODO: Implement LIC and FastLIC
-    // This code instead sets all pixels to the same gray value
+
+    /*double stepSize = std::min(
+            vectorFieldDims_.x / (double)texDims_.x,
+            vectorFieldDims_.y / (double)texDims_.y);*/
+    auto pixel = pixelToField({1, 1}) - pixelToField({0, 0});
+    double stepSize = std::min(pixel.x, pixel.y);
+    LogProcessorInfo("stepSize: " << stepSize);
+
+    int numSteps = 100;
+
+    std::vector<dvec2> forward, backward;
 
     for (size_t j = 0; j < texDims_.y; j++) {
         for (size_t i = 0; i < texDims_.x; i++) {
-            int val = int(licTexture[i][j]);
-            licImage.setPixel(size2_t(i, j), dvec4(val, val, val, 255));
-            // or
+            dvec2 vecPoint = pixelToField({i+0.5, j+0.5});
+
+            //if (j < 10 && i < 10)
+                //LogProcessorInfo("Point " << size2_t(i, j) << " " << vecPoint << " " << fieldToPixel(vecPoint));
+
+            //LogProcessorInfo("Seed inside " << vectorField.isInside(vecPoint));
+
+            streamline(vectorField, vecPoint, stepSize, numSteps, forward);
+            streamline(vectorField, vecPoint, -stepSize, numSteps, backward);
+            
+            int sum = texture.readPixelGrayScale(size2_t(i, j));
+            for (size_t k = 0; k < forward.size(); k++)
+                sum += texture.sampleGrayScale(fieldToPixel(forward[k]));
+            for (size_t k = 0; k < backward.size(); k++)
+                sum += texture.sampleGrayScale(fieldToPixel(backward[k]));
+
+            //if (j < 10 && i < 10)
+                //LogProcessorInfo("Line: " << forward.size() << " + 1 + " << backward.size());
+
+            int val = sum / (double)(1 + forward.size() + backward.size());
+
+            //int val = int(licTexture[i][j]);
+            //int val = texture.readPixelGrayScale(size2_t(i, j));
             licImage.setPixelGrayScale(size2_t(i, j), val);
+            //licImage.setPixel(size2_t(i, j), dvec4(val, val, val, 255));
         }
     }
 
