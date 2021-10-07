@@ -20,7 +20,7 @@
 #include <lablic/lablicmoduledefine.h>
 #include <labutils/scalarvectorfield.h>
 #include <labutils/rgbaimage.h>
-
+#include <inviwo/core/properties/transferfunctionproperty.h>
 namespace inviwo {
 
 /** \docpage{org.inviwo.LICProcessor, LICProcessor}
@@ -60,7 +60,11 @@ protected:
 
     // (TODO: Helper functions can be defined here and then implemented in the .cpp)
     // e.g. something like a function for standardLIC, fastLIC, autoContrast, ...
-
+    double magnitudeField(const VectorField2& vectorField,const dvec2 textdim,
+                                        std::vector<std::vector<double>>& magnitudeF);
+    void ColorLic(RGBAImage& outImage,const dvec2 & textdim,
+                                std::vector<std::vector<double>>& magnitudeF,const double max_mag,std::vector<std::vector<double>>& licTex);
+    void contrastAuto(RGBAImage& outImage,const VectorField2& vectorField,const dvec2 textdim,double Amean,double P2,int nonblack,std::vector<std::vector<double>>& licTex);
 private:
     dvec2 pixelToField(dvec2 pixel);
     dvec2 fieldToPixel(dvec2 vec);
@@ -78,8 +82,14 @@ public:
 
     // Properties
 public:
+   
     IntProperty propKernelSize;
+    FloatProperty propMu;
+    FloatProperty propSigma;
     BoolProperty propFastLIC;
+    BoolProperty propContrastEnhance;
+    BoolProperty textureColor;
+    TransferFunctionProperty propTransferFunc;
 
     // Attributes
 private:

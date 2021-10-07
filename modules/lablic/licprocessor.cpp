@@ -30,8 +30,13 @@ LICProcessor::LICProcessor()
     , volumeIn_("volIn")
     , noiseTexIn_("noiseTexIn")
     , licOut_("licOut")
-    , propKernelSize("kernelSize", "Kernel size", 50, 1, 1000)
+    , propKernelSize("kernelSize", "Kernel size", 10, 1, 1000)
+    ,propMu("mu", "Mu", 0.5, 0.0,1.0)
+    ,propSigma("propsigma", "prop Sigma", 0.1, 0.0,1.0)
     , propFastLIC("fastLIC", "FastLIC")
+    , propContrastEnhance("contrastEnhance","Contrast Enhance")
+    , textureColor("texture_Color", "texture color")
+    ,propTransferFunc("TransferFunc", "Colors", &volumeIn_)
 {
     // Register ports
     addPort(volumeIn_);
@@ -39,8 +44,23 @@ LICProcessor::LICProcessor()
     addPort(licOut_);
 
     // Register properties
+    
     addProperty(propKernelSize);
+    addProperty(propMu);
+    addProperty(propSigma);
     addProperty(propFastLIC);
+    addProperty(propContrastEnhance);
+    addProperty(textureColor);
+      addProperty(propTransferFunc);
+    
+      // The default transfer function has just two blue points
+      propTransferFunc.get().clear();
+      //propIsoTransferFunc.get().add(0.0f, vec4(0.0f, 0.0f, 1.0f, 1.0f));
+      propTransferFunc.get().add(0.0f, vec4(0.0f, 0.0f, 1.0f, 1.0f));
+      propTransferFunc.get().add(0.5f, vec4(0.0f, 1.0f, 0.0f, 1.0f));
+      propTransferFunc.get().add(1.0f, vec4(1.0f, 0.0f, 0.0f, 1.0f));
+      propTransferFunc.setCurrentStateAsDefault();
+
 }
 
 void streamline(const VectorField2& vectorField, const dvec2& seed, double stepSize, int numSteps, std::vector<dvec2>& points)
@@ -101,7 +121,8 @@ void LICProcessor::process() {
     const RGBAImage texture = RGBAImage::createFromImage(tex);
     texDims_ = tex->getDimensions();
     LogProcessorInfo("texDims_: " << texDims_);
-
+    std::vector<std::vector<double>> magnitudeF(texDims_.x,std::vector<double>(texDims_.y));
+    double magmax=magnitudeField(vectorField, texDims_, magnitudeF);
     // Prepare the output, it has the same dimensions as the texture and rgba values in [0,255]
     auto outImage = std::make_shared<Image>(texDims_, DataVec4UInt8::get());
     RGBAImage licImage(outImage);
@@ -109,7 +130,13 @@ void LICProcessor::process() {
     auto pixel = pixelToField({1, 1}) - pixelToField({0, 0});
     double stepSize = std::min(pixel.x, pixel.y);
     LogProcessorInfo("stepSize: " << stepSize);
-
+    
+    std::vector<std::vector<double>> licTex(texDims_.x,std::vector<double>(texDims_.y));
+    double Amean=0.0;
+        double p2=0.0;
+        int nonblack=0;
+    bool contrast=propContrastEnhance.get();
+    bool colortexturing=textureColor.get();
     if (!propFastLIC.get()) {
         // Half of the steps in either direction
         int numSteps = propKernelSize.get() / 2;
@@ -128,13 +155,28 @@ void LICProcessor::process() {
                 
                 // Sample the points and sum
                 int sum = texture.sampleGrayScale({i+0.5, j+0.5});
+                double sum2=texture.sampleGrayScale({i+0.5, j+0.5});
                 for (size_t k = 0; k < forward.size(); k++)
+                {
                     sum += texture.sampleGrayScale(fieldToPixel(forward[k]));
+                    sum2 += texture.sampleGrayScale(fieldToPixel(forward[k]));
+                }
+                    
                 for (size_t k = 0; k < backward.size(); k++)
+                {
                     sum += texture.sampleGrayScale(fieldToPixel(backward[k]));
-
+                    sum2+=texture.sampleGrayScale(fieldToPixel(backward[k]));
+                }
+                
                 // Arithmetic mean
                 int val = sum / (double)(1 + forward.size() + backward.size());
+                licTex[i][j]=sum2/(double)(1 + forward.size() + backward.size());
+                if(contrast&&licTex[i][j]>1.0)
+                {
+                    Amean+=licTex[i][j];
+                    p2+=licTex[i][j]*licTex[i][j];
+                    nonblack++;
+                }
                 licImage.setPixelGrayScale(size2_t(i, j), val);
             }
         }
@@ -183,7 +225,7 @@ void LICProcessor::process() {
 
                 // Now we will compute the box filter
                 int sum = 0;
-
+                double sum2=0.0;
                 // Left and right of rolling window
                 size_t a = 0, b = std::min(linePix.size(), (size_t)propKernelSize.get());
                 for (size_t k = 0; k < b; k++)
@@ -192,7 +234,20 @@ void LICProcessor::process() {
                 // The first pixels will have the same value since we use the first propKernelSize points for all of them
                 int val0 = sum / b;
                 for (size_t k = 0; k <= b/2; k++)
+                {
                     licImage.setPixelGrayScale(linePix[k], val0);
+                    int ii=linePix[k].x;
+                    int jj=linePix[k].y;
+                    licTex[ii][jj]=double(sum)/b;
+                    //auto contrast
+                    if(contrast&&licTex[ii][jj]>1.0)
+                    {
+                        Amean+=licTex[ii][jj];
+                        p2+=licTex[ii][jj]*licTex[ii][jj];
+                        nonblack++;
+                    }
+                }
+                    
 
                 // Do the rolling average
                 size_t k;
@@ -203,19 +258,100 @@ void LICProcessor::process() {
 
                     int val = sum / (b-a);
                     licImage.setPixelGrayScale(linePix[k], val);
+                    int ii=linePix[k].x;
+                    int jj=linePix[k].y;
+                    licTex[ii][jj]=double(sum)/(b-a);
+                    //auto contrast
+                    if(contrast&&licTex[ii][jj]>1.0)
+                    {
+                        Amean+=licTex[ii][jj];
+                        p2+=licTex[ii][jj]*licTex[ii][jj];
+                        nonblack++;
+                    }
                 }
 
                 // The last ones also have the same value
                 int val1 = sum / (b-a);
                 while (k < linePix.size()) {
+                    int ii=linePix[k].x;
+                    int jj=linePix[k].y;
+                    licTex[ii][jj]=double(sum)/(b-a);
+                    if(contrast&&licTex[ii][jj]>1.0)
+                    {
+                        Amean+=licTex[ii][jj];
+                        p2+=licTex[ii][jj]*licTex[ii][jj];
+                        nonblack++;
+                    }
                     licImage.setPixelGrayScale(linePix[k++], val1);
+                    
                 }
             }
         }
         delete[] seen;
     }
-
+    if(contrast)
+    {
+        contrastAuto(licImage ,vectorField, texDims_, Amean, p2,nonblack, licTex);
+    }
+    if(colortexturing)
+        ColorLic(licImage, texDims_, magnitudeF, magmax,licTex);
     licOut_.setData(outImage);
+}
+
+void LICProcessor::contrastAuto(RGBAImage& outImage,const VectorField2& vectorField,const dvec2 textdim,double Amean,double p2,int nonblack,std::vector<std::vector<double>>& licTex)
+{
+    double mu=Amean/nonblack;
+    double mymu=propMu.get()*255;
+    double mySigma=propSigma.get()*255;
+    for(int i=0;i<textdim.x;i++)
+    {
+        for(int j=0;j<textdim.y;j++)
+        {
+            double sigma=sqrt((p2-nonblack*mu*mu)/(nonblack-1));
+            
+            double f=mySigma/sigma;
+            //int pij=outImage.readPixelGrayScale(size2_t(i,j));
+            double pij=licTex[i][j];
+            int val=(mymu+f*(pij-mu));
+            //licTex[i][j]=val;
+            outImage.setPixelGrayScale(size2_t(i,j), val);
+        }
+    }
+}
+
+
+
+double LICProcessor::magnitudeField(const VectorField2& vectorField,const dvec2 textdim,
+                                std::vector<std::vector<double>>& magnitudeF)
+{
+    double max_mag=DBL_MIN;
+    for(int i=0;i<textdim.x;i++)
+    {
+        for(int j=0;j<textdim.y;j++)
+        {
+            dvec2 mag=vectorField.interpolate(pixelToField(size2_t(i,j)));
+            magnitudeF[i][j]=sqrt(pow(mag.x,2)+pow(mag.y,2));
+            if(max_mag<magnitudeF[i][j])
+                max_mag=magnitudeF[i][j];
+        }
+    }
+    return max_mag;
+}
+void LICProcessor::ColorLic(RGBAImage& outImage,const dvec2 & textdim,
+                            std::vector<std::vector<double>>& magnitudeF,const double max_mag,std::vector<std::vector<double>>& licTex)
+{
+    for(int i=0;i<textdim.x;i++)
+    {
+        for(int j=0;j<textdim.y;j++)
+        {
+            //int pij=outImage.readPixelGrayScale(size2_t(i,j));
+            double pij=licTex[i][j];
+            int val=pij*magnitudeF[i][j] /max_mag;
+            double magratio = magnitudeF[i][j] / max_mag;
+            dvec4 color = 255 * propTransferFunc.get().sample(magratio);
+            outImage.setPixel(size2_t(i,j), (color+dvec4(val,val,val,255))*0.5);
+        }
+    }
 }
 
 }  // namespace inviwo
