@@ -57,7 +57,7 @@ LICProcessor::LICProcessor()
       propTransferFunc.get().clear();
       //propIsoTransferFunc.get().add(0.0f, vec4(0.0f, 0.0f, 1.0f, 1.0f));
       propTransferFunc.get().add(0.0f, vec4(0.0f, 0.0f, 1.0f, 1.0f));
-      propTransferFunc.get().add(0.5f, vec4(0.0f, 1.0f, 0.0f, 1.0f));
+      //propTransferFunc.get().add(0.5f, vec4(0.0f, 1.0f, 0.0f, 1.0f));
       propTransferFunc.get().add(1.0f, vec4(1.0f, 0.0f, 0.0f, 1.0f));
       propTransferFunc.setCurrentStateAsDefault();
 
@@ -225,7 +225,6 @@ void LICProcessor::process() {
 
                 // Now we will compute the box filter
                 int sum = 0;
-                double sum2=0.0;
                 // Left and right of rolling window
                 size_t a = 0, b = std::min(linePix.size(), (size_t)propKernelSize.get());
                 for (size_t k = 0; k < b; k++)
@@ -324,15 +323,18 @@ void LICProcessor::contrastAuto(RGBAImage& outImage,const VectorField2& vectorFi
 double LICProcessor::magnitudeField(const VectorField2& vectorField,const dvec2 textdim,
                                 std::vector<std::vector<double>>& magnitudeF)
 {
-    double max_mag=DBL_MIN;
+    double max_mag = 0;
+
     for(int i=0;i<textdim.x;i++)
     {
         for(int j=0;j<textdim.y;j++)
         {
-            dvec2 mag=vectorField.interpolate(pixelToField(size2_t(i,j)));
-            magnitudeF[i][j]=sqrt(pow(mag.x,2)+pow(mag.y,2));
-            if(max_mag<magnitudeF[i][j])
-                max_mag=magnitudeF[i][j];
+            dvec2 vec = vectorField.interpolate(pixelToField({i+0.5,j+0.5}));
+            if (vec != dvec2(0)) {
+                magnitudeF[i][j] = glm::length(vec);
+                if(max_mag < magnitudeF[i][j])
+                    max_mag =magnitudeF[i][j];
+            }
         }
     }
     return max_mag;
@@ -346,10 +348,14 @@ void LICProcessor::ColorLic(RGBAImage& outImage,const dvec2 & textdim,
         {
             //int pij=outImage.readPixelGrayScale(size2_t(i,j));
             double pij=licTex[i][j];
-            int val=pij*magnitudeF[i][j] /max_mag;
+            //int val=pij*magnitudeF[i][j] /max_mag;
             double magratio = magnitudeF[i][j] / max_mag;
-            dvec4 color = 255 * propTransferFunc.get().sample(magratio);
-            outImage.setPixel(size2_t(i,j), (color+dvec4(val,val,val,255))*0.5);
+            //dvec4 color = 255 * propTransferFunc.get().sample(magratio);
+            //outImage.setPixel(size2_t(i,j), (color+dvec4(val,val,val,255))*0.5);
+            dvec4 transferColor = propTransferFunc.get().sample(magratio);
+            dvec4 color = pij * transferColor;
+            color.w = transferColor.w;
+            outImage.setPixel(size2_t(i,j), color);
         }
     }
 }
