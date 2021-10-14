@@ -133,19 +133,19 @@ int StreamlineIntegrator::drawStreamline(
     double arcLength = 0;
     for (;;) {
         if (stepsTaken >= propMaxSteps.get()) {
-            LogProcessorInfo("Stop: max steps");
+            //LogProcessorInfo("Stop: max steps");
             break;
         }
 
         dvec2 x1 = Integrator::RK4(vectorField, x0, propStepSize.get());
 
         if (!vectorField.isInside(x1)) {
-            LogProcessorInfo("Stop: domain");
+            //LogProcessorInfo("Stop: domain");
             break;
         }
 
         if (vectorField.interpolate(x1) == dvec2(0)) {
-            LogProcessorInfo("Stop: zero");
+            //LogProcessorInfo("Stop: zero");
             break;
         }
 
@@ -153,19 +153,19 @@ int StreamlineIntegrator::drawStreamline(
         auto jacobian = vectorField.derive(x1);
         LogProcessorInfo("det: " << glm::abs(glm::determinant(jacobian)));
         if (glm::abs(glm::determinant(jacobian)) < propMinVelocity.get()) {
-            LogProcessorInfo("Stop: min velocity");
+            //LogProcessorInfo("Stop: min velocity");
             break;
         }
         */
         double dist = glm::distance(x0, x1);
         if (dist < propMinVelocity.get()) {
-            LogProcessorInfo("Stop: min velocity");
+            //LogProcessorInfo("Stop: min velocity");
             break;
         }
 
         arcLength += dist;
         if (arcLength >= propMaxArc.get()) {
-            LogProcessorInfo("Stop: max arc length");
+            //LogProcessorInfo("Stop: max arc length");
             break;
         }
 

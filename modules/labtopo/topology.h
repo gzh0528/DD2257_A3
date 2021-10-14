@@ -74,6 +74,10 @@ protected:
                                 IndexBufferRAM* indexBuffer,
                                 std::vector<BasicMesh::Vertex>& vertices);
 
+    static void drawSeparatrix(const std::vector<dvec2>& points,
+                               std::vector<BasicMesh::Vertex>& vertices,
+                               BasicMesh& mesh);
+
     // Ports
 public:
     // Input data

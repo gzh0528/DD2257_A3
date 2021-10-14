@@ -54,6 +54,85 @@ Topology::Topology()
     // addProperty(propertyName);
 }
 
+static void streamline(const VectorField2& vectorField, const dvec2& seed, double stepSize, int numSteps, std::vector<dvec2>& points)
+{
+    points.clear();
+
+    dvec2 x0 = seed;
+    for (int i = 0; i < numSteps; i++) {
+        dvec2 x1 = Integrator::RK4_norm(vectorField, x0, stepSize);
+
+        if (!vectorField.isInside(x1))
+            break;
+
+        if (vectorField.interpolate(x1) == dvec2(0))
+            break;
+
+        points.push_back(x1);
+
+        x0 = x1;
+    }
+}
+
+// Linear cell has at most 1 critical point
+bool findCriticalPoint(const VectorField2& vectorField, double thresholdArea, dvec2 lo, dvec2 hi, dvec2& criticalPoint) {
+    dvec2 values[4];
+    values[0] = vectorField.interpolate({lo.x, lo.y});
+    values[1] = vectorField.interpolate({lo.x, hi.y});
+    values[2] = vectorField.interpolate({hi.x, hi.y});
+    values[3] = vectorField.interpolate({hi.x, lo.y});
+
+    for (int dim = 0; dim < 2; dim++) {
+        int sgn = std::signbit(values[0][dim]);
+        for (int i = 1; i < 4; i++)
+            if (std::signbit(values[i][dim]) != sgn)
+                goto next_dim;
+        return false;
+        next_dim:;
+    }
+
+    dvec2 diff = hi-lo;
+    double area = diff.x*diff.y;
+    if (area > thresholdArea) {
+        double dx = diff.x/2;
+        double dy = diff.y/2;
+
+        dvec2 subcells[4][2] = {
+            {lo + dvec2(0, 0), hi - dvec2(dx, dy)},
+            {lo + dvec2(0, dy), hi - dvec2(dx, 0)},
+            {lo + dvec2(dx, 0), hi - dvec2(0, dy)},
+            {lo + dvec2(dx, dy), hi - dvec2(0, 0)}
+        };
+
+        bool found = false;
+        for (int i = 0; i < 4 && !found; i++)
+            found = findCriticalPoint(vectorField, thresholdArea, subcells[i][0], subcells[i][1], criticalPoint);
+        return found;
+    } else {
+        criticalPoint = (lo+hi)/2;
+        return true;
+    }
+}
+
+Topology::TypeCP categorizePoint(const util::EigenResult& eigen) {
+    double threshold = 1e-2;
+    if (eigen.eigenvaluesIm[0] == 0.0) {
+        if (eigen.eigenvaluesRe[0] * eigen.eigenvaluesRe[1] < 0)
+            return Topology::TypeCP::Saddle;
+        else if (eigen.eigenvaluesRe[0] < 0)
+            return Topology::TypeCP::AttractingNode;
+        else
+            return Topology::TypeCP::RepellingNode;
+    } else {
+        if (eigen.eigenvaluesRe[0] < -threshold)
+            return Topology::TypeCP::AttractingFocus;
+        else if (eigen.eigenvaluesRe[0] > threshold)
+            return Topology::TypeCP::RepellingFocus;
+        else
+            return Topology::TypeCP::Center;
+    }
+}
+
 void Topology::process() {
     // Get input
     if (!inData.hasData()) {
@@ -94,30 +173,100 @@ void Topology::process() {
 
     auto indexBufferPoints = mesh->addIndexBuffer(DrawType::Points, ConnectivityType::None);
 
-    // TODO: Compute the topological skeleton of the input vector field.
-    // Find the critical points and color them according to their type.
-    // Integrate all separatrices.
-
     size2_t dims = vectorField.getNumVerticesPerDim();
 
-    // Looping through all values in the vector field.
+    dvec2 cellSize = vectorField.getCellSize();
+    double thresholdArea = 1e-6;
+    struct critical_point {
+        dvec2 point;
+        size2_t vert;
+    };
+    std::vector<critical_point> criticalPoints;
+    //std::vector<std::vector<bool>> occupied(dims.x, std::vector<bool>(dims.y));
+
     for (size_t j = 0; j < dims[1]; ++j) {
         for (size_t i = 0; i < dims[0]; ++i) {
-            dvec2 vectorValue = vectorField.getValueAtVertex(size2_t(i, j));
+            dvec2 point;
+            dvec2 lo = vectorField.getPositionAtVertex({i, j});
+            dvec2 hi = lo + cellSize;
+            if (findCriticalPoint(vectorField, thresholdArea, lo, hi, point)) {
+                LogProcessorInfo("Found " << point << " value " << vectorField.interpolate(point));
+                criticalPoints.push_back({point, {i, j}});
+                //occupied[i][j] = true;
+            }
         }
     }
 
-    // Other helpful functions
-    // dvec2 pos = vectorField.getPositionAtVertex(size2_t(i, j));
-    // Computing the jacobian at a position
-    // dmat2 jacobian = vectorField.derive(pos);
-    // Doing the eigen analysis
-    // auto eigenResult = util::eigenAnalysis(jacobian);
-    // The result of the eigen analysis has attributed eigenvaluesRe eigenvaluesIm and
-    // eigenvectors
+    /*
+    std::vector<std::vector<bool>> hasNeighbor(dims.x, std::vector<bool>(dims.y));
+    for (size_t j = 0; j < dims.y; j++) {
+        bool last = occupied[0][j];
+        for (size_t i = 1; i < dims.x; i++) {
+            bool curr = occupied[i][j];
+            if (curr && last) {
+                hasNeighbor[i-1][j] = true;
+                hasNeighbor[i][j] = true;
+            }
+            last = curr;
+        }
+    }
+    for (size_t i = 0; i < dims.x; i++) {
+        bool last = occupied[i][0];
+        for (size_t j = 1; j < dims.y; j++) {
+            bool curr = occupied[i][j];
+            if (curr && last) {
+                hasNeighbor[i][j-1] = true;
+                hasNeighbor[i][j] = true;
+            }
+            last = curr;
+        }
+    }
+    */
 
-    // Accessing the colors
-    vec4 colorCenter = ColorsCP[static_cast<int>(TypeCP::Center)];
+    int maxSteps = 1000;
+    dvec2 extent = BBoxMax-BBoxMin;
+    double minExtent = std::min(extent.x, extent.y);
+    double stepSize = minExtent / maxSteps;
+
+    std::vector<dvec2> tmpPoints;
+    for (size_t i = 0; i < criticalPoints.size(); i++) {
+        dvec2 p = criticalPoints[i].point;
+        size2_t vert = criticalPoints[i].vert;
+        mat2 jacobian = vectorField.derive(p);
+
+        //bool isIsolated = !hasNeighbor[vert.x][vert.y];
+        bool isIsolated = true;
+        for (size_t j = 0; j < criticalPoints.size() && isIsolated; j++) {
+            if (i == j)
+                continue;
+            if (glm::length(p - criticalPoints[j].point) < minExtent / 50)
+                isIsolated = false;
+        }
+        bool firstOrder = isIsolated && glm::abs(glm::determinant(jacobian)) > 1e-5;
+
+        if (!firstOrder)
+            continue;
+
+        auto eigen = util::eigenAnalysis(jacobian);
+        TypeCP type = categorizePoint(eigen);
+
+        if (type == TypeCP::Saddle) {
+            for (int eigenValue = 0; eigenValue < 2; eigenValue++) {
+                double myStepSize = eigen.eigenvaluesRe[eigenValue] > 0 ? stepSize : -stepSize;
+                dvec2 step = stepSize*eigen.eigenvectors[eigenValue];
+
+                streamline(vectorField, p + step, myStepSize, maxSteps, tmpPoints);
+                drawSeparatrix(tmpPoints, vertices, *mesh);
+
+                streamline(vectorField, p - step, myStepSize, maxSteps, tmpPoints);
+                drawSeparatrix(tmpPoints, vertices, *mesh);
+            }
+        }
+
+        vec4 color = ColorsCP[static_cast<int>(type)];
+        indexBufferPoints->add(static_cast<std::uint32_t>(vertices.size()));
+        vertices.push_back({vec3(p[0], p[1], 0), vec3(0, 0, 1), vec3(p[0], p[1], 0), color});
+    }
 
     mesh->addVertices(vertices);
     outMesh.setData(mesh);
@@ -130,6 +279,17 @@ void Topology::drawLineSegment(const dvec2& v1, const dvec2& v2, const vec4& col
     vertices.push_back({vec3(v1[0], v1[1], 0), vec3(0, 0, 1), vec3(v1[0], v1[1], 0), color});
     indexBuffer->add(static_cast<std::uint32_t>(vertices.size()));
     vertices.push_back({vec3(v2[0], v2[1], 0), vec3(0, 0, 1), vec3(v2[0], v2[1], 0), color});
+}
+
+void Topology::drawSeparatrix(const std::vector<dvec2>& points,
+                              std::vector<BasicMesh::Vertex>& vertices,
+                              BasicMesh& mesh) {
+    vec4 color(1);
+    auto indexBuffer = mesh.addIndexBuffer(DrawType::Lines, ConnectivityType::Strip);
+    for (size_t i = 0; i < points.size(); i++) {
+        indexBuffer->add(static_cast<std::uint32_t>(vertices.size()));
+        vertices.push_back({vec3(points[i][0], points[i][1], 0), vec3(0, 0, 1), vec3(points[i][0], points[i][1], 0), color});
+    }
 }
 
 }  // namespace inviwo
