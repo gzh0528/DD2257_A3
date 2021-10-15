@@ -73,19 +73,11 @@ protected:
     static void drawLineSegment(const dvec2& v1, const dvec2& v2, const vec4& color,
                                 IndexBufferRAM* indexBuffer,
                                 std::vector<BasicMesh::Vertex>& vertices);
-    void extractCriticalPoints(const VectorField2& vectorField,std::vector<dvec2> gridPos, std::vector<dvec2>& res,dvec2 cellT);
-    void separatrice(const VectorField2& vectorField,
-                     std::shared_ptr<IndexBufferRAM> indexBufferPoints,
-                     std::shared_ptr<BasicMesh> mesh,
-                     std::vector<BasicMesh::Vertex>& vertices,dvec2 pos);
-    int criticalPointType(const VectorField2 &vectorField,std::vector<dvec2>& res,dvec2 pos);
-    dvec2 lineLineIntersection(dvec2 A, dvec2 B, dvec2 C, dvec2 D);
-    int drawStreamline(
-            const VectorField2& vectorField,
-            dvec2 startPoint,
-            std::shared_ptr<IndexBufferRAM> indexBufferPoints,
-            std::shared_ptr<BasicMesh> mesh,
-                       std::vector<BasicMesh::Vertex>& vertices,double stepsize);
+
+    static void drawSeparatrix(const std::vector<dvec2>& points,
+                               std::vector<BasicMesh::Vertex>& vertices,
+                               BasicMesh& mesh);
+
     // Ports
 public:
     // Input data
@@ -94,12 +86,9 @@ public:
     // Output mesh
     MeshOutport outMesh;
 
-	// Output mesh for bounding box and gridlines
+    // Output mesh for bounding box and gridlines
     MeshOutport meshBBoxOut;
-    IntVec2Property cellThreshold;
-    FloatProperty minThreshold;
-    FloatProperty propStepSize;
-    IntProperty propMaxSteps;
+
 };  // namespace inviwo
 
 }  // namespace inviwo
