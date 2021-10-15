@@ -11,7 +11,6 @@
 #include <labstreamlines/integrator.h>
 #include <labutils/scalarvectorfield.h>
 #include <labtopo/topology.h>
-#include <labstreamlines/streamlineintegrator.h>
 #include <labtopo/utils/gradients.h>
 
 namespace inviwo {
@@ -24,7 +23,6 @@ const vec4 Topology::ColorsCP[6] = {
     vec4(1, 0.5, 0, 1),  // RepellingFocus - Orange
     vec4(0, 1, 0, 1)     // Center - Green
 };
-
 
 // The Class Identifier has to be globally unique. Use a reverse DNS naming scheme
 const ProcessorInfo Topology::processorInfo_{
@@ -42,10 +40,6 @@ Topology::Topology()
     , inData("inData")
     , outMesh("meshOut")
     , meshBBoxOut("meshBBoxOut")
-    ,cellThreshold("Cell_Threshold", "ThresholdOfCellSize", {0.025,0.025}, {0.05,0.05})
-    ,minThreshold("MinThreshold", "ThresholdofMin", 0.001,0.00001, 0.1,0.0001)
-    , propStepSize("propStepSize", "Step size", 0.1, 0.001, 10)
-    , propMaxSteps("propMaxSteps", "Max steps", 100, 0, 10000)
 // TODO: Initialize additional properties
 // propertyName("propertyIdentifier", "Display Name of the Propery",
 // default value (optional), minimum value (optional), maximum value (optional), increment
@@ -58,10 +52,101 @@ Topology::Topology()
 
     // TODO: Register additional properties
     // addProperty(propertyName);
-    addProperty(cellThreshold);
-    addProperty(minThreshold);
-    addProperty(propStepSize);
-    addProperty(propMaxSteps);
+}
+
+static void streamline(const VectorField2& vectorField, const dvec2& seed, double stepSize, int numSteps, std::vector<dvec2>& points)
+{
+    points.clear();
+
+    dvec2 x0 = seed;
+    for (int i = 0; i < numSteps; i++) {
+        dvec2 x1 = Integrator::RK4_norm(vectorField, x0, stepSize);
+
+        if (!vectorField.isInside(x1))
+            break;
+
+        if (vectorField.interpolate(x1) == dvec2(0))
+            break;
+
+        points.push_back(x1);
+
+        x0 = x1;
+    }
+}
+
+void findBoundPoint(const VectorField2& vectorField, double thresholdLength, dvec2 lo, dvec2 hi, vector<dvec2>& BoundaryPoint,double minThreshold,int sign) {
+
+
+    dvec2 diff = hi-lo;
+    dvec2 mid=(hi+lo)/2.0;
+    if (max(diff.x,diff.y)<=thresholdLength) {
+        if(((sign==1)&&(vectorField.interpolate(lo).x*vectorField.interpolate(hi).x<0))||((sign==0)&&(vectorField.interpolate(lo).y*vectorField.interpolate(hi).y<0)))
+        {
+            BoundaryPoint.push_back(mid);
+        }
+        return;
+    }
+    findBoundPoint(vectorField, thresholdLength,lo, lo+diff/2.0,BoundaryPoint,minThreshold,sign);
+    findBoundPoint(vectorField, thresholdLength, lo+diff/2.0, hi,BoundaryPoint,minThreshold,sign);
+}
+
+// Linear cell has at most 1 critical point
+bool findCriticalPoint(const VectorField2& vectorField, double thresholdArea, dvec2 lo, dvec2 hi, dvec2& criticalPoint) {
+    dvec2 values[4];
+    values[0] = vectorField.interpolate({lo.x, lo.y});
+    values[1] = vectorField.interpolate({lo.x, hi.y});
+    values[2] = vectorField.interpolate({hi.x, hi.y});
+    values[3] = vectorField.interpolate({hi.x, lo.y});
+
+    for (int dim = 0; dim < 2; dim++) {
+        int sgn = std::signbit(values[0][dim]);
+        for (int i = 1; i < 4; i++)
+            if (std::signbit(values[i][dim]) != sgn)
+                goto next_dim;
+        return false;
+        next_dim:;
+    }
+
+    dvec2 diff = hi-lo;
+    double area = diff.x*diff.y;
+    if (area > thresholdArea) {
+        double dx = diff.x/2;
+        double dy = diff.y/2;
+
+        dvec2 subcells[4][2] = {
+            {lo + dvec2(0, 0), hi - dvec2(dx, dy)},
+            {lo + dvec2(0, dy), hi - dvec2(dx, 0)},
+            {lo + dvec2(dx, 0), hi - dvec2(0, dy)},
+            {lo + dvec2(dx, dy), hi - dvec2(0, 0)}
+        };
+
+        bool found = false;
+        for (int i = 0; i < 4 && !found; i++)
+            found = findCriticalPoint(vectorField, thresholdArea, subcells[i][0], subcells[i][1], criticalPoint);
+        return found;
+    } else {
+        criticalPoint = (lo+hi)/2;
+        return true;
+    }
+}
+
+Topology::TypeCP categorizePoint(const util::EigenResult& eigen) {
+    double threshold = 1e-4;
+    if (eigen.eigenvaluesIm[0] == 0.0) {
+        if (eigen.eigenvaluesRe[0] * eigen.eigenvaluesRe[1] < 0)
+            return Topology::TypeCP::Saddle;
+        else if (eigen.eigenvaluesRe[0] < 0)
+            return Topology::TypeCP::AttractingNode;
+        else
+            return Topology::TypeCP::RepellingNode;
+    } else {
+        if (eigen.eigenvaluesRe[0] < -threshold)
+            return Topology::TypeCP::AttractingFocus;
+        else if (eigen.eigenvaluesRe[0] > threshold)
+            return Topology::TypeCP::RepellingFocus;
+        else
+            return Topology::TypeCP::Center;
+    }
 }
 
 void Topology::process() {
@@ -104,67 +189,141 @@ void Topology::process() {
 
     auto indexBufferPoints = mesh->addIndexBuffer(DrawType::Points, ConnectivityType::None);
 
-    // TODO: Compute the topological skeleton of the input vector field.
-    // Find the critical points and color them according to their type.
-    // Integrate all separatrices.
-
     size2_t dims = vectorField.getNumVerticesPerDim();
-    dvec2 cellsizeThres(0.005,0.005);
-    std::cout<<vectorField.getBBoxMax().x<<"maxx"<<std::endl;
-    std::cout<<vectorField.getBBoxMin().x<<"minx"<<std::endl;
-    std::cout<<vectorField.getBBoxMax().y<<"maxy"<<std::endl;
-    std::cout<<vectorField.getBBoxMin().y<<"miny"<<std::endl;
-    // Looping through all values in the vector field.
-    std::vector<dvec2> res;
+
+    dvec2 cellSize = vectorField.getCellSize();
+    double thresholdArea = 1e-6;
+    double thresholdLength=1e-5;
+    double minThreshold=1e-5;
+    struct critical_point {
+        dvec2 point;
+        size2_t vert;
+    };
+    std::vector<critical_point> criticalPoints;
+    //std::vector<std::vector<bool>> occupied(dims.x, std::vector<bool>(dims.y));
+    std::vector<dvec2> BoundaryPoint;
     for (size_t j = 0; j < dims[1]; ++j) {
         for (size_t i = 0; i < dims[0]; ++i) {
-            //change of sign test
-            //vector<dvec2> res=extractCriticalPoints(vectorField, dims,dvec2(i,j));
-            if((i+1<dims[0])&&(j+1<dims[1]))
-            {
-                std::vector<dvec2> gridPos;
-                std::vector<dvec2> gridres;
-                gridPos.push_back(vectorField.getPositionAtVertex(size2_t(i,j)));
-                gridPos.push_back(vectorField.getPositionAtVertex(size2_t(i,j+1)));
-                gridPos.push_back(vectorField.getPositionAtVertex(size2_t(i+1,j)));
-                gridPos.push_back(vectorField.getPositionAtVertex(size2_t(i+1,j+1)));
-                extractCriticalPoints(vectorField, gridPos,res,cellsizeThres);
+            dvec2 point;
+            dvec2 lo = vectorField.getPositionAtVertex({i, j});
+            dvec2 hi = lo + cellSize;
+            if (findCriticalPoint(vectorField, thresholdArea, lo, hi, point)) {
+                LogProcessorInfo("Found " << point << " value " << vectorField.interpolate(point));
+                criticalPoints.push_back({point, {i, j}});
+                //occupied[i][j] = true;
             }
-            
-            
+            if(i==0)
+            {
+                dvec2 hi1(lo.x,lo.y+cellSize.y);
+                findBoundPoint(vectorField, thresholdLength,lo, hi1,BoundaryPoint,minThreshold,1);
+            }
+            if(j==0)
+            {
+                dvec2 hi2(lo.x+cellSize.x,lo.y);
+                findBoundPoint(vectorField, thresholdLength,lo, hi2,BoundaryPoint,minThreshold,0);
+            }
+            if(i==dims[0]-1)
+            {
+                dvec2 hi3(lo.x,lo.y+cellSize.y);
+                findBoundPoint(vectorField, thresholdLength,lo, hi3,BoundaryPoint,minThreshold,1);
+            }
+            if(j==dims[1]-1)
+            {
+                dvec2 hi4(lo.x+cellSize.x,lo.y);
+                findBoundPoint(vectorField, thresholdLength,lo, hi4,BoundaryPoint,minThreshold,0);
+            }
         }
     }
-    for(auto cp:res)
+
+    /*
+    std::vector<std::vector<bool>> hasNeighbor(dims.x, std::vector<bool>(dims.y));
+    for (size_t j = 0; j < dims.y; j++) {
+        bool last = occupied[0][j];
+        for (size_t i = 1; i < dims.x; i++) {
+            bool curr = occupied[i][j];
+            if (curr && last) {
+                hasNeighbor[i-1][j] = true;
+                hasNeighbor[i][j] = true;
+            }
+            last = curr;
+        }
+    }
+    for (size_t i = 0; i < dims.x; i++) {
+        bool last = occupied[i][0];
+        for (size_t j = 1; j < dims.y; j++) {
+            bool curr = occupied[i][j];
+            if (curr && last) {
+                hasNeighbor[i][j-1] = true;
+                hasNeighbor[i][j] = true;
+            }
+            last = curr;
+        }
+    }
+    */
+
+    int maxSteps = 1000;
+    dvec2 extent = BBoxMax-BBoxMin;
+    double minExtent = std::min(extent.x, extent.y);
+    double stepSize = minExtent / maxSteps;
+    std::vector<dvec2> tmpBPoints;
+    for(auto p:BoundaryPoint)
     {
-        int color_=criticalPointType(vectorField, res, cp);
-        if(color_!=-1)
-        {
-            vec4 col_=ColorsCP[color_];
-            Integrator::drawPoint(cp, col_, indexBufferPoints.get(), vertices);
+        vec4 color_(0.5,0.5,0.5,1);
+        mat2 jacobian = vectorField.derive(p);
+        auto eigen = util::eigenAnalysis(jacobian);
+        for (int eigenValue = 0; eigenValue < 2; eigenValue++) {
+            double myStepSize = eigen.eigenvaluesRe[eigenValue] > 0 ? stepSize : -stepSize;
+            dvec2 step = stepSize*eigen.eigenvectors[eigenValue];
+
+            streamline(vectorField, p + step, myStepSize, maxSteps, tmpBPoints);
+            drawSeparatrix(tmpBPoints, vertices, *mesh);
+
+            streamline(vectorField, p - step, myStepSize, maxSteps, tmpBPoints);
+            drawSeparatrix(tmpBPoints, vertices, *mesh);
         }
-        else
-        {
-            Integrator::drawPoint(cp, black, indexBufferPoints.get(), vertices);
+        vertices.push_back({vec3(p[0], p[1], 0), vec3(0, 0, 1), vec3(p[0], p[1], 0), color_});
+        Integrator::drawPoint(p, vec4(0.5, 0.5, 0.5, 1), indexBufferPoints.get(), vertices);
+    }
+    std::vector<dvec2> tmpPoints;
+    for (size_t i = 0; i < criticalPoints.size(); i++) {
+        dvec2 p = criticalPoints[i].point;
+        size2_t vert = criticalPoints[i].vert;
+        mat2 jacobian = vectorField.derive(p);
+
+        //bool isIsolated = !hasNeighbor[vert.x][vert.y];
+        bool isIsolated = true;
+        for (size_t j = 0; j < criticalPoints.size() && isIsolated; j++) {
+            if (i == j)
+                continue;
+            if (glm::length(p - criticalPoints[j].point) < minExtent / 50)
+                isIsolated = false;
         }
-        
+        bool firstOrder = isIsolated && glm::abs(glm::determinant(jacobian)) > 1e-5;
+
+        if (!firstOrder)
+            continue;
+
+        auto eigen = util::eigenAnalysis(jacobian);
+        TypeCP type = categorizePoint(eigen);
+
+        if (type == TypeCP::Saddle) {
+            for (int eigenValue = 0; eigenValue < 2; eigenValue++) {
+                double myStepSize = eigen.eigenvaluesRe[eigenValue] > 0 ? stepSize : -stepSize;
+                dvec2 step = stepSize*eigen.eigenvectors[eigenValue];
+
+                streamline(vectorField, p + step, myStepSize, maxSteps, tmpPoints);
+                drawSeparatrix(tmpPoints, vertices, *mesh);
+
+                streamline(vectorField, p - step, myStepSize, maxSteps, tmpPoints);
+                drawSeparatrix(tmpPoints, vertices, *mesh);
+            }
+        }
+
+        vec4 color = ColorsCP[static_cast<int>(type)];
+        indexBufferPoints->add(static_cast<std::uint32_t>(vertices.size()));
+        vertices.push_back({vec3(p[0], p[1], 0), vec3(0, 0, 1), vec3(p[0], p[1], 0), color});
     }
-    for(auto cp:res)
-    {
-        //Topology::separatrice(vectorField, indexBufferPoints,mesh,vertices,cp);
-    }
-    
-    // Other helpful functions
-    // dvec2 pos = vectorField.getPositionAtVertex(size2_t(i, j));
-    // Computing the jacobian at a position
-    // dmat2 jacobian = vectorField.derive(pos);
-    // Doing the eigen analysis
-    // auto eigenResult = util::eigenAnalysis(jacobian);
-    // The result of the eigen analysis has attributed eigenvaluesRe eigenvaluesIm and
-    // eigenvectors
-    
-    // Accessing the colors
-    vec4 colorCenter = ColorsCP[static_cast<int>(TypeCP::Center)];
-    
+
     mesh->addVertices(vertices);
     outMesh.setData(mesh);
 }
@@ -178,338 +337,14 @@ void Topology::drawLineSegment(const dvec2& v1, const dvec2& v2, const vec4& col
     vertices.push_back({vec3(v2[0], v2[1], 0), vec3(0, 0, 1), vec3(v2[0], v2[1], 0), color});
 }
 
-void Topology::extractCriticalPoints(const VectorField2& vectorField,std::vector<dvec2> gridPos, std::vector<dvec2>& res,dvec2 cellT)
-{
-    
-    if(gridPos.size()!=4)
-        return;
-    /*if((!vectorField.isInside(gridPos[0]))||(!vectorField.isInside(gridPos[1]))||(!vectorField.isInside(gridPos[2]))||(!vectorField.isInside(gridPos[3])))
-    {
-        std::cout<<"not in side"<<gridPos[0]<<gridPos[1]<<gridPos[2]<<gridPos[3]<<std::endl;
-        return;
-    }*/
-    
-    /*
-     If we recursively achieve a very small grid, then we collect results and
-     exit the recursion*/
-    if((gridPos[1].y-gridPos[0].y<=cellT.y)&&(gridPos[2].x-gridPos[0].x <= cellT.x))
-    {
-        //change of sign test begins
-        dvec2 vij = vectorField.interpolate(gridPos[0]);
-        dvec2 vij1 = vectorField.interpolate(gridPos[1]);
-        dvec2 vi1j = vectorField.interpolate(gridPos[2]);
-        dvec2 vi1j1 = vectorField.interpolate(gridPos[3]);
-        int x1=vij.x>0?1:0;
-        int x2=vij1.x>0?1:0;
-        int x3=vi1j.x>0?1:0;
-        int x4=vi1j1.x>0?1:0;
-        int y1=vij.y>0?1:0;
-        int y2=vij1.y>0?1:0;
-        int y3=vi1j.y>0?1:0;
-        int y4=vi1j1.y>0?1:0;
-        if(((x1==x2)&&(x2==x3)&&(x3==x4))||((y1==y2)&&(y2==y3)&&(y3==y4)))
-        {
-            return;
-        }
-        /*'
-         1. linear interpolation four edges
-         2. v.x==0 then ->vx
-         3. v.y==0 then ->vy
-         4. test if the zero point is on the boundary
-         5. get intersectionpoints of two lines and return
-         */
-        std::vector<dvec2> vx;
-        std::vector<dvec2> vy;
-        //bottom
-        if(vij.x*vij1.x<0)
-        {
-            dvec2 px;
-            px=dvec2(gridPos[0].x,gridPos[0].y+(0-vij.x)*(gridPos[1].y-gridPos[0].y)/(vij1.x-vij.x));
-            if((vectorField.interpolate(px).x<minThreshold.get())&&(vectorField.interpolate(px).x>-minThreshold.get()))
-            {
-                LogProcessorInfo("px"<<vectorField.interpolate(px).x);
-                vx.push_back(px);
-            }
-        }
-        //up
-        if(vi1j.x*vi1j1.x<0)
-        {
-            dvec2 px;
-            px=dvec2(gridPos[2].x,gridPos[2].y+(0-vi1j.x)*(gridPos[3].y-gridPos[2].y)/(vi1j1.x-vi1j.x));
-            if((vectorField.interpolate(px).x<minThreshold.get())&&(vectorField.interpolate(px).x>-minThreshold.get()))
-            {
-                LogProcessorInfo("px"<<vectorField.interpolate(px).x);
-                vx.push_back(px);
-            }
-        }
-        //left
-        if(vij.x*vi1j.x<0)
-        {
-            dvec2 px;
-            px=dvec2(gridPos[0].x+(0-vij.x)*(gridPos[2].x-gridPos[0].x)/(vi1j.x-vij.x),gridPos[0].y);
-            if((vectorField.interpolate(px).x<minThreshold.get())&&(vectorField.interpolate(px).x>-minThreshold.get()))
-            {
-                LogProcessorInfo("px"<<vectorField.interpolate(px).x);
-                vx.push_back(px);
-            }
-        }
-        //right
-        if(vij1.x*vi1j1.x<0)
-        {
-            dvec2 px;
-            px=dvec2(gridPos[1].x+(0-vij1.x)*(gridPos[3].x-gridPos[1].x)/(vi1j1.x-vij1.x),gridPos[1].y);
-            if((vectorField.interpolate(px).x<minThreshold.get())&&(vectorField.interpolate(px).x>-minThreshold.get()))
-            {
-                LogProcessorInfo("px"<<vectorField.interpolate(px).x);
-                vx.push_back(px);
-            }
-        }
-        
-        //bottom
-        if(vij.y*vij1.y<0)
-        {
-            dvec2 py;
-            py=dvec2(gridPos[0].x,gridPos[0].y+(0-vij.y)*(gridPos[1].y-gridPos[0].y)/(vij1.y-vij.y));
-            if((vectorField.interpolate(py).y<minThreshold.get())&&(vectorField.interpolate(py).y>-minThreshold.get()))
-            {
-                vy.push_back(py);
-            }
-        }
-        //up
-        if(vi1j.y*vi1j1.y<0)
-        {
-            dvec2 py;
-            py=dvec2(gridPos[2].x,gridPos[2].y+(0-vi1j.y)*(gridPos[3].y-gridPos[2].y)/(vi1j1.y-vi1j.y));
-            if((vectorField.interpolate(py).y<minThreshold.get())&&(vectorField.interpolate(py).y>-minThreshold.get()))
-            {
-                vy.push_back(py);
-            }
-        }
-        //left
-        if(vij.y*vi1j.y<0)
-        {
-            dvec2 py;
-            py=dvec2(gridPos[0].x+(0-vij.y)*(gridPos[2].x-gridPos[0].x)/(vi1j.y-vij.y),gridPos[0].y);
-            if((vectorField.interpolate(py).y<minThreshold.get())&&(vectorField.interpolate(py).y>-minThreshold.get()))
-            {
-                vy.push_back(py);
-            }
-        }
-    
-        //right
-        if(vij1.y*vi1j1.y<0)
-        {
-            dvec2 py;
-            py=dvec2(gridPos[1].x+(0-vij1.y)*(gridPos[3].x-gridPos[1].x)/(vi1j1.y-vij1.y),gridPos[1].y);
-            if((vectorField.interpolate(py).y<minThreshold.get())&&(vectorField.interpolate(py).y>-minThreshold.get()))
-            {
-                vy.push_back(py);
-            }
-        }
-        //hit the bound
-        for(int ii=0;ii<vx.size();ii++)
-        {
-            dvec2 vii=vectorField.interpolate(vx[ii]);
-            dmat2 jaco=vectorField.derive(vii);
-            if((glm::determinant(jaco))&&(vii.x<minThreshold.get())&&(vii.x>-minThreshold.get())&&(vii.y<minThreshold.get())&&(vii.y>-minThreshold.get()))
-            {
-                res.push_back(vx[ii]);
-                vx.erase(vx.begin()+ii);
-            }
-        }
-        for(int jj=0;jj<vy.size();jj++)
-        {
-            dvec2 vjj=vectorField.interpolate(vy[jj]);
-            dmat2 jaco=vectorField.derive(vjj);
-            if((glm::determinant(jaco))&&(vjj.x<minThreshold.get())&&(vjj.x>-minThreshold.get())&&(vjj.y<minThreshold.get())&&(vjj.y>-minThreshold.get()))
-            {
-                res.push_back(vy[jj]);
-                vy.erase(vy.begin()+jj);
-            }
-        }
-        /*
-         This is where we return the intersection point
-         */
-        if((vx.size()==2)&&(vy.size()==2))
-        {
-            dvec2 npos=Topology::lineLineIntersection(vx[0], vx[1], vy[0], vy[1]);
-            if(npos.x!=FLT_MAX)
-            {
-                dmat2 jacobian = vectorField.derive(npos);
-                //compute determinate
-                float det=glm::determinant(jacobian);//jacobian[0][0]*jacobian[1][1]-jacobian[0][1]*jacobian[1][0];
-                if(det!=0.0)
-                    res.push_back(npos);
-            }
-        }
-        return;
-    }
-    
-    
-    /*change of sign test*/
-    dvec2 vij = vectorField.interpolate(gridPos[0]);
-    dvec2 vij1 = vectorField.interpolate(gridPos[1]);
-    dvec2 vi1j = vectorField.interpolate(gridPos[2]);
-    dvec2 vi1j1 = vectorField.interpolate(gridPos[3]);
-    int x1=vij.x>0?1:0;
-    int x2=vij1.x>0?1:0;
-    int x3=vi1j.x>0?1:0;
-    int x4=vi1j1.x>0?1:0;
-    int y1=vij.y>0?1:0;
-    int y2=vij1.y>0?1:0;
-    int y3=vi1j.y>0?1:0;
-    int y4=vi1j1.y>0?1:0;
-    if(((x1==x2)&&(x2==x3)&&(x3==x4))||((y1==y2)&&(y2==y3)&&(y3==y4)))
-    {
-        return;
-    }
-    
-    /*
-     Recursively decomposing the big grid
-     */
-    std::vector<dvec2> DecompPos(5,dvec2(0));
-    DecompPos[0]=(gridPos[0]+gridPos[1])/2.0;//bottom
-    DecompPos[1]=(gridPos[0]+gridPos[2])/2.0;//left
-    DecompPos[2]=(gridPos[1]+gridPos[3])/2.0;//right
-    DecompPos[3]=(gridPos[2]+gridPos[3])/2.0;//up
-    DecompPos[4]=(gridPos[0]+gridPos[3])/2.0;//center
-    //up left
-    std::vector<dvec2>upleft={DecompPos[1],DecompPos[4],gridPos[2],DecompPos[3]};
-    extractCriticalPoints(vectorField,upleft,res,cellT);
- 
-    //bottom left
-    std::vector<dvec2>bottomleft={gridPos[0],DecompPos[0],DecompPos[1],DecompPos[4]};
-    extractCriticalPoints(vectorField,bottomleft,res,cellT);
- 
-    //up right
-    std::vector<dvec2>upright={DecompPos[4],DecompPos[2],DecompPos[3],gridPos[3]};
-    extractCriticalPoints(vectorField,upright,res,cellT);
-
-    //bottom right
-    std::vector<dvec2>bottomright={DecompPos[0],gridPos[1],DecompPos[4],DecompPos[2]};
-    extractCriticalPoints(vectorField,bottomright,res,cellT);
-
-
-   
-}
-
-//not working
-void Topology::separatrice(const VectorField2& vectorField,
-                 std::shared_ptr<IndexBufferRAM> indexBufferPoints,
-                 std::shared_ptr<BasicMesh> mesh,
-                 std::vector<BasicMesh::Vertex>& vertices,dvec2 pos)
-{
-   
-    dmat2 jacobian = vectorField.derive(pos);
-    auto eigenResult = util::eigenAnalysis(jacobian);
-    float MinT=minThreshold.get();
-    dvec2 np1(pos.x+MinT*eigenResult.eigenvectors[0].x,pos.y+MinT*eigenResult.eigenvectors[0].y);
-    dvec2 np2(pos.x-MinT*eigenResult.eigenvectors[0].x,pos.y-MinT*eigenResult.eigenvectors[0].y);
-    dvec2 np3(pos.x+MinT*eigenResult.eigenvectors[1].x,pos.y+MinT*eigenResult.eigenvectors[1].y);
-    dvec2 np4(pos.x-MinT*eigenResult.eigenvectors[1].x,pos.y-MinT*eigenResult.eigenvectors[1].y);
-    Topology::drawStreamline(vectorField, np1, indexBufferPoints, mesh, vertices,propStepSize.get());
-    Topology::drawStreamline(vectorField, np1, indexBufferPoints, mesh, vertices,-propStepSize.get());
-    Topology::drawStreamline(vectorField, np1, indexBufferPoints, mesh, vertices,propStepSize.get());
-    Topology::drawStreamline(vectorField, np1, indexBufferPoints, mesh, vertices,-propStepSize.get());
-    
-}
-int Topology::drawStreamline(
-        const VectorField2& vectorField,
-        dvec2 startPoint,
-        std::shared_ptr<IndexBufferRAM> indexBufferPoints,
-        std::shared_ptr<BasicMesh> mesh,
-                   std::vector<BasicMesh::Vertex>& vertices,double stepsize)
-{
-    // Draw start point
-    // TODO: Create one stream line from the given start point
-    auto indexBufferLine = mesh->addIndexBuffer(DrawType::Lines, ConnectivityType::Strip);
-    vec4 color(0, 0, 1, 1);
-    Integrator::drawNextPointInPolyline(startPoint, color, indexBufferLine.get(), vertices);
-    dvec2 x0 = startPoint;
-    int stepsTaken = 0;
-    for (;;) {
-        dvec2 x1 = Integrator::RK4_norm(vectorField, x0, stepsize);
-        if (!vectorField.isInside(x1)) {
-            LogProcessorInfo("Stop: domain");
-            break;
-        }
-
-        if (vectorField.interpolate(x1) == dvec2(0)) {
-            LogProcessorInfo("Stop: zero");
-            break;
-        }
-        Integrator::drawNextPointInPolyline(x1, color, indexBufferLine.get(), vertices);
-        x0 = x1;
-        stepsTaken++;
-    }
-
-    return stepsTaken;
-}
-
-int Topology::criticalPointType(const VectorField2 &vectorField,std::vector<dvec2>& res,dvec2 pos)
-{
-    
-            /*
-             (-minThreshold,minThreshold) -> zero
-             */
-            dmat2 jacobian = vectorField.derive(pos);
-            auto eigenResult = util::eigenAnalysis(jacobian);
-        
-            //compute determinate
-            float det=glm::determinant(jacobian);
-            if((eigenResult.eigenvaluesRe[0]*eigenResult.eigenvaluesRe[1]<0.0)&&((eigenResult.eigenvaluesIm[0]<minThreshold.get()&&(eigenResult.eigenvaluesIm[0]>-minThreshold.get()))&&((eigenResult.eigenvaluesIm[1]<minThreshold.get()&&(eigenResult.eigenvaluesIm[1]>-minThreshold.get())))))
-            {
-                
-                LogProcessorInfo("Saddle Point")
-                return 0;
-            }
-            if((eigenResult.eigenvaluesRe[0]>0)&& (eigenResult.eigenvaluesRe[1]>0)&&((eigenResult.eigenvaluesIm[0]<minThreshold.get()&&(eigenResult.eigenvaluesIm[0]>-minThreshold.get()))&&((eigenResult.eigenvaluesIm[1]<minThreshold.get()&&(eigenResult.eigenvaluesIm[1]>-minThreshold.get())))))
-            {
-                LogProcessorInfo("Repelling Node")
-                return 2;
-            }
-    if((eigenResult.eigenvaluesRe[0]<0)&& (eigenResult.eigenvaluesRe[1]<0)&&((eigenResult.eigenvaluesIm[0]<minThreshold.get()&&(eigenResult.eigenvaluesIm[0]>-minThreshold.get()))&&((eigenResult.eigenvaluesIm[1]<minThreshold.get()&&(eigenResult.eigenvaluesIm[1]>-minThreshold.get())))))
-            {
-                LogProcessorInfo("Attracting Node")
-                return 1;
-            }
-            if ((eigenResult.eigenvaluesRe[0]==eigenResult.eigenvaluesRe[1])&& ((eigenResult.eigenvaluesRe[1]<minThreshold.get())&&(eigenResult.eigenvaluesRe[1]>-minThreshold.get()))&&((eigenResult.eigenvaluesIm[0]==-eigenResult.eigenvaluesIm[1])&&(eigenResult.eigenvaluesIm[1]!=0.0))) {
-                LogProcessorInfo("Center")
-                return 5;
-            }
-            
-            if ((eigenResult.eigenvaluesRe[0]==eigenResult.eigenvaluesRe[1])&& (eigenResult.eigenvaluesRe[1]<0.0)&&((eigenResult.eigenvaluesIm[0]==-eigenResult.eigenvaluesIm[1])&&(eigenResult.eigenvaluesIm[1]!=0.0))) {
-                LogProcessorInfo("Attracting Focus")
-                return 3;
-            }
-            if ((eigenResult.eigenvaluesRe[0]==eigenResult.eigenvaluesRe[1])&& (eigenResult.eigenvaluesRe[1]>0.0)&&((eigenResult.eigenvaluesIm[0]==-eigenResult.eigenvaluesIm[1])&&(eigenResult.eigenvaluesIm[1]!=0.0))) {
-                LogProcessorInfo("Repelling Focus")
-                return 4;
-            }
-    return -1;
-}
-dvec2 Topology::lineLineIntersection(dvec2 A, dvec2 B, dvec2 C, dvec2 D)
-{
-    // Line AB
-    double a1 = B.y - A.y;
-    double b1 = A.x - B.x;
-    double c1 = a1*(A.x) + b1*(A.y);
-    // Line CD
-    double a2 = D.y - C.y;
-    double b2 = C.x - D.x;
-    double c2 = a2*(C.x)+ b2*(C.y);
-  
-    double determinant = a1*b2 - a2*b1;
-  
-    if (determinant == 0)
-    {
-        return dvec2(FLT_MAX, FLT_MAX);
-    }
-    else
-    {
-        double x = (b2*c1 - b1*c2)/determinant;
-        double y = (a1*c2 - a2*c1)/determinant;
-        return dvec2(x, y);
+void Topology::drawSeparatrix(const std::vector<dvec2>& points,
+                              std::vector<BasicMesh::Vertex>& vertices,
+                              BasicMesh& mesh) {
+    vec4 color(1);
+    auto indexBuffer = mesh.addIndexBuffer(DrawType::Lines, ConnectivityType::Strip);
+    for (size_t i = 0; i < points.size(); i++) {
+        indexBuffer->add(static_cast<std::uint32_t>(vertices.size()));
+        vertices.push_back({vec3(points[i][0], points[i][1], 0), vec3(0, 0, 1), vec3(points[i][0], points[i][1], 0), color});
     }
 }
 
